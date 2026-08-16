@@ -51,6 +51,7 @@ pub struct HorizonTask {
     pub plan: Option<String>,
 }
 
+#[must_use]
 pub fn resolve_path(args: &LedgerArgs) -> PathBuf {
     args.file
         .clone()
@@ -129,6 +130,7 @@ pub fn print_show(args: &crate::cli::IdArgs) -> Result<()> {
     bail!("no task {}", args.id);
 }
 
+#[must_use]
 pub fn graph_errors(ledger: &Ledger, root: &Path) -> Vec<String> {
     let mut errors = Vec::new();
     let prefix = &ledger.prefix;
