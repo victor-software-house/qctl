@@ -1,0 +1,108 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://github.com/victor-software-house/qctl/blob/main/schema/tasks.schema.json",
+	"title": "qctl work queue",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["schema_version", "prefix", "active", "queue", "archive"],
+	"properties": {
+		"schema_version": {
+			"const": 1,
+			"description": "Ledger schema version. Increment only with a coordinated schema and ledger migration."
+		},
+		"prefix": {
+			"type": "string",
+			"pattern": "^[A-Z][A-Z0-9]{1,7}$",
+			"description": "Stable ID prefix for this repository, such as PST, KAI, or OMX. Never encodes priority."
+		},
+		"active": {
+			"description": "The one task currently being executed, or null when work is intentionally paused.",
+			"oneOf": [{ "$ref": "#/$defs/taskId" }, { "type": "null" }]
+		},
+		"queue": {
+			"type": "array",
+			"description": "Pending work in priority order. Array order is the priority.",
+			"items": { "$ref": "#/$defs/task" }
+		},
+		"archive": {
+			"type": "array",
+			"description": "Completed or deliberately dropped work, newest first. Archived IDs are never reused.",
+			"items": { "$ref": "#/$defs/archiveTask" }
+		}
+	},
+	"$defs": {
+		"taskId": {
+			"type": "string",
+			"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$"
+		},
+		"nonEmptyString": {
+			"type": "string",
+			"minLength": 1
+		},
+		"nonEmptyStringList": {
+			"type": "array",
+			"items": { "$ref": "#/$defs/nonEmptyString" },
+			"minItems": 1,
+			"uniqueItems": true
+		},
+		"repoPath": {
+			"type": "string",
+			"pattern": "^(?!/)(?!.*\\.\\.).+\\.md$"
+		},
+		"task": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["id", "title", "scope", "outcome", "blocked_by", "acceptance"],
+			"properties": {
+				"id": { "$ref": "#/$defs/taskId" },
+				"title": { "$ref": "#/$defs/nonEmptyString" },
+				"scope": { "$ref": "#/$defs/nonEmptyString" },
+				"outcome": { "$ref": "#/$defs/nonEmptyString" },
+				"blocked_by": {
+					"type": "array",
+					"items": { "$ref": "#/$defs/taskId" },
+					"uniqueItems": true
+				},
+				"acceptance": { "$ref": "#/$defs/nonEmptyStringList" },
+				"patch": {
+					"type": "string",
+					"pattern": "^[a-z][a-z0-9-]*$"
+				},
+				"plan": { "$ref": "#/$defs/repoPath" },
+				"links": {
+					"type": "array",
+					"items": { "type": "string", "format": "uri" },
+					"uniqueItems": true
+				},
+				"notes": { "$ref": "#/$defs/nonEmptyString" }
+			}
+		},
+		"archiveTask": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["id", "title", "scope", "completed", "outcome", "evidence"],
+			"properties": {
+				"id": { "$ref": "#/$defs/taskId" },
+				"title": { "$ref": "#/$defs/nonEmptyString" },
+				"scope": { "$ref": "#/$defs/nonEmptyString" },
+				"completed": { "type": "string", "format": "date" },
+				"outcome": { "$ref": "#/$defs/nonEmptyString" },
+				"evidence": { "$ref": "#/$defs/nonEmptyStringList" },
+				"patch": {
+					"type": "string",
+					"pattern": "^[a-z][a-z0-9-]*$"
+				},
+				"plan": { "$ref": "#/$defs/repoPath" },
+				"links": {
+					"type": "array",
+					"items": { "type": "string", "format": "uri" },
+					"uniqueItems": true
+				},
+				"disposition": {
+					"type": "string",
+					"enum": ["completed", "dropped"]
+				}
+			}
+		}
+	}
+}
