@@ -3,6 +3,7 @@
 mod common;
 
 use common::{LedgerDir, MINIMAL, qctl, stderr, stdout};
+use indoc::indoc;
 
 #[test]
 fn init_writes_ledger_without_schema_copy() {
@@ -37,16 +38,14 @@ fn check_accepts_own_repo_shape() {
 #[test]
 fn check_rejects_unknown_field() {
     let dir = LedgerDir::empty();
-    dir.write(
-        "\
-schema_version: 1
-prefix: QCTL
-active: null
-queue: []
-archive: []
-nope: true
-",
-    );
+    dir.write(indoc! {"
+        schema_version: 1
+        prefix: QCTL
+        active: null
+        queue: []
+        archive: []
+        nope: true
+    "});
     let output = qctl(&["check", "-f", dir.path.to_str().unwrap()]);
     assert!(!output.status.success());
 }
@@ -102,34 +101,32 @@ fn add_start_archive_round_trip() {
 #[test]
 fn start_refuses_blocked_or_horizon() {
     let dir = LedgerDir::empty();
-    dir.write(
-        "\
-schema_version: 1
-prefix: QCTL
-active: null
-queue:
-  - id: QCTL-002
-    title: blocked
-    scope: s
-    outcome: o
-    blocked_by: [QCTL-001]
-    acceptance: [a]
-  - id: QCTL-001
-    title: first
-    scope: s
-    outcome: o
-    blocked_by: []
-    acceptance: [a]
-archive: []
-horizon:
-  - id: QCTL-009
-    title: later
-    scope: s
-    outcome: o
-    kind: research
-    open: unknown
-",
-    );
+    dir.write(indoc! {"
+        schema_version: 1
+        prefix: QCTL
+        active: null
+        queue:
+          - id: QCTL-002
+            title: blocked
+            scope: s
+            outcome: o
+            blocked_by: [QCTL-001]
+            acceptance: [a]
+          - id: QCTL-001
+            title: first
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [a]
+        archive: []
+        horizon:
+          - id: QCTL-009
+            title: later
+            scope: s
+            outcome: o
+            kind: research
+            open: unknown
+    "});
     let blocked = qctl(&["start", "QCTL-002", "-f", dir.path.to_str().unwrap()]);
     assert!(!blocked.status.success());
     assert!(stderr(&blocked).contains("blocked"));
@@ -151,28 +148,26 @@ fn instructions_prints_contract() {
 #[test]
 fn status_lists_horizon() {
     let dir = LedgerDir::empty();
-    dir.write(
-        "\
-schema_version: 1
-prefix: QCTL
-active: QCTL-001
-queue:
-  - id: QCTL-001
-    title: now
-    scope: s
-    outcome: o
-    blocked_by: []
-    acceptance: [a]
-archive: []
-horizon:
-  - id: QCTL-008
-    title: later
-    scope: s
-    outcome: o
-    kind: evaluation
-    open: wait
-",
-    );
+    dir.write(indoc! {"
+        schema_version: 1
+        prefix: QCTL
+        active: QCTL-001
+        queue:
+          - id: QCTL-001
+            title: now
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [a]
+        archive: []
+        horizon:
+          - id: QCTL-008
+            title: later
+            scope: s
+            outcome: o
+            kind: evaluation
+            open: wait
+    "});
     let output = qctl(&["status", "-f", dir.path.to_str().unwrap()]);
     assert!(output.status.success(), "{}", stderr(&output));
     let text = stdout(&output);

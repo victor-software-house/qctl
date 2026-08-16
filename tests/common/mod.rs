@@ -1,3 +1,4 @@
+use indoc::indoc;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
@@ -44,11 +45,11 @@ pub fn stderr(output: &Output) -> String {
     String::from_utf8_lossy(&output.stderr).into_owned()
 }
 
-pub const MINIMAL: &str = "\
-schema_version: 1
-prefix: QCTL
-active: null
-queue: []
-archive: []
-horizon: []
-";
+pub const MINIMAL: &str = indoc! {"
+    schema_version: 1
+    prefix: QCTL
+    active: null
+    queue: []
+    archive: []
+    horizon: []
+"};
