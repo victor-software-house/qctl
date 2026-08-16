@@ -6,7 +6,10 @@ mod mutate;
 use anyhow::Result;
 use clap::Parser;
 use cli::{Cli, Command};
+use std::io::{self, Write};
 use std::process::ExitCode;
+
+const INSTRUCTIONS: &str = include_str!("instructions.md");
 
 fn main() -> ExitCode {
     match run() {
@@ -28,6 +31,9 @@ fn run() -> Result<()> {
         Command::Start(args) => mutate::start(&args)?,
         Command::Archive(args) => mutate::archive(&args)?,
         Command::Show(args) => ledger::print_show(&args)?,
+        Command::Instructions => {
+            io::stdout().write_all(INSTRUCTIONS.as_bytes())?;
+        }
     }
     Ok(())
 }

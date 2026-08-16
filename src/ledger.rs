@@ -15,6 +15,8 @@ pub struct Ledger {
     pub active: Option<String>,
     pub queue: Vec<QueuedTask>,
     pub archive: Vec<ArchivedTask>,
+    #[serde(default)]
+    pub horizon: Vec<HorizonTask>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -35,6 +37,17 @@ pub struct ArchivedTask {
     pub id: String,
     pub title: String,
     pub completed: String,
+    pub plan: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct HorizonTask {
+    pub id: String,
+    pub title: String,
+    pub scope: String,
+    pub outcome: String,
+    pub kind: String,
+    pub open: String,
     pub plan: Option<String>,
 }
 
@@ -70,15 +83,22 @@ pub fn print_status(args: &LedgerArgs) -> Result<()> {
     }
     if ledger.queue.is_empty() {
         println!("queue   (empty)");
+    } else {
+        for (index, task) in ledger.queue.iter().enumerate() {
+            let mark = if ledger.active.as_deref() == Some(task.id.as_str()) {
+                "*"
+            } else {
+                " "
+            };
+            println!("queue{mark} {:>2}  {}  {}", index + 1, task.id, task.title);
+        }
+    }
+    if ledger.horizon.is_empty() {
         return Ok(());
     }
-    for (index, task) in ledger.queue.iter().enumerate() {
-        let mark = if ledger.active.as_deref() == Some(task.id.as_str()) {
-            "*"
-        } else {
-            " "
-        };
-        println!("queue{mark} {:>2}  {}  {}", index + 1, task.id, task.title);
+    println!("horizon {}", ledger.horizon.len());
+    for task in &ledger.horizon {
+        println!("        {}  [{}]  {}", task.id, task.kind, task.title);
     }
     Ok(())
 }
@@ -97,6 +117,13 @@ pub fn print_show(args: &crate::cli::IdArgs) -> Result<()> {
     }
     if let Some(task) = ledger.archive.iter().find(|task| task.id == args.id) {
         println!("{}  {}  (archived {})", task.id, task.title, task.completed);
+        return Ok(());
+    }
+    if let Some(task) = ledger.horizon.iter().find(|task| task.id == args.id) {
+        println!("{}  {}  (horizon {})", task.id, task.title, task.kind);
+        println!("scope     {}", task.scope);
+        println!("outcome   {}", task.outcome);
+        println!("open      {}", task.open);
         return Ok(());
     }
     bail!("no task {}", args.id);
@@ -119,6 +146,7 @@ pub fn graph_errors(ledger: &Ledger, root: &Path) -> Vec<String> {
         .iter()
         .map(|task| task.id.as_str())
         .chain(ledger.archive.iter().map(|task| task.id.as_str()))
+        .chain(ledger.horizon.iter().map(|task| task.id.as_str()))
     {
         if !id_matches_prefix(id, prefix) {
             errors.push(format!("{id} does not match {prefix}-NNN"));
@@ -129,6 +157,9 @@ pub fn graph_errors(ledger: &Ledger, root: &Path) -> Vec<String> {
     }
 
     if let Some(active) = &ledger.active {
+        if ledger.horizon.iter().any(|task| task.id == *active) {
+            errors.push(format!("active {active} is on the horizon, not the queue"));
+        }
         match ledger.queue.first() {
             Some(head) if head.id == *active => {
                 if !head.blocked_by.is_empty() {
@@ -182,6 +213,12 @@ pub fn graph_errors(ledger: &Ledger, root: &Path) -> Vec<String> {
                 .iter()
                 .filter_map(|task| task.plan.as_deref()),
         )
+        .chain(
+            ledger
+                .horizon
+                .iter()
+                .filter_map(|task| task.plan.as_deref()),
+        )
     {
         if !parent.join(plan).is_file() {
             errors.push(format!("missing plan {plan}"));
@@ -208,6 +245,7 @@ pub fn next_id(ledger: &Ledger) -> Result<String> {
         .iter()
         .map(|task| task.id.as_str())
         .chain(ledger.archive.iter().map(|task| task.id.as_str()))
+        .chain(ledger.horizon.iter().map(|task| task.id.as_str()))
     {
         let Some((_, number)) = id.rsplit_once('-') else {
             continue;

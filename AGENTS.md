@@ -1,11 +1,11 @@
 # qctl
 
-Rust policy CLI for in-repo `tasks.yaml` work queues. `check` is the
-validation command. Do not copy Ajv tests into consumers.
+Rust policy CLI for in-repo `tasks.yaml` work queues.
 
-- Prefix lives in the ledger (`prefix: OMX`). IDs are `{prefix}-NNN` with at
-  least three digits and are never reused.
-- File order is priority. Exactly one `active`, or `null`.
-- Mutations should become surgical YAML edits; serde rewrites are a known
-  first-slice gap for `start`/`archive`.
-- The remote mise catalog is `tasks/q` and execs the released binary.
+- Operator contract: `qctl instructions` and `skills/qctl/SKILL.md`.
+- This repo's queue is [`tasks.yaml`](tasks.yaml) (`QCTL-###`).
+- `horizon` maps research/evaluations that are not startable. Do not put
+  them on `queue` and do not set `active` to a horizon id.
+- Schema is types + schemars (QCTL-001). Generated JSON lives only here.
+  Consumers pin a `$schema` URL and run `qctl check`.
+- Mutations should become surgical YAML edits (QCTL-002).

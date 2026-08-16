@@ -1,0 +1,79 @@
+# yaml-language-server: $schema=./schema/tasks.schema.json
+schema_version: 1
+prefix: QCTL
+active: QCTL-001
+
+queue:
+  - id: QCTL-001
+    title: Own the ledger contract as Rust types via schemars
+    scope: qctl
+    outcome: >-
+      The work-queue shape is declared once as Rust types. The committed
+      JSON Schema is generated from those types and still exact for IDEs.
+    blocked_by: []
+    acceptance:
+      - Ledger structs derive serde and schemars::JsonSchema, matching forkctl's contract types.
+      - schema/tasks.schema.json is generated in the qctl repo only (xtask or qctl schema write) and checked in CI.
+      - Consumers do not vendor a copy. tasks.yaml points $schema at a versioned stable URL.
+      - jsonschema still validates from the schema embedded in the qctl binary.
+      - Hand-written schema JSON is not edited as source.
+    notes: >-
+      Do not implement this until the type layout is settled. Graph rules
+      (unique ids, blocker order, active is queue[0]) stay as Rust checks,
+      not JSON Schema. Preferred URL shape is an immutable tag or release
+      asset, including schema_version (not /latest).
+
+  - id: QCTL-002
+    title: Mutate tasks.yaml without losing comments or key order
+    scope: qctl
+    outcome: >-
+      add, start, and archive change only the bytes they must. Comments,
+      quoting, and the $schema header survive.
+    blocked_by: [QCTL-001]
+    acceptance:
+      - A ledger with comments and a yaml-language-server header still has them after add/start/archive.
+      - serde dump is not the write path.
+      - check still passes on the mutated file.
+
+  - id: QCTL-003
+    title: "Publish native qctl so mise github: can install it"
+    scope: release
+    outcome: >-
+      A tagged release ships darwin-arm64 and linux-x64 binaries. The
+      tasks/q catalog pin is a real immutable ref.
+    blocked_by: [QCTL-001]
+    acceptance:
+      - GitHub Release assets exist for darwin-arm64 and linux-x64.
+      - examples/mise.toml pins that tag.
+      - mise run q -- check works from a clean consumer after mise install.
+
+  - id: QCTL-004
+    title: Point consumers at qctl check instead of copied Ajv tests
+    scope: cross-repo
+    outcome: >-
+      OMX seed, then kodus and pi-stuff, call qctl check. Copied
+      test/tasks-ledger.test.ts files can die once the pin is real.
+    blocked_by: [QCTL-003]
+    acceptance:
+      - ompex/oh-my-pi seed uses mise run q -- check.
+      - pi-stuff and kodus-ai have a follow-up row or are converted.
+      - No consumer still vendors ajv or a copied tasks.schema.json.
+      - Each consumer $schema URL is a pinned qctl tag/release, not latest.
+
+horizon:
+  - id: QCTL-005
+    title: Extract a shared CLI chassis from forkctl and qctl
+    scope: cross-repo
+    kind: evaluation
+    outcome: >-
+      Pretty/JSON output, help/color, schemars emit, and release pin-sync
+      live in one small crate only if a third *ctl would copy them again.
+    open: >-
+      qctl does not yet have --format json, width-aware help, or a crates.io
+      release. Extract only after those exist and match forkctl's chassis
+      well enough that a third CLI would copy them.
+    notes: >-
+      Domain types stay in each CLI. Do not create vsh-cli/ctlkit as a
+      prerequisite for cargo publish.
+
+archive: []

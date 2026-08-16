@@ -14,7 +14,7 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Command {
-    /// Write tasks.yaml and tasks.schema.json for a prefix.
+    /// Write a tasks.yaml for a prefix. Does not copy a schema file.
     Init(InitArgs),
     /// Print the active task and the priority-ordered queue.
     Status(LedgerArgs),
@@ -26,8 +26,10 @@ pub enum Command {
     Start(IdArgs),
     /// Move a queued task to the archive.
     Archive(ArchiveArgs),
-    /// Print one queued or archived task.
+    /// Print one queued, archived, or horizon task.
     Show(IdArgs),
+    /// Print the installed-version operator contract.
+    Instructions,
 }
 
 #[derive(Args, Clone)]

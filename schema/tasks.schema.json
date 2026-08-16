@@ -28,6 +28,11 @@
 			"type": "array",
 			"description": "Completed or deliberately dropped work, newest first. Archived IDs are never reused.",
 			"items": { "$ref": "#/$defs/archiveTask" }
+		},
+		"horizon": {
+			"type": "array",
+			"description": "Mapped work that is not on the short-term queue: research, evaluations, or deferred items without a start condition. File order is not priority. active must never name a horizon id.",
+			"items": { "$ref": "#/$defs/horizonTask" }
 		}
 	},
 	"$defs": {
@@ -102,6 +107,37 @@
 					"type": "string",
 					"enum": ["completed", "dropped"]
 				}
+			}
+		},
+		"horizonTask": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["id", "title", "scope", "outcome", "kind", "open"],
+			"properties": {
+				"id": { "$ref": "#/$defs/taskId" },
+				"title": { "$ref": "#/$defs/nonEmptyString" },
+				"scope": { "$ref": "#/$defs/nonEmptyString" },
+				"outcome": { "$ref": "#/$defs/nonEmptyString" },
+				"kind": {
+					"type": "string",
+					"enum": ["research", "evaluation", "deferred"],
+					"description": "research = unknown facts; evaluation = known options, no start condition; deferred = start condition is explicit and not met."
+				},
+				"open": {
+					"$ref": "#/$defs/nonEmptyString",
+					"description": "The missing start condition or the question that keeps this off the queue."
+				},
+				"patch": {
+					"type": "string",
+					"pattern": "^[a-z][a-z0-9-]*$"
+				},
+				"plan": { "$ref": "#/$defs/repoPath" },
+				"links": {
+					"type": "array",
+					"items": { "type": "string", "format": "uri" },
+					"uniqueItems": true
+				},
+				"notes": { "$ref": "#/$defs/nonEmptyString" }
 			}
 		}
 	}

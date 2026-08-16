@@ -1,5 +1,5 @@
 use crate::cli::{AddArgs, ArchiveArgs, InitArgs};
-use crate::ledger::{CANONICAL_SCHEMA, load, next_id, resolve_path};
+use crate::ledger::{load, next_id, resolve_path};
 use anyhow::{Context, Result, bail, ensure};
 use serde_yml::{Mapping, Value};
 use std::fs;
@@ -22,13 +22,11 @@ pub fn init(args: &InitArgs) -> Result<()> {
     {
         fs::create_dir_all(parent)?;
     }
-    let schema_path = path.with_file_name("tasks.schema.json");
-    fs::write(&schema_path, CANONICAL_SCHEMA).with_context(|| schema_path.display().to_string())?;
     let body = format!(
-        "# yaml-language-server: $schema=./tasks.schema.json\nschema_version: 1\nprefix: {prefix}\nactive: null\nqueue: []\narchive: []\n"
+        "# yaml-language-server: $schema=https://raw.githubusercontent.com/victor-software-house/qctl/main/schema/tasks.schema.json\nschema_version: 1\nprefix: {prefix}\nactive: null\nqueue: []\narchive: []\nhorizon: []\n"
     );
     fs::write(&path, body).with_context(|| path.display().to_string())?;
-    println!("wrote {} and {}", path.display(), schema_path.display());
+    println!("wrote {}", path.display());
     Ok(())
 }
 
