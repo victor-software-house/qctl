@@ -1,4 +1,7 @@
-# qctl
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/banner-dark.svg">
+  <img src="docs/banner.svg" alt="qctl — In-repo YAML work queues. One file, one active task.">
+</picture>
 
 Control in-repo YAML work queues. One file, one active task, file order is
 priority. Replaces copied Ajv `test:ledger` scripts.
