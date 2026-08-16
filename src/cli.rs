@@ -32,7 +32,7 @@ pub enum Command {
 
 #[derive(Args, Clone)]
 pub struct LedgerArgs {
-    /// Ledger path. Defaults to TASKS_LEDGER, then tasks.yaml.
+    /// Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`.
     #[arg(short = 'f', long, value_hint = clap::ValueHint::FilePath)]
     pub file: Option<PathBuf>,
 }
