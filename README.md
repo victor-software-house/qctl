@@ -16,9 +16,17 @@ Consumer mise catalog (same shape as forkctl 0.0.21):
 ```toml
 [task_config]
 includes = [
-  "git::https://github.com/victor-software-house/qctl.git//tasks/q?ref=<immutable-ref>",
+  "git::https://github.com/victor-software-house/qctl.git//tasks/q?ref=v0.0.1",
   "mise-tasks",
 ]
+```
+
+Install:
+
+```sh
+cargo install qctl --locked
+# or, after the native release:
+# mise x github:victor-software-house/qctl@0.0.1 -- qctl --version
 ```
 
 Do not name this `taskctl` (existing Go Make alternative) or `pi-tasks`
