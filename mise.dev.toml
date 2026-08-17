@@ -2,7 +2,9 @@
 # Compile this checkout. Not used by Version PR.
 
 [tools]
-rust = "1.97.1"
+# Components are explicit: a bare `rust = "1.97.1"` resolves without
+# rustfmt or clippy on a clean runner, which local rustup hides.
+rust = { version = "1.97.1", components = "rustfmt,clippy" }
 
 [tasks.format]
 description = "rustfmt check"
