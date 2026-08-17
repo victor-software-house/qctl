@@ -1,0 +1,8 @@
+[[packages]]
+name = "qctl"
+path = "Cargo.toml"
+
+# The two hosts this stack runs on: this workstation and the Linux VPS.
+# PR CI never builds these.
+[assets]
+targets = ["darwin-arm64", "linux-x64"]
