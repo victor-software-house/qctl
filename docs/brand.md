@@ -1,10 +1,10 @@
 # Mark
 
-The mark is the queue: one file as a rail, rows attached in order, the active
-task full width and in rust at the head. The queued rows shorten as they
-recede. Same palette and 32-unit grid as `verctl` and `forkctl`; each tool's
-topology differs — a rising history there, a carried stack in `forkctl`, an
-ordered queue here.
+The mark is the invariant: a rule down the middle, the queue on one side, and
+exactly one task in flight on the other — larger, and the only rust in the
+file. Same palette and 32-unit grid as `verctl` and `forkctl`; each tool's
+topology differs — a rising history there, a fork graph in `forkctl`, this
+split here.
 
 | File | Use |
 |:--|:--|
@@ -29,11 +29,12 @@ Banner-only tints: `#6f675c` (muted on cream), `#8d857a` (muted on ink),
 
 ## Construction
 
-A 32-unit square, corner radius 6. The file is a 3-unit rail at `x 4`, full
-height. Three rows start at `x 9`: the active one 19 units wide and 8 tall at
-`y 4`, then 15 units at `y 14.5` and 11 units at `y 22.5`. The 2.5 and 2-unit
-row gaps are load bearing: closed up, the rows render as one block at 16px,
-which is the size it gets judged at.
+A 32-unit square, corner radius 6, mirrored about `y 16`. The rule is 2 units
+wide at `x 15`, running `y 4` to `28`. Two queued cells, 9×8.5, sit at `x 3.5`
+on `y 6` and `y 17.5` — their midpoint is the rule's centre, so the pair reads
+as balanced against it. The task in flight is 9×11 at `x 19.5`, centred on the
+same line and taller than either queued cell. Both side gaps to the rule are
+2.5 units; closing them collapses the split, which is the whole statement.
 
 ## Banner text
 
