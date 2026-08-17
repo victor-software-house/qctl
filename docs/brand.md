@@ -29,12 +29,18 @@ Banner-only tints: `#6f675c` (muted on cream), `#8d857a` (muted on ink),
 
 ## Construction
 
-A 32-unit square, corner radius 6, mirrored about `y 16`. The rule is 2 units
-wide at `x 15`, running `y 4` to `28`. Two queued cells, 9×8.5, sit at `x 3.5`
-on `y 6` and `y 17.5` — their midpoint is the rule's centre, so the pair reads
-as balanced against it. The task in flight is 9×11 at `x 19.5`, centred on the
-same line and taller than either queued cell. Both side gaps to the rule are
-2.5 units; closing them collapses the split, which is the whole statement.
+A 32-unit square, corner radius 6, mirrored about `y 16` and inset 4.5 units
+left and right, 5 top and bottom. The rule is 3 units wide at `x 14.5`, running
+`y 5` to `27`. Two queued cells, 8×8, sit at `x 4.5` on `y 6.5` and `y 17.5` —
+their midpoint is the rule's centre, so the pair reads as balanced against it.
+The task in flight is 8×10 at `x 19.5`, centred on the same line and taller
+than either queued cell. Both side gaps to the rule are 2 units; closing them
+collapses the split, which is the whole statement.
+
+The rule is 3 units and not 2 for one reason: at 16px a 2-unit stroke lands on
+a single half-covered pixel and renders pale grey, so the split — the entire
+point of the mark — is the first thing to disappear. 3 units matches the
+connector weight in the `forkctl` mark and holds.
 
 ## Banner text
 
