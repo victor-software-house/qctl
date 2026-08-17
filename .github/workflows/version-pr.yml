@@ -33,4 +33,4 @@ jobs:
           version: 2026.8.2
           cache: true
       - run: mise install --locked
-      - uses: victor-software-house/verctl/actions/version-pr@main
+      - uses: victor-software-house/verctl/actions/version-pr@a03483fbdbcb43148dbe443e961dbe41021fdff0 # v0.0.2

@@ -46,7 +46,7 @@ jobs:
       - name: Plan native assets
         id: plan
         run: verctl assets --github-output "$GITHUB_OUTPUT"
-      - uses: victor-software-house/verctl/actions/publish@main
+      - uses: victor-software-house/verctl/actions/publish@a03483fbdbcb43148dbe443e961dbe41021fdff0 # v0.0.2
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
@@ -71,7 +71,7 @@ jobs:
           cache: true
       - run: mise install --locked
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - uses: victor-software-house/verctl/actions/asset@main
+      - uses: victor-software-house/verctl/actions/asset@a03483fbdbcb43148dbe443e961dbe41021fdff0 # v0.0.2
         with:
           target: ${{ matrix.id }}
           tag: ${{ needs.crate.outputs.tag }}
