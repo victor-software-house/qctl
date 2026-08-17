@@ -60,20 +60,67 @@ queue:
       - No consumer still vendors ajv or a copied tasks.schema.json.
       - Each consumer $schema URL is a pinned qctl tag/release, not latest.
 
-horizon:
-  - id: QCTL-005
-    title: Extract a shared CLI chassis from forkctl and qctl
+  - id: QCTL-006
+    title: Archive from commit trailers in a pre-push hook
+    scope: qctl
+    outcome: >-
+      A merged or pushed commit that closes a ledger id archives that
+      row. An active id cannot sit on main after its close trailer landed.
+    blocked_by: [QCTL-002]
+    acceptance:
+      - "Trailers Closes PREFIX-NNN and Completes: PREFIX-NNN in the commit body are the only syntax. Subject-line slogans do not count."
+      - "qctl hook install writes a pre-push (and optional commit-msg) hook that runs qctl close-from-git."
+      - "qctl close-from-git reads commits being pushed (or main..HEAD), archives matching queued ids with evidence = the commit SHA, and fails if active still names a closed id."
+      - "CI qctl check on default branch fails when a commit already on that branch closed an id that is still queued."
+      - "The hook does not amend. It writes tasks.yaml in the working tree and requires that file to be part of the push (or a follow-up commit). No hook skip flags."
+      - "Does not invent GitHub issue linking. Closes #12 stays GitHub's."
+    notes: >-
+      VER-003 stayed active after PR 1 merged because qctl only checks
+      graph shape. Nobody ran archive, and no commit carried a trailer.
+      Pre-commit rewrite + amend loops; pre-push + CI is the gate.
+
+  - id: QCTL-008
+    title: Adopt ctl-core in qctl and forkctl
     scope: cross-repo
+    outcome: >-
+      qctl and forkctl flatten ctl-core flags and go()/View::show.
+      No third copy of styled help, color, or format.
+    blocked_by: []
+    acceptance:
+      - qctl main uses ctl_core::prelude (go, OutputArgs or ColorLong, formatdoc).
+      - forkctl drops its local help/color/format chassis in favor of ctl-core.
+      - state-sync is a follow-up or the same PR if the diff stays small.
+      - Pin is a ctl-core git rev or crates.io version, not a path dep on main.
+    notes: >-
+      verctl already did this on ver-004-version-pr. Do not wait for
+      QCTL-001.
+
+horizon:
+  - id: QCTL-007
+    title: Optional per-user daemon sharing one session and view
+    scope: ctl-core
     kind: evaluation
     outcome: >-
-      Pretty/JSON output, help/color, schemars emit, and release pin-sync
-      live in one small crate only if a third *ctl would copy them again.
+      Multiple *ctl clients can attach to one local session the way
+      skill-cli does (Unix socket, NDJSON protocol, one dispatcher).
     open: >-
-      qctl does not yet have --format json, width-aware help, or a crates.io
-      release. Extract only after those exist and match forkctl's chassis
-      well enough that a third CLI would copy them.
+      skill-cli already has daemon + UDS + protocol crates. ctl-core
+      should reuse that shape only after pretty/JSON views are adopted
+      by at least one *ctl. Not a default feature.
     notes: >-
-      Domain types stay in each CLI. Do not create vsh-cli/ctlkit as a
-      prerequisite for cargo publish.
+      Lower priority than clap chassis and schema-first views. Do not
+      pull tokio into ctl-core default features.
 
-archive: []
+archive:
+  - id: QCTL-005
+    title: Start the shared CLI crate (short/long, help, negations)
+    scope: cross-repo
+    completed: "2026-08-17"
+    disposition: completed
+    outcome: >-
+      forkctl, qctl, and verctl share one clap chassis instead of
+      copying flag style.
+    evidence:
+      - "github.com/victor-software-house/ctl-core main 02c7e9f"
+      - "verctl ver-004-version-pr consumes ctl-core via git rev"
+      - "prelude, Render, formatdoc, FormatArgs/ColorLong, View"
