@@ -18,8 +18,8 @@ pub enum Command {
     Init(InitArgs),
     /// Print the active task and the priority-ordered queue.
     Status(LedgerArgs),
-    /// Validate schema, prefix, blockers, archive order, and plan paths.
-    Check(LedgerArgs),
+    /// Validate schema, graph, and git trailers that closed still-queued ids.
+    Check(CheckArgs),
     /// Append a new unblocked task and print its id.
     Add(AddArgs),
     /// Make one unblocked queued task active (moves it to queue head).
@@ -30,6 +30,15 @@ pub enum Command {
     Show(IdArgs),
     /// Print the installed-version operator contract.
     Instructions,
+}
+
+#[derive(Args, Clone)]
+pub struct CheckArgs {
+    #[command(flatten)]
+    pub ledger: LedgerArgs,
+    /// Skip the git trailer scan.
+    #[arg(long)]
+    pub no_git: bool,
 }
 
 #[derive(Args, Clone)]

@@ -24,7 +24,9 @@ binary. Use a local or `cargo install --git` build, then `qctl`.
   is a qctl publish artifact. Consumers set `$schema` to a **pinned** URL
   and do not vendor `tasks.schema.json`.
 - `qctl check` validates from the schema embedded in the binary, plus graph
-  rules JSON Schema cannot express.
+  rules JSON Schema cannot express, plus git trailers. A body line
+  `Closes PREFIX-NNN` or `Completes: PREFIX-NNN` that names a still-queued
+  id is a check failure. `--no-git` skips the scan. Auto-archive is later.
 - `qctl instructions` and `--help` are the installed-version contract.
 
 ## Three lists

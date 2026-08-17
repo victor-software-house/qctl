@@ -75,9 +75,9 @@ queue:
       - "The hook does not amend. It writes tasks.yaml in the working tree and requires that file to be part of the push (or a follow-up commit). No hook skip flags."
       - "Does not invent GitHub issue linking. Closes #12 stays GitHub's."
     notes: >-
-      VER-003 stayed active after PR 1 merged because qctl only checks
-      graph shape. Nobody ran archive, and no commit carried a trailer.
-      Pre-commit rewrite + amend loops; pre-push + CI is the gate.
+      check now fails if a Closes/Completes trailer names a still-queued
+      id. Auto-archive of tasks.yaml still needs QCTL-002. VER-003 went
+      stale because check did not look at git and no commit had a trailer.
 
   - id: QCTL-008
     title: Adopt ctl-core in qctl and forkctl
