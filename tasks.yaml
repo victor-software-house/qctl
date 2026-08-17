@@ -92,8 +92,8 @@ queue:
       - state-sync is a follow-up or the same PR if the diff stays small.
       - Pin is a ctl-core git rev or crates.io version, not a path dep on main.
     notes: >-
-      verctl already did this on ver-004-version-pr. Do not wait for
-      QCTL-001.
+      Blocked in practice on ctl-core CTC-004 (harden). qctl cannot
+      name a foreign prefix in blocked_by. Do not wait for QCTL-001.
 
 horizon:
   - id: QCTL-007
