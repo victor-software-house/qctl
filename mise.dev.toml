@@ -1,0 +1,25 @@
+# Loaded when MISE_ENV contains `dev` (local default via .miserc.toml).
+# Compile this checkout. Not used by Version PR.
+
+[tools]
+rust = "1.97.1"
+
+[tasks.format]
+description = "rustfmt check"
+run = "cargo fmt --all -- --check"
+
+[tasks.lint]
+description = "clippy -D warnings"
+run = "cargo clippy --all-targets --all-features -- -D warnings"
+
+[tasks.test]
+description = "Test suite"
+run = "cargo test --all-features"
+
+[tasks.verify]
+description = "CI-safe gate: format, clippy, test"
+depends = ["format", "lint", "test"]
+
+[tasks.build]
+description = "Build the release binary"
+run = "cargo build --release"

@@ -46,6 +46,13 @@ queue:
       - GitHub Release assets exist for darwin-arm64 and linux-x64.
       - examples/mise.toml pins that tag.
       - mise run q -- check works from a clean consumer after mise install.
+    notes: >-
+      2026-08-17: the lane exists — CI, Version PR, publish, and both
+      tarballs, all through released verctl 0.0.2, same shape as
+      ctl-core. 0.0.1 was cut by hand from this workstation, which is
+      why it shipped macos-arm64 only. Still open here: examples/mise.toml
+      does not exist yet, and verctl's asset planner emits
+      macos-latest/ubuntu-latest instead of the nscloud labels.
 
   - id: QCTL-004
     title: Point consumers at qctl check instead of copied Ajv tests
