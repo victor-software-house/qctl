@@ -36,6 +36,28 @@ fn check_accepts_own_repo_shape() {
 }
 
 #[test]
+fn check_accepts_archive_notes() {
+    let dir = LedgerDir::empty();
+    dir.write(indoc! {"
+        schema_version: 1
+        prefix: QCTL
+        active: null
+        queue: []
+        archive:
+          - id: QCTL-001
+            title: done
+            scope: s
+            completed: '2026-08-17'
+            outcome: o
+            evidence: [landed]
+            notes: >-
+              Keep the context that would not fit in evidence.
+    "});
+    let output = qctl(&["check", "-f", dir.path.to_str().unwrap()]);
+    assert!(output.status.success(), "{}", stderr(&output));
+}
+
+#[test]
 fn check_rejects_unknown_field() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"

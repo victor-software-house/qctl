@@ -34,7 +34,7 @@ binary. Use a local or `cargo install --git` build, then `qctl`.
 | List | Meaning |
 |:--|:--|
 | `queue` | Short-term work. File order is priority. Exactly one `active`, or `null`. |
-| `archive` | Finished or dropped. Newest `completed` date first. IDs never reused. |
+| `archive` | Finished or dropped. Newest `completed` date first. IDs never reused. `notes` stay. |
 | `horizon` | Mapped but not startable: research, evaluations, deferred. File order is not priority. `active` must never name a horizon id. |
 
 Horizon rows require `kind` (`research` / `evaluation` / `deferred`) and

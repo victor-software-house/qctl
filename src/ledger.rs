@@ -38,6 +38,7 @@ pub struct ArchivedTask {
     pub title: String,
     pub completed: String,
     pub plan: Option<String>,
+    pub notes: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -118,6 +119,9 @@ pub fn print_show(args: &crate::cli::IdArgs) -> Result<()> {
     }
     if let Some(task) = ledger.archive.iter().find(|task| task.id == args.id) {
         println!("{}  {}  (archived {})", task.id, task.title, task.completed);
+        if let Some(notes) = &task.notes {
+            println!("notes     {notes}");
+        }
         return Ok(());
     }
     if let Some(task) = ledger.horizon.iter().find(|task| task.id == args.id) {

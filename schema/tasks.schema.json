@@ -103,6 +103,7 @@
 					"items": { "type": "string", "format": "uri" },
 					"uniqueItems": true
 				},
+				"notes": { "$ref": "#/$defs/nonEmptyString" },
 				"disposition": {
 					"type": "string",
 					"enum": ["completed", "dropped"]
