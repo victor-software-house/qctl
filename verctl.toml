@@ -2,7 +2,7 @@
 # regenerates it and `stage` puts it on the Version PR commit; without both,
 # Verify's `cargo package --locked` fails on a dirty tree.
 [prepare]
-after = ["cargo", "generate-lockfile"]
+after = ["cargo", "update", "--workspace"]
 stage = ["Cargo.lock"]
 
 [[packages]]
