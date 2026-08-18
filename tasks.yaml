@@ -108,6 +108,31 @@ queue:
       Blocked in practice on ctl-core CTC-004 (harden). qctl cannot
       name a foreign prefix in blocked_by. Do not wait for QCTL-001.
 
+  - id: QCTL-009
+    title: A mutation keeps the comments the file was written with
+    scope: qctl
+    outcome: >-
+      Every line a person put in tasks.yaml on purpose — the schema
+      pointer first of all — is still there after qctl writes the file
+      back.
+    blocked_by: []
+    acceptance:
+      - "`qctl start`, `add`, and `archive` leave every comment in place, including line 1."
+      - The schema pointer survives a mutation, so an IDE keeps validating the file it just changed.
+      - A test mutates a fixture that carries comments in three positions and asserts all three survive.
+    notes: >-
+      2026-08-18, found by running it: a copy of verctl's tasks.yaml lost
+      every comment to one `qctl start`, line 1 included, because mutate.rs
+      rewrites the document through serde_yaml `Value` maps and a comment is
+      not a value. This repo's own tasks.yaml line 1 is
+      `# yaml-language-server: $schema=./schema/tasks.schema.json`, so qctl
+      deletes its own IDE pointer the first time anyone runs a verb here.
+      It also blocks verctl VER-021, which installs that line across every
+      ctl repo. The fix is a comment-preserving YAML representation
+      (yaml-rust2 / a round-tripping edit) rather than serialize-from-scratch;
+      until then no comment in a ledger is load-bearing, and nothing should
+      be recorded beside a key that belongs in notes.
+
 horizon:
   - id: QCTL-007
     title: Optional per-user daemon sharing one session and view
