@@ -2,7 +2,7 @@
 #MISE description="Run the qctl work-queue CLI"
 #MISE dir="{{cwd}}"
 #MISE raw_args=true
-#MISE tools = { "github:victor-software-house/qctl" = "0.0.1" }
+#MISE tools = { "github:victor-software-house/qctl" = "0.0.2" }
 
 set -euo pipefail
 exec "$(mise where github:victor-software-house/qctl)/qctl" "$@"

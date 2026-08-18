@@ -73,6 +73,14 @@ queue:
       cause was verctl's reference workflow, which had no pin job for
       anyone to copy; verctl/actions/pin ships in verctl#29 and this repo
       adopts it once that merges, since the ref has to be a real SHA.
+      Counted while fixing it: five pin sites, not one. examples/mise.toml
+      carries the [tools] pin and the ?ref=, tasks/q/q line 5 carries a
+      `#MISE tools` header, and README repeats the ?ref= plus the install
+      hint. `verctl pin` reaches the two TOML [tools] tables and nothing
+      else, so all five were hand-bumped to 0.0.2 here as a bridge. The
+      mechanism that ends the hand-bumping is verctl VER-018: templates
+      and overlays declared by the consumer, plus pin-phase hooks, rather
+      than teaching verctl each file format.
 
   - id: QCTL-004
     title: Point consumers at qctl check instead of copied Ajv tests
