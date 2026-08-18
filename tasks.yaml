@@ -30,7 +30,7 @@ queue:
       add, start, and archive change only the bytes they must, so a ledger
       edit is reviewable as a diff, two people can edit different rows
       without conflicting, and the file still reads the way it was written.
-    blocked_by: [QCTL-001]
+    blocked_by: []
     acceptance:
       - A ledger with comments and a yaml-language-server header still has them after add/start/archive.
       - serde dump is not the write path.
@@ -64,6 +64,13 @@ queue:
       prettier serializer, which would still rewrite untouched rows.
       Until this ships, no comment in a ledger is load-bearing and nothing
       belongs beside a key that could live in notes.
+      The QCTL-001 blocker is dropped, and it was never real: a
+      round-tripping writer edits the document it was given and never names a
+      field, so generated types cannot change what it does. The blocker was
+      load-bearing rather than decorative — `qctl start` refuses a blocked row
+      — so it parked the highest-friction defect in this repo behind a
+      refactor whose own note says not to start it until the type layout
+      settles.
 
   - id: QCTL-003
     title: "Publish native qctl so mise github: can install it"
