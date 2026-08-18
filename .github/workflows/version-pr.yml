@@ -7,8 +7,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  # Saving the rust and mise caches is a write to the Actions cache.
-  actions: write
 
 env:
   GIT_CONFIG_COUNT: "1"
