@@ -34,6 +34,17 @@ queue:
       - A ledger with comments and a yaml-language-server header still has them after add/start/archive.
       - serde dump is not the write path.
       - check still passes on the mutated file.
+      - A test mutates a fixture carrying comments in three positions — line 1, above a row, beside a key — and asserts all three survive.
+    notes: >-
+      2026-08-18, measured rather than assumed: a copy of verctl's tasks.yaml
+      lost every comment to a single `qctl start`, line 1 included, because
+      mutate.rs rewrites the document through serde_yaml `Value` maps and a
+      comment is not a value. This repo's own line 1 is
+      `# yaml-language-server: $schema=./schema/tasks.schema.json`, so qctl
+      deletes its own IDE pointer the first time anyone runs a verb here. It
+      also blocks verctl VER-021, which installs that line across every ctl
+      repo. Until this ships, no comment in a ledger is load-bearing and
+      nothing belongs beside a key that could live in notes.
 
   - id: QCTL-003
     title: "Publish native qctl so mise github: can install it"
