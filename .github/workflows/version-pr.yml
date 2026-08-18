@@ -7,12 +7,16 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  # Saving the rust and mise caches is a write to the Actions cache.
+  actions: write
 
 env:
   GIT_CONFIG_COUNT: "1"
   GIT_CONFIG_KEY_0: init.defaultBranch
   GIT_CONFIG_VALUE_0: main
-  MISE_ENV: release
+  # `dev` for the toolchain [prepare].after needs, `release` for the verctl
+  # tarball that runs it. Not `dev` alone: verctl is not built from this repo.
+  MISE_ENV: dev,release
 
 concurrency:
   group: version-pr-${{ github.ref }}
@@ -33,4 +37,7 @@ jobs:
           version: 2026.8.2
           cache: true
       - run: mise install --locked
-      - uses: victor-software-house/verctl/actions/version-pr@a03483fbdbcb43148dbe443e961dbe41021fdff0 # v0.0.2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: qctl-version-pr
+      - uses: victor-software-house/verctl/actions/version-pr@cc87aba821a504f3b7c1d35af40201f4609eaf0d # v0.0.3

@@ -1,5 +1,6 @@
 # Loaded when MISE_ENV contains `dev` (local default via .miserc.toml).
-# Compile this checkout. Not used by Version PR.
+# Compile this checkout. The Version PR loads it too, for the toolchain
+# `[prepare].after` uses to regenerate Cargo.lock.
 
 [tools]
 # Components are explicit: a bare `rust = "1.97.1"` resolves without
