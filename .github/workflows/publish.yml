@@ -7,13 +7,15 @@ on:
 
 permissions:
   contents: write
-  actions: write
 
 env:
   GIT_CONFIG_COUNT: "1"
   GIT_CONFIG_KEY_0: init.defaultBranch
   GIT_CONFIG_VALUE_0: main
   MISE_ENV: dev,release
+  # A cache written off the default branch is scoped to that ref, so no
+  # other run can read it back.
+  CACHE_WRITE: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
 
 concurrency:
   group: publish-${{ github.ref }}
@@ -34,6 +36,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
           fetch-depth: 0
       - name: Set up mise
@@ -41,13 +44,12 @@ jobs:
         with:
           version: 2026.8.2
           cache: true
-          # This run is a closed pull request: its merge ref no longer
-          # exists, so the Actions cache refuses every write. Read only.
-          cache_save: false
+          cache_save: ${{ env.CACHE_WRITE }}
       - run: mise install --locked
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          save-if: false
+          shared-key: qctl-crate
+          save-if: ${{ env.CACHE_WRITE }}
       - name: Plan native assets
         id: plan
         run: verctl assets --github-output "$GITHUB_OUTPUT"
@@ -67,6 +69,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
           fetch-depth: 0
       - name: Set up mise
@@ -74,13 +77,12 @@ jobs:
         with:
           version: 2026.8.2
           cache: true
-          # This run is a closed pull request: its merge ref no longer
-          # exists, so the Actions cache refuses every write. Read only.
-          cache_save: false
+          cache_save: ${{ env.CACHE_WRITE }}
       - run: mise install --locked
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          save-if: false
+          shared-key: qctl-assets-${{ matrix.id }}
+          save-if: ${{ env.CACHE_WRITE }}
       - uses: victor-software-house/verctl/actions/asset@cc87aba821a504f3b7c1d35af40201f4609eaf0d # v0.0.3
         with:
           target: ${{ matrix.id }}
