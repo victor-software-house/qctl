@@ -70,9 +70,13 @@ queue:
       Still open here: examples/mise.toml pins ?ref=v0.0.1 and nothing
       moves it. Two things are missing, not one. No [[pins]] claims the
       file, and publish.yml has no pin job to run `verctl pin`. The root
-      cause was verctl's reference workflow, which had no pin job for
-      anyone to copy; verctl/actions/pin ships in verctl#29 and this repo
-      adopts it once that merges, since the ref has to be a real SHA.
+      cause was in verctl, and deeper than a missing job: a pin rewritten
+      after publish lands past the tag, so tag v0.0.2 here carries
+      tasks/q/q pinning 0.0.1 and no post-release commit could ever have
+      fixed it. verctl#29 moves the rewrite into `prepare`, onto the
+      Version PR commit the tag names. This repo adopts it by bumping its
+      verctl pin to that release and declaring [[pins]]; there is no pin
+      job to copy.
       Counted while fixing it: five pin sites, not one. examples/mise.toml
       carries the [tools] pin and the ?ref=, tasks/q/q line 5 carries a
       `#MISE tools` header, and README repeats the ?ref= plus the install
