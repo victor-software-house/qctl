@@ -58,7 +58,21 @@ queue:
       files. The nscloud note is withdrawn, not deferred: this repo is
       public, so macos-latest/ubuntu-latest are the runners it wants, and
       verctl 0.0.3 makes them a default rather than a hardcoded map.
-      Still open here: examples/mise.toml does not exist yet.
+      2026-08-18, later: 0.0.2 shipped. crates.io 0.0.2, tag v0.0.2, and a
+      release carrying both tarballs plus tasks.schema.json, from
+      workflow_dispatch run 32134914501 — which is also the first time the
+      [assets.NAME] fan-out and matrix.labels ran in GitHub for this repo,
+      both green. The first attempt had failed on an empty
+      CARGO_REGISTRY_TOKEN; the repo now holds the publish-new-scoped
+      crates.io token from 1Password. Decided rather than assumed: this
+      crate does publish to crates.io (it was already there at 0.0.1), so
+      the token is part of the lane, not an accident.
+      Still open here: examples/mise.toml pins ?ref=v0.0.1 and nothing
+      moves it. Two things are missing, not one. No [[pins]] claims the
+      file, and publish.yml has no pin job to run `verctl pin`. The root
+      cause was verctl's reference workflow, which had no pin job for
+      anyone to copy; verctl/actions/pin ships in verctl#29 and this repo
+      adopts it once that merges, since the ref has to be a real SHA.
 
   - id: QCTL-004
     title: Point consumers at qctl check instead of copied Ajv tests
