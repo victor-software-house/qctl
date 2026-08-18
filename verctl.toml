@@ -1,8 +1,18 @@
+# Cargo.lock carries the version too, so a bump leaves it stale. `after`
+# regenerates it and `stage` puts it on the Version PR commit; without both,
+# Verify's `cargo package --locked` fails on a dirty tree.
+[prepare]
+after = ["cargo", "generate-lockfile"]
+stage = ["Cargo.lock"]
+
 [[packages]]
 name = "qctl"
 path = "Cargo.toml"
 
-# The two hosts this stack runs on: this workstation and the Linux VPS.
-# PR CI never builds these.
-[assets]
-targets = ["darwin-arm64", "linux-x64"]
+# One table per host binary; the name is the job, the tarball, and the
+# platform. Both are built-in records, so the runner labels, os, arch, and
+# triple come from verctl — this repo is public, so those defaults are the
+# free hosted runners it wants. PR CI never builds these.
+[assets.darwin-arm64]
+
+[assets.linux-x64]

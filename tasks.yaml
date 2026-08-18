@@ -48,11 +48,17 @@ queue:
       - mise run q -- check works from a clean consumer after mise install.
     notes: >-
       2026-08-17: the lane exists — CI, Version PR, publish, and both
-      tarballs, all through released verctl 0.0.2, same shape as
-      ctl-core. 0.0.1 was cut by hand from this workstation, which is
-      why it shipped macos-arm64 only. Still open here: examples/mise.toml
-      does not exist yet, and verctl's asset planner emits
-      macos-latest/ubuntu-latest instead of the nscloud labels.
+      tarballs, all through released verctl, same shape as ctl-core.
+      0.0.1 was cut by hand from this workstation, which is why it
+      shipped macos-arm64 only.
+      2026-08-18: 0.0.2 never shipped — its Version PR bumped Cargo.toml
+      and left Cargo.lock at 0.0.1, so Verify's `cargo package --locked`
+      hit a dirty tree. Fixed by declaring `[prepare]` here and moving to
+      verctl 0.0.3, which is the release that commits `[prepare].stage`
+      files. The nscloud note is withdrawn, not deferred: this repo is
+      public, so macos-latest/ubuntu-latest are the runners it wants, and
+      verctl 0.0.3 makes them a default rather than a hardcoded map.
+      Still open here: examples/mise.toml does not exist yet.
 
   - id: QCTL-004
     title: Point consumers at qctl check instead of copied Ajv tests
