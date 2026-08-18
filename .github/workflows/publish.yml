@@ -13,6 +13,9 @@ env:
   GIT_CONFIG_KEY_0: init.defaultBranch
   GIT_CONFIG_VALUE_0: main
   MISE_ENV: dev,release
+  # A cache written off the default branch is scoped to that ref, so no
+  # other run can read it back.
+  CACHE_WRITE: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
 
 concurrency:
   group: publish-${{ github.ref }}
@@ -40,12 +43,12 @@ jobs:
         with:
           version: 2026.8.2
           cache: true
-          cache_save: ${{ github.event_name == 'workflow_dispatch' }}
+          cache_save: ${{ env.CACHE_WRITE }}
       - run: mise install --locked
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           shared-key: qctl-crate
-          save-if: ${{ github.event_name == 'workflow_dispatch' }}
+          save-if: ${{ env.CACHE_WRITE }}
       - name: Plan native assets
         id: plan
         run: verctl assets --github-output "$GITHUB_OUTPUT"
@@ -72,12 +75,12 @@ jobs:
         with:
           version: 2026.8.2
           cache: true
-          cache_save: ${{ github.event_name == 'workflow_dispatch' }}
+          cache_save: ${{ env.CACHE_WRITE }}
       - run: mise install --locked
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           shared-key: qctl-assets-${{ matrix.id }}
-          save-if: ${{ github.event_name == 'workflow_dispatch' }}
+          save-if: ${{ env.CACHE_WRITE }}
       - uses: victor-software-house/verctl/actions/asset@cc87aba821a504f3b7c1d35af40201f4609eaf0d # v0.0.3
         with:
           target: ${{ matrix.id }}
