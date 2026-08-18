@@ -62,15 +62,14 @@ queue:
       round-tripping representation that edits the document in place
       (yaml-rust2, or a line-oriented edit against the parsed span) — not a
       prettier serializer, which would still rewrite untouched rows.
-      Until this ships, no comment in a ledger is load-bearing and nothing
-      belongs beside a key that could live in notes.
+      Until this ships, a comment in a ledger does not survive the next verb,
+      so nothing belongs beside a key that could live in notes instead.
       The QCTL-001 blocker is dropped, and it was never real: a
       round-tripping writer edits the document it was given and never names a
-      field, so generated types cannot change what it does. The blocker was
-      load-bearing rather than decorative — `qctl start` refuses a blocked row
-      — so it parked the highest-friction defect in this repo behind a
-      refactor whose own note says not to start it until the type layout
-      settles.
+      field, so generated types cannot change what it does. `qctl start`
+      refuses a blocked row, so that blocker parked the worst defect in this
+      repo behind a refactor whose own note says not to start it until the
+      type layout settles.
 
   - id: QCTL-003
     title: "Publish native qctl so mise github: can install it"
