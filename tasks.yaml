@@ -24,27 +24,53 @@ queue:
       asset, including schema_version (not /latest).
 
   - id: QCTL-002
-    title: Mutate tasks.yaml without losing comments or key order
+    title: A mutation rewrites the lines it changes, not the file
     scope: qctl
     outcome: >-
-      add, start, and archive change only the bytes they must. Comments,
-      quoting, and the $schema header survive.
-    blocked_by: [QCTL-001]
+      add, start, and archive change only the bytes they must, so a ledger
+      edit is reviewable as a diff, two people can edit different rows
+      without conflicting, and the file still reads the way it was written.
+    blocked_by: []
     acceptance:
       - A ledger with comments and a yaml-language-server header still has them after add/start/archive.
       - serde dump is not the write path.
       - check still passes on the mutated file.
       - A test mutates a fixture carrying comments in three positions — line 1, above a row, beside a key — and asserts all three survive.
+      - Blank lines between rows survive, so the file does not come back as one dense block.
+      - Sequence indentation survives; a queue written as two-space `  - id:` does not come back flush against the key.
+      - "A folded scalar stays folded at the width it had: no notes block comes back as one long line."
+      - Quote style is left alone — a double-quoted title does not become single-quoted.
+      - "A flow sequence stays inline; `blocked_by: [QCTL-001]` does not expand to a block list."
+      - "The diff is bounded and asserted as such: moving one row in a real ledger changes that row's lines, not every line in the file."
     notes: >-
-      2026-08-18, measured rather than assumed: a copy of verctl's tasks.yaml
-      lost every comment to a single `qctl start`, line 1 included, because
-      mutate.rs rewrites the document through serde_yaml `Value` maps and a
-      comment is not a value. This repo's own line 1 is
-      `# yaml-language-server: $schema=./schema/tasks.schema.json`, so qctl
-      deletes its own IDE pointer the first time anyone runs a verb here. It
-      also blocks verctl VER-021, which installs that line across every ctl
-      repo. Until this ships, no comment in a ledger is load-bearing and
-      nothing belongs beside a key that could live in notes.
+      2026-08-18, measured on the real thing rather than assumed. One
+      `qctl start VER-020` against a copy of verctl's 427-line tasks.yaml
+      changed 641 lines — every line in the file — and stretched the longest
+      line from 153 to 2158 characters. Six distinct losses, all from the
+      same cause: mutate.rs parses to serde_yml `Value`, which keeps values
+      and drops everything else, then serializes from scratch. Gone are
+      comments (line 1 `# yaml-language-server: $schema=…` included), blank
+      lines between rows, two-space sequence indentation, folded `>-`
+      scalars (flattened to single long lines), double quotes (rewritten to
+      single), and inline flow sequences (expanded to block lists). The
+      values themselves survive — `check` still passes on the output — so
+      this is entirely a writer problem, not a schema one.
+      Why it matters beyond taste: a whole-file diff cannot be reviewed, and
+      two people editing different rows conflict on every line. It also
+      blocks verctl VER-021, which installs a `$schema` line in every ctl
+      repo that qctl would delete on the next verb. The fix is a
+      round-tripping representation that edits the document in place
+      (yaml-rust2, or a line-oriented edit against the parsed span) — not a
+      prettier serializer, which would still rewrite untouched rows.
+      Until this ships, no comment in a ledger is load-bearing and nothing
+      belongs beside a key that could live in notes.
+      The QCTL-001 blocker is dropped, and it was never real: a
+      round-tripping writer edits the document it was given and never names a
+      field, so generated types cannot change what it does. The blocker was
+      load-bearing rather than decorative — `qctl start` refuses a blocked row
+      — so it parked the highest-friction defect in this repo behind a
+      refactor whose own note says not to start it until the type layout
+      settles.
 
   - id: QCTL-003
     title: "Publish native qctl so mise github: can install it"
