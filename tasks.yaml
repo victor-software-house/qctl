@@ -67,9 +67,8 @@ queue:
       crates.io token from 1Password. Decided rather than assumed: this
       crate does publish to crates.io (it was already there at 0.0.1), so
       the token is part of the lane, not an accident.
-      Still open here: examples/mise.toml pins ?ref=v0.0.1 and nothing
-      moves it. Two things are missing, not one. No [[pins]] claims the
-      file, and publish.yml has no pin job to run `verctl pin`. The root
+      Still open here: nothing moves the pins by itself. The refs are at
+      0.0.2 by hand, and no [[pins]] claims a file. The root
       cause was in verctl, and deeper than a missing job: a pin rewritten
       after publish lands past the tag, so tag v0.0.2 here carries
       tasks/q/q pinning 0.0.1 and no post-release commit could ever have
