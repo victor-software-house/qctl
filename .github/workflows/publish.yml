@@ -53,7 +53,7 @@ jobs:
       - name: Plan native assets
         id: plan
         run: verctl assets --github-output "$GITHUB_OUTPUT"
-      - uses: victor-software-house/verctl/actions/publish@cc87aba821a504f3b7c1d35af40201f4609eaf0d # v0.0.3
+      - uses: victor-software-house/verctl/actions/publish@0eb0a2a11a50e6a651edabddf8bad00b8334ae99 # v0.0.4
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
@@ -83,7 +83,7 @@ jobs:
         with:
           shared-key: qctl-assets-${{ matrix.id }}
           save-if: ${{ env.CACHE_WRITE }}
-      - uses: victor-software-house/verctl/actions/asset@cc87aba821a504f3b7c1d35af40201f4609eaf0d # v0.0.3
+      - uses: victor-software-house/verctl/actions/asset@0eb0a2a11a50e6a651edabddf8bad00b8334ae99 # v0.0.4
         with:
           target: ${{ matrix.id }}
           tag: ${{ needs.crate.outputs.tag }}

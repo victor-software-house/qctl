@@ -40,4 +40,4 @@ jobs:
         with:
           shared-key: qctl-verify
           save-if: false
-      - uses: victor-software-house/verctl/actions/version-pr@cc87aba821a504f3b7c1d35af40201f4609eaf0d # v0.0.3
+      - uses: victor-software-house/verctl/actions/version-pr@0eb0a2a11a50e6a651edabddf8bad00b8334ae99 # v0.0.4
