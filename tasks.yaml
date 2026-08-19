@@ -1,41 +1,9 @@
 # yaml-language-server: $schema=./schema/tasks.schema.json
 schema_version: 1
 prefix: QCTL
-active: QCTL-001
+active: QCTL-002
 
 queue:
-  - id: QCTL-001
-    title: Own the ledger contract as Rust types via schemars
-    scope: qctl
-    outcome: >-
-      The work-queue shape is declared once as Rust types. The committed
-      JSON Schema is generated from those types and still exact for IDEs.
-    blocked_by: []
-    acceptance:
-      - Ledger structs derive serde and schemars::JsonSchema, matching forkctl's contract types.
-      - schema/tasks.schema.json is generated in the qctl repo only (xtask or qctl schema write) and checked in CI.
-      - Consumers do not vendor a copy. tasks.yaml points $schema at a versioned stable URL.
-      - jsonschema still validates from the schema embedded in the qctl binary.
-      - Hand-written schema JSON is not edited as source.
-    notes: >-
-      Graph rules (unique ids, blocker order, active is queue[0]) stay as
-      Rust checks, not JSON Schema. Preferred URL shape is an immutable tag
-      or release asset, including schema_version (not /latest).
-      The root cause: this repo states the same contract twice. There are
-      serde structs in src/ledger.rs and a hand-written
-      schema/tasks.schema.json embedded by include_str!, and nothing makes
-      them agree. Either can drift from the other silently, and a row shape
-      only one of them knows about passes one gate and fails the next.
-      2026-08-18: this leads QCTL-002 rather than following it. The writer
-      generates a row for `add` and adds completed/evidence/disposition for
-      `archive`, and those values are serialized from these types — that is
-      what keeps a quoting helper out of the writer. Verified against the
-      chosen crates: a typed struct serializes into the value type
-      yamlpatch consumes, and it quotes what needs quoting. So the slice
-      that unblocks the writer is the types as the serialization source;
-      the schemars derive, the versioned $id, and the CI drift check are
-      the rest of this row and do not gate it.
-
   - id: QCTL-002
     title: A mutation rewrites the lines it changes, not the file
     scope: qctl
@@ -43,7 +11,7 @@ queue:
       add, start, and archive change only the bytes they must, so a ledger
       edit is reviewable as a diff, two people can edit different rows
       without conflicting, and the file still reads the way it was written.
-    blocked_by: [QCTL-001]
+    blocked_by: []
     acceptance:
       - A ledger with comments and a yaml-language-server header still has them after add/start/archive.
       - serde dump is not the write path.
@@ -129,7 +97,7 @@ queue:
     outcome: >-
       A tagged release ships darwin-arm64 and linux-x64 binaries. The
       tasks/q catalog pin is a real immutable ref.
-    blocked_by: [QCTL-001]
+    blocked_by: []
     acceptance:
       - GitHub Release assets exist for darwin-arm64 and linux-x64.
       - examples/mise.toml pins that tag.
@@ -241,6 +209,22 @@ horizon:
       pull tokio into ctl-core default features.
 
 archive:
+  - id: QCTL-001
+    title: Own the ledger contract as Rust types via schemars
+    scope: qctl
+    completed: "2026-08-19"
+    disposition: completed
+    outcome: >-
+      The work-queue shape is declared once, as Rust types. serde reads and
+      writes it, garde refuses the values a type cannot, and schemars
+      generates the committed JSON Schema from the same declarations.
+    evidence:
+      - "qctl main f35ccfd (#13), squashed from five commits"
+      - "src/schema.rs is the only statement of the shape; the hand-written schema stopped being source"
+      - "qctl schema regenerates schema/tasks.schema.json; a test fails when the committed file is stale"
+      - "12 suites, 45 cases; 4 mutations proved them: schema ignored fails 19, format-as-annotation fails 3, garde off fails both verb cases, one-pass off fails 1"
+      - "verctl and ctl-core ledgers still check ok against the generated schema"
+      - "the pinned versioned $schema URL is deliberately not here; QCTL-004 owns it"
   - id: QCTL-005
     title: Start the shared CLI crate (short/long, help, negations)
     scope: cross-repo
