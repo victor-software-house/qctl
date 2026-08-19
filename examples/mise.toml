@@ -9,10 +9,10 @@ lockfile = true
 # the release you copy is not in that tarball yet — pin the release that carries
 # the verb you copied.
 [tools]
-"github:victor-software-house/qctl" = "0.1.0"
+"github:victor-software-house/qctl" = "0.1.1"
 
 [task_config]
 includes = [
-  "git::https://github.com/victor-software-house/qctl.git//tasks/q?ref=v0.1.0",
+  "git::https://github.com/victor-software-house/qctl.git//tasks/q?ref=v0.1.1",
   "mise-tasks",
 ]
