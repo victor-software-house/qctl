@@ -76,7 +76,7 @@ queue:
     blocked_by: []
     acceptance:
       - verctl, ctl-core, kodus-ai, pi-stuff and claude-code-source-recovery each declare schema_version 3 and a style block naming their timezone.
-      - Each archived row carries the moment recovered from the commit that first shows it archived, shifted into the declared zone; its recovered day matched the day it already recorded.
+      - "Each archived row carries the moment recovered from the commit in which it last entered the archive, shifted into the declared zone; its recovered day matched the day it already recorded, or the row is named as an exception because the archiving commit crossed midnight."
       - verctl, ctl-core and claude-code-source-recovery bump their qctl pin in the same change, so their own check passes.
       - The two ledgers under ~/workspace/omp are left alone; they are not ours.
     notes: >-
