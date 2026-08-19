@@ -114,7 +114,7 @@ queue:
     outcome: 'examples/mise.toml shows the shape consumers actually use: the include alone, with the served task carrying the version.'
     blocked_by: []
     acceptance:
-      - The mise.toml template drops its [tools] entry, and the rendered comment says the ?ref= tag is the only pin.
+      - "The mise.toml template drops its [tools] entry, and the rendered comment says the include ref is the only pin — whatever kind of ref QCTL-017 settles on."
       - README says the same thing.
 
 horizon:
@@ -123,8 +123,8 @@ horizon:
     scope: qctl
     kind: evaluation
     open: >-
-      Six repositories now speak schema 3, and the only way to see the work is
-      to cd into each one and run status six times. What is the smallest thing
+      Five repositories speak schema 3 with a sixth in review, and the only way
+      to see the work is to cd into each one and run status again. What is the smallest thing
       that gives one board and lets a row in one ledger name a blocker in
       another, without turning qctl into a service?
     outcome: >-
