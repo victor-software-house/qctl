@@ -55,9 +55,10 @@ lists, never reused, never encode priority.
 
 YAML: quote list items that start with `#` or contain `: `.
 
-`add` / `start` / `archive` currently rewrite via serde and can drop
-comments. Treat that as a known gap (QCTL-002), not as license to hand-edit
-around `check`.
+`add` / `start` / `archive` change only the lines they must, so a comment, a
+blank line, a folded scalar and an inline list all survive a verb. Prefer the
+verb over a hand edit: `archive` also takes the archived id out of every
+`blocked_by` that named it, which a hand edit forgets.
 
 ## Stop conditions
 

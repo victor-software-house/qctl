@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=./schema/tasks.schema.json
+schema_version: 1
+prefix: DEMO
+active: null
+
+queue: []
+archive:
+  - id: DEMO-001
+    title: The only row
+    scope: demo
+    outcome: Something is true.
+    completed: TODAY
+    evidence:
+      - It shipped.
+    disposition: completed
+horizon: []

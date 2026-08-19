@@ -1,0 +1,9 @@
+add
+--title
+Third
+--scope
+demo
+--outcome
+A third thing is true.
+--acceptance
+It holds too.

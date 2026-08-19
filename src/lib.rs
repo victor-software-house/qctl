@@ -4,6 +4,7 @@
 
 pub mod check;
 pub mod cli;
+pub mod document;
 pub mod ledger;
 pub mod mutate;
 pub mod schema;
