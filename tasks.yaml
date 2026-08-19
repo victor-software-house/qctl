@@ -88,7 +88,76 @@ queue:
       - A test proves the original survives when the write fails after the temp file exists.
       - No verb calls fs::write on the ledger path.
 
+  - id: QCTL-016
+    title: Name the next row a ledger can actually start
+    scope: qctl
+    outcome: 'qctl answers what to work on next, instead of a human reading status and applying blocked_by in their head. One ledger first: the earliest queued row whose blockers are all archived.'
+    blocked_by: []
+    acceptance:
+      - qctl next prints one id, or says why nothing is startable — every queued row blocked, or the queue empty.
+      - It agrees with active when active is set and startable, and disagrees loudly when active names a row whose blockers are still queued.
+      - A scenario in tests/fixtures covers a queue whose head is blocked and whose second row is not.
+
+  - id: QCTL-017
+    title: Decide whether a served include pins a tag or a commit
+    scope: cross-repo
+    outcome: Every consumer's task include names the same kind of ref, on purpose, and the reason is written down where the include is generated.
+    blocked_by: []
+    acceptance:
+      - 'The decision is recorded in docs/served-files terms: a tag is ours and never moved, or a SHA because a tag can be.'
+      - If SHAs win, the served-file template renders the tag's commit and every consumer moves in the same slice.
+      - If tags win, the reasoning is in the repo, so the next review that raises it is answered by a link rather than an argument.
+
+  - id: QCTL-018
+    title: Stop the example catalog declaring a second qctl pin
+    scope: qctl
+    outcome: 'examples/mise.toml shows the shape consumers actually use: the include alone, with the served task carrying the version.'
+    blocked_by: []
+    acceptance:
+      - "The mise.toml template drops its [tools] entry, and the rendered comment says the include ref is the only pin — whatever kind of ref QCTL-017 settles on."
+      - README says the same thing.
+
 horizon:
+  - id: QCTL-019
+    title: One view over every ledger, from wherever you are standing
+    scope: qctl
+    kind: evaluation
+    open: >-
+      Five repositories speak schema 3 with a sixth in review, and the only way
+      to see the work is to cd into each one and run status again. What is the smallest thing
+      that gives one board and lets a row in one ledger name a blocker in
+      another, without turning qctl into a service?
+    outcome: >-
+      A decision, written down, on whether qctl learns a ledger registry — and
+      if so, what a source is, where the registry lives, and what a foreign
+      blocked_by means when the other ledger is not on this machine.
+    notes: >-
+      2026-08-19, from migrating ctl-core, verctl, kodus-ai and pi-stuff by
+      hand in one pass. What the pass actually taught:
+      Cross-repo order is real and invisible. QCTL-003 waited on QCTL-009 in the
+      same ledger and that was easy to see; verctl VER-025 will rewrite the
+      verctl.toml this repo just gained, and nothing anywhere records that. A
+      foreign blocked_by is the first thing worth having.
+      Prefixes already carry the repository. QCTL-, VER-, CTC-, KAI-, PST-,
+      CCS- are unique across the six, and this ledger already reserves the rule
+      that a foreign prefix in blocked_by is not waited on. A registry that maps
+      prefix to source is most of the design.
+      pi's package model is the shape to copy, and it is worth reading before
+      designing: sources are `npm:`, `git:host/user/repo@ref`, protocol URLs,
+      and local paths; settings split user-level (~/.pi/agent/settings.json)
+      from project-level (.pi/settings.json); git sources clone to
+      ~/.pi/agent/git/<host>/<path> and refs are pinned, with `update`
+      reconciling an existing clone rather than floating it. A qctl registry
+      wants the same split — a user-level list for `qctl status` at the root,
+      a project-level one for a repo that reads its siblings — and the same
+      refusal to move a pinned ref on its own.
+      The cheap half is local paths. Five of the six ledgers are checkouts on
+      this machine, so a registry of paths answers "one board" without any
+      network at all. Git sources are what a fresh machine or CI would need,
+      and they are the part that can wait.
+      QCTL-016 is the single-ledger half of the same question and should land
+      first: `next` has to mean something in one file before it can mean
+      anything across six.
   - id: QCTL-007
     title: Optional per-user daemon sharing one session and view
     scope: ctl-core

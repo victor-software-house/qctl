@@ -24,3 +24,7 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   `[patterns]` in `verctl.toml` (QCTL-009). Edit the template or the pattern,
   never the rendered file; the Version PR rewrites all five sites onto the
   commit the tag names. A template git does not track renders nowhere.
+- A consumer wires one pin, not two: the `?ref=` tag on the task include. The
+  served task carries its own `#MISE tools` version and wins on PATH, so a
+  consumer `[tools]` entry can only disagree with it — and needs a lockfile
+  entry to survive `mise install --locked` (ctl-core#9 hit exactly that).
