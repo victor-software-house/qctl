@@ -72,6 +72,10 @@ queue:
       single), and inline flow sequences (expanded to block lists). The
       values themselves survive — `check` still passes on the output — so
       this is entirely a writer problem, not a schema one.
+      The shortest demonstration needs two commands and no existing file:
+      `qctl init` writes the `# yaml-language-server:` header, and the first
+      `qctl add` deletes it. The tool destroys its own output on the first
+      verb after creating it.
       Why it matters beyond taste: a whole-file diff cannot be reviewed, and
       two people editing different rows conflict on every line. It also
       blocks verctl VER-021, which installs a `$schema` line in every ctl
