@@ -292,10 +292,25 @@ impl Document {
         let span = rows[index].clone();
         let indent = self.indent_of(section)?;
         let row = dedent(self.source[span.clone()].trim_end(), indent);
-        let from = self.start_of_blank_run(span.start);
-        // The last row's span stops at the end of its final line, so its line
-        // ending has to go too, or the section keeps a blank line nobody wrote.
-        let to = if self.source[span.end..].starts_with('\n') && index + 1 == rows.len() {
+        let last = index + 1 == rows.len();
+        // A row's span reaches to where the next row begins, so it already holds
+        // the blank line that separated them. Taking the blank line above as well
+        // would remove two separators for one row, and the rows either side of it
+        // would end up written against each other.
+        //
+        // The last row has no next row, so its span stops at the end of its text:
+        // there the blank line above is the one to take, along with the line
+        // ending, or the section keeps a blank line nobody wrote.
+        //
+        // A blank line above the *first* row is not a separator between rows —
+        // it sits between the list's key and the list. A verb leaves it, because
+        // it did not put it there; `fmt` is what removes it.
+        let from = if last {
+            self.start_of_blank_run(span.start)
+        } else {
+            span.start
+        };
+        let to = if last && self.source[span.end..].starts_with('\n') {
             span.end + 1
         } else {
             span.end

@@ -108,29 +108,40 @@ queue:
       rather than remembering them. Split out of QCTL-003, which was about
       publishing native binaries and got that done — this is the part that
       never landed, and it is unblocked now that verctl 0.0.4 exists.
+
   - id: QCTL-011
-    title: Migrate the five other owned ledgers to schema 2
+    title: Migrate the five other owned ledgers to schema 3
     scope: workspace
-    outcome: Every ledger under this operator's own repositories declares schema_version 2 and stamps completion with an instant.
+    outcome: Every ledger under this operator's own repositories declares schema_version 3, stamps completion with a moment, and declares the zone that moment is in.
     blocked_by: [QCTL-003]
     acceptance:
-      - verctl, ctl-core, kodus-ai, pi-stuff and claude-code-source-recovery each declare schema_version 2.
-      - Each archived row carries the instant recovered from the commit that first shows it archived, and its recovered day matches the day it already recorded.
+      - verctl, ctl-core, kodus-ai, pi-stuff and claude-code-source-recovery each declare schema_version 3 and a style block naming their timezone.
+      - Each archived row carries the moment recovered from the commit that first shows it archived, shifted into the declared zone; its recovered day matched the day it already recorded.
       - verctl, ctl-core and claude-code-source-recovery bump their qctl pin in the same change, so their own check passes.
       - The two ledgers under ~/workspace/omp are left alone; they are not ours.
 
-  - id: QCTL-012
-    title: Declare a ledger's style, and add qctl fmt to apply it
+  - id: QCTL-013
+    title: Stop a cut row taking two separators with it
     scope: qctl
-    outcome: A ledger states its own formatting, qctl fmt applies it, and the verbs write new text in it.
+    outcome: Removing a row from between two others leaves those two separated the way they were.
     blocked_by: []
     acceptance:
-      - A style block carries timezone, section_order, indent, archive_order and normalize_on_write, each optional with a default that preserves today's behaviour.
-      - qctl fmt rewrites a ledger into its declared style; qctl fmt --check exits non-zero and names what differs.
-      - completed is written in the declared zone with no offset, so schema_version is 3 and this repo's ledger is migrated.
-      - normalize_on_write false leaves every verb surgical; true makes a verb normalize the whole file.
-      - 'fmt never guesses: it changes only what a declared option or a check rule names.'
-    patch: style-and-fmt
+      - Archiving a middle row leaves exactly one blank line between the rows it sat between.
+      - Archiving the last row of a section leaves no trailing blank line, as it already did.
+      - A fixture archives from the middle, which none did — that is why this went unseen.
+      - This repo's own two damaged separators are repaired.
+    patch: cut-separator
+
+  - id: QCTL-014
+    title: Let a ledger declare whether rows are blank-separated
+    scope: qctl
+    outcome: fmt keeps one blank line between rows when the style asks for it, so a lost separator is repaired rather than found by eye.
+    blocked_by: []
+    acceptance:
+      - A style option decides whether rows in a list are separated by exactly one blank line, defaulting to leaving them as written.
+      - With it on, fmt inserts a missing separator and removes a doubled one; the first row of a list never gets one above it.
+      - The two separators repaired by hand in QCTL-013 would have been fixed by running fmt.
+    patch: blank-between-rows
 
 horizon:
   - id: QCTL-007
@@ -149,6 +160,16 @@ horizon:
       pull tokio into ctl-core default features.
 
 archive:
+  - id: QCTL-012
+    title: Declare a ledger's style, and add qctl fmt to apply it
+    scope: qctl
+    outcome: A ledger states its own formatting, qctl fmt applies it, and the verbs write new text in it.
+    patch: style-and-fmt
+    completed: 2026-08-19T01:46:55
+    evidence:
+      - 'qctl PR #17, squashed 91adda1.'
+    disposition: completed
+
   - id: QCTL-010
     title: Stamp completion with an instant, not a day
     scope: qctl
@@ -254,6 +275,7 @@ archive:
       - "12 suites, 45 cases; 4 mutations proved them: schema ignored fails 19, format-as-annotation fails 3, garde off fails both verb cases, one-pass off fails 1"
       - "verctl and ctl-core ledgers still check ok against the generated schema"
       - "the pinned versioned $schema URL is deliberately not here; QCTL-004 owns it"
+
   - id: QCTL-005
     title: Start the shared CLI crate (short/long, help, negations)
     scope: cross-repo

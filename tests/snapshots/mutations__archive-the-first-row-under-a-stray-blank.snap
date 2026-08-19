@@ -1,0 +1,35 @@
+---
+source: tests/mutations.rs
+description: "qctl archive DEMO-001 --evidence \"It shipped.\""
+---
+# -9 +10
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 3
+ prefix: DEMO
+-active: DEMO-001
++active: DEMO-002
+ queue:
+ 
+-  - id: DEMO-001
+-    title: First, with a stray blank line above it
+-    scope: demo
+-    outcome: Something is true.
+-    blocked_by: []
+-    acceptance: [It holds.]
+-
+   - id: DEMO-002
+     title: Second
+     scope: demo
+     outcome: Something else is true.
+     blocked_by: []
+     acceptance: [It also holds.]
+-archive: []
++archive:
++  - id: DEMO-001
++    title: First, with a stray blank line above it
++    scope: demo
++    outcome: Something is true.
++    completed: [NOW]
++    evidence:
++      - It shipped.
++    disposition: completed
