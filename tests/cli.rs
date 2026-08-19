@@ -87,6 +87,55 @@ fn show_reads_a_stamp_without_moving_it() {
     );
 }
 
+/// The zone a stamp is written in comes from the ledger, and the only way to see
+/// that is to read the stamp back as the declared zone and land on now. Written
+/// in UTC instead, it would be three hours out.
+#[test]
+fn archive_stamps_in_the_zone_the_ledger_declares() {
+    let dir = LedgerDir::empty();
+    dir.write(indoc! {"
+        schema_version: 3
+        prefix: QCTL
+        style:
+          timezone: \"-03:00\"
+        active: QCTL-001
+        queue:
+          - id: QCTL-001
+            title: About to close
+            scope: qctl
+            outcome: Something is true.
+            blocked_by: []
+            acceptance: [It holds.]
+        archive: []
+    "});
+    let archived = qctl(&[
+        "archive",
+        "QCTL-001",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-e",
+        "It shipped.",
+    ]);
+    assert!(archived.status.success(), "{}", stderr(&archived));
+
+    let body = dir.read();
+    let stamp = body
+        .lines()
+        .find_map(|line| line.trim().strip_prefix("completed: "))
+        .expect("a stamp");
+    let written = time::PrimitiveDateTime::parse(
+        stamp,
+        time::macros::format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]"),
+    )
+    .unwrap_or_else(|error| panic!("{stamp}: {error}"))
+    .assume_offset(time::macros::offset!(-3));
+    let drift = time::OffsetDateTime::now_utc() - written;
+    assert!(
+        drift.abs() < time::Duration::seconds(30),
+        "{stamp} read as -03:00 is {drift} from now, so it was not written in that zone"
+    );
+}
+
 /// `fmt --check` is for a hook: it writes nothing, exits non-zero, and says
 /// which line to look at rather than only that something is out of style.
 #[test]
