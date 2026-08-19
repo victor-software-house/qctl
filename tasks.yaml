@@ -185,6 +185,27 @@ horizon:
       QCTL-016 is the single-ledger half of the same question and should land
       first: `next` has to mean something in one file before it can mean
       anything across six.
+      2026-08-19, read from pi's parser rather than its docs
+      (packages/coding-agent/src/utils/git.ts): a git source there is always a
+      whole repository. `buildGitSource` refuses a path that is not exactly
+      user/project, the hosted branch builds it as `${info.user}/${info.project}`,
+      and `GitSource` carries no subdirectory at all — selection inside a package
+      is done by globs in its own package.json, and the only way to point at part
+      of a tree is a local path. Protocol is gated deliberately: without a `git:`
+      prefix the string must match `^(https?|ssh|git)://`, and the prefix is what
+      buys the shorthands `git:github.com/user/repo` and
+      `git:git@github.com:user/repo`. A ref is `@ref`, with `#committish` also
+      parsed, and `pinned` is simply whether one was given.
+      So pi is the wrong donor for the path half. A ledger is a file inside a
+      repository, and the syntax that says protocol, subpath, and ref at once is
+      the go-getter form this repo's own task includes already use:
+      `git::https://github.com/o/r.git//tasks/q?ref=v0.1.2` — `git::` forces the
+      protocol the way pi's `git:` does, `//` selects a directory pi cannot
+      address, and `?ref=` pins. Whatever a registry entry looks like, it should
+      read like the includes a consumer already writes, not like a second dialect.
+      What pi is right about, and worth copying: the user-level and project-level
+      split, refs that reconcile an existing clone instead of floating to a newer
+      one, and a clone cache keyed by host and path.
   - id: QCTL-007
     title: Optional per-user daemon sharing one session and view
     scope: ctl-core
