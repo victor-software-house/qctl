@@ -58,11 +58,17 @@ fn a_verb_changes_only_what_it_must(
         stderr(&checked)
     );
 
-    // The instant `archive` stamps is the one value a case cannot pin, so it
-    // is the one held loosely — and only on the line the verb wrote, so the
-    // stamps already in a ledger stay under assertion.
+    // The instant `archive` stamps is the one value a case cannot pin, so it is
+    // the one held loosely — on a line that verb wrote, in a case that runs it.
+    // `fmt` only ever moves a stamp somebody else wrote, and a filter that
+    // could not tell the difference would stop asserting the value it moved.
+    let stamped = argv.first().is_some_and(|verb| verb == "archive");
     insta::with_settings!({
-        filters => vec![(r"(?m)^(\+\s*completed: )\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", "${1}[NOW]")],
+        filters => if stamped {
+            vec![(r"(?m)^(\+\s*completed: )\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$", "${1}[NOW]")]
+        } else {
+            Vec::new()
+        },
         description => format!("qctl {line}"),
         omit_expression => true,
     }, {

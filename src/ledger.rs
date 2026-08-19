@@ -5,10 +5,8 @@ use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use time::OffsetDateTime;
-use time::format_description::well_known::Rfc3339;
-use time::macros::{format_description, offset};
 
+use crate::schema::ArchiveOrder;
 pub use crate::schema::Ledger;
 
 /// The schema qctl was built with, generated from [`crate::schema`].
@@ -98,24 +96,11 @@ pub fn print_status(args: &LedgerArgs) -> Result<()> {
     Ok(())
 }
 
-/// A stamp as it reads where the work happened. The ledger stores UTC so that
-/// stamps sort wherever they are read; a person wants the hour they were at the
-/// desk. Brazil has not observed daylight saving since 2019, so that is a fixed
-/// three hours — deliberately fixed, not the reader's local zone, so the same
-/// ledger reads the same everywhere. The offset is printed with it, because a
-/// bare wall-clock time copied out of a terminal says nothing.
-///
-/// Its one caller has already been through [`load`], which refuses a stamp that
-/// is not an instant, so a parse failure here would mean the two disagree.
-fn where_the_work_happens(stamp: &str) -> Result<String> {
-    let shown = format_description!(
-        "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hour sign:mandatory]:[offset_minute]"
-    );
-    OffsetDateTime::parse(stamp, &Rfc3339)
-        .with_context(|| format!("{stamp} passed validation and is not an instant"))?
-        .to_offset(offset!(-3))
-        .format(shown)
-        .context("render a stamp")
+/// A stamp as a person reads it. The ledger declares the zone once, so a stamp
+/// carries no offset and needs no conversion here — only the `T` that separates
+/// the day from the time, which a machine wants and a reader does not.
+fn as_a_person_reads_it(stamp: &str) -> String {
+    stamp.replacen('T', " ", 1)
 }
 
 pub fn print_show(args: &crate::cli::IdArgs) -> Result<()> {
@@ -135,7 +120,7 @@ pub fn print_show(args: &crate::cli::IdArgs) -> Result<()> {
             "{}  {}  (archived {})",
             task.id,
             task.title,
-            where_the_work_happens(&task.completed)?
+            as_a_person_reads_it(&task.completed)
         );
         if let Some(notes) = &task.notes {
             println!("notes     {notes}");
@@ -156,6 +141,15 @@ pub fn print_show(args: &crate::cli::IdArgs) -> Result<()> {
 pub fn graph_errors(ledger: &Ledger, root: &Path) -> Vec<String> {
     let mut errors = Vec::new();
     let prefix = &ledger.prefix;
+
+    for task in &ledger.archive {
+        if !crate::schema::is_a_real_instant(&task.completed) {
+            errors.push(format!(
+                "{}: completed {} is not a moment that exists",
+                task.id, task.completed
+            ));
+        }
+    }
 
     let mut seen = HashSet::new();
     for id in ledger
@@ -207,16 +201,18 @@ pub fn graph_errors(ledger: &Ledger, root: &Path) -> Vec<String> {
         }
     }
 
-    let dates: Vec<&str> = ledger
-        .archive
-        .iter()
-        .map(|task| task.completed.as_str())
-        .collect();
-    let mut sorted = dates.clone();
-    sorted.sort_unstable();
-    sorted.reverse();
-    if dates != sorted {
-        errors.push("archive is not newest-first by completed date".into());
+    if ledger.style.archive_order == ArchiveOrder::NewestFirst {
+        let stamps: Vec<&str> = ledger
+            .archive
+            .iter()
+            .map(|task| task.completed.as_str())
+            .collect();
+        let mut sorted = stamps.clone();
+        sorted.sort_unstable();
+        sorted.reverse();
+        if stamps != sorted {
+            errors.push("archive is not newest-first by completed".into());
+        }
     }
 
     let parent = root.parent().unwrap_or(Path::new("."));

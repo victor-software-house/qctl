@@ -28,6 +28,7 @@ fn run() -> Result<()> {
         Command::Start(args) => mutate::start(&args)?,
         Command::Archive(args) => mutate::archive(&args)?,
         Command::Show(args) => ledger::print_show(&args)?,
+        Command::Fmt(args) => qctl::format::run(&args)?,
         Command::Schema(args) => qctl::schema::write(&args)?,
         Command::Instructions => {
             io::stdout().write_all(INSTRUCTIONS.as_bytes())?;

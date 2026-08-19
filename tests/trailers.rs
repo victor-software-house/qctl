@@ -31,7 +31,7 @@ fn check_fails_when_trailer_closes_queued_id() {
     fs::write(
         root.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 2
+            schema_version: 3
             prefix: CTC
             active: CTC-001
             queue:
@@ -70,7 +70,7 @@ fn check_ok_with_no_git() {
     fs::write(
         root.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 2
+            schema_version: 3
             prefix: CTC
             active: null
             queue: []

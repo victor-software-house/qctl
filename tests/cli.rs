@@ -39,7 +39,7 @@ fn check_accepts_own_repo_shape() {
 fn check_accepts_archive_notes() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 2
+        schema_version: 3
         prefix: QCTL
         active: null
         queue: []
@@ -47,7 +47,7 @@ fn check_accepts_archive_notes() {
           - id: QCTL-001
             title: done
             scope: s
-            completed: 2026-08-17T09:12:00Z
+            completed: 2026-08-17T09:12:00
             outcome: o
             evidence: [landed]
             notes: >-
@@ -57,24 +57,25 @@ fn check_accepts_archive_notes() {
     assert!(output.status.success(), "{}", stderr(&output));
 }
 
-/// The ledger stores UTC so stamps sort wherever they are read, but a person
-/// reading `show` wants the hour they were at the desk. This stamp is chosen to
-/// cross midnight: 02:08 UTC is the previous evening three hours behind, so a
-/// version that printed the stored text would name the wrong day, not just the
-/// wrong hour.
+/// The ledger declares its zone, so a stamp is already local and `show` must not
+/// shift it — only separate the day from the time. This stamp sits late in the
+/// evening on purpose: a version that converted it, in either direction, would
+/// name a different day and not merely a different hour.
 #[test]
-fn show_reads_a_stamp_where_the_work_happened() {
+fn show_reads_a_stamp_without_moving_it() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 2
+        schema_version: 3
         prefix: QCTL
+        style:
+          timezone: \"-03:00\"
         active: null
         queue: []
         archive:
           - id: QCTL-001
             title: Shipped late
             scope: qctl
-            completed: 2026-08-17T02:08:28Z
+            completed: 2026-08-16T23:08:28
             outcome: It shipped.
             evidence: [The tag exists.]
     "});
@@ -82,7 +83,42 @@ fn show_reads_a_stamp_where_the_work_happened() {
     assert!(output.status.success(), "{}", stderr(&output));
     assert_eq!(
         stdout(&output).trim_end(),
-        "QCTL-001  Shipped late  (archived 2026-08-16 23:08:28 -03:00)"
+        "QCTL-001  Shipped late  (archived 2026-08-16 23:08:28)"
+    );
+}
+
+/// `fmt --check` is for a hook: it writes nothing, exits non-zero, and says
+/// which line to look at rather than only that something is out of style.
+#[test]
+fn fmt_check_names_the_line_and_writes_nothing() {
+    let dir = LedgerDir::empty();
+    let untidy = indoc! {"
+        schema_version: 3
+        prefix: QCTL
+        active: null
+        queue: []
+        archive: []
+        horizon: []
+
+
+    "};
+    dir.write(untidy);
+    let output = qctl(&["fmt", "--check", "-f", dir.path.to_str().unwrap()]);
+    assert!(!output.status.success(), "accepted an untidy ledger");
+    assert!(
+        stderr(&output).contains("is not in its declared style"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(dir.read(), untidy, "--check wrote to the file");
+
+    let fixed = qctl(&["fmt", "-f", dir.path.to_str().unwrap()]);
+    assert!(fixed.status.success(), "{}", stderr(&fixed));
+    assert!(dir.read().ends_with("horizon: []\n"));
+    assert!(
+        qctl(&["fmt", "--check", "-f", dir.path.to_str().unwrap()])
+            .status
+            .success()
     );
 }
 
@@ -90,7 +126,7 @@ fn show_reads_a_stamp_where_the_work_happened() {
 fn check_rejects_unknown_field() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 2
+        schema_version: 3
         prefix: QCTL
         active: null
         queue: []
@@ -153,7 +189,7 @@ fn add_start_archive_round_trip() {
 fn start_refuses_blocked_or_horizon() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 2
+        schema_version: 3
         prefix: QCTL
         active: null
         queue:
@@ -200,7 +236,7 @@ fn instructions_prints_contract() {
 fn status_lists_horizon() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 2
+        schema_version: 3
         prefix: QCTL
         active: QCTL-001
         queue:

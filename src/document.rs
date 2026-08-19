@@ -92,6 +92,102 @@ impl Document {
         self.paste_back(section, &as_item(&rendered))
     }
 
+    /// Put a section's rows in the order these ids name, keeping each row's
+    /// text — and the comment above it — as it was written.
+    pub fn reorder_rows(&mut self, section: &str, ids: &[String]) -> Result<()> {
+        if self.ids(section)? == ids {
+            return Ok(());
+        }
+        let mut rows = Vec::with_capacity(ids.len());
+        for id in ids {
+            rows.push(self.cut(section, id)?);
+        }
+        for row in rows {
+            self.paste_back(section, &row)?;
+        }
+        Ok(())
+    }
+
+    /// Put the lists in the order these names give, moving each one whole: its
+    /// key line, its rows, and the comments and blank lines between them.
+    ///
+    /// Everything above the first list — the version, the prefix, the style, the
+    /// active row — stays where it is.
+    pub fn reorder_sections(&mut self, order: &[&str]) -> Result<()> {
+        let mut blocks = Vec::with_capacity(order.len());
+        for section in order {
+            blocks.push((*section, self.block_of(section)?));
+        }
+        let mut found: Vec<Range<usize>> = blocks.iter().map(|(_, span)| span.clone()).collect();
+        found.sort_by_key(|span| span.start);
+        if found.windows(2).any(|pair| pair[0].end > pair[1].start) {
+            bail!("these lists overlap, which is not a file this can reorder");
+        }
+        let already: Vec<&str> = {
+            let mut named: Vec<(usize, &str)> = blocks
+                .iter()
+                .map(|(section, span)| (span.start, *section))
+                .collect();
+            named.sort_by_key(|(start, _)| *start);
+            named.into_iter().map(|(_, section)| section).collect()
+        };
+        if already == order {
+            return Ok(());
+        }
+        // `blocks` was measured in the order asked for, so it is already the
+        // order to write.
+        let text: Vec<String> = blocks
+            .iter()
+            .map(|(_, span)| self.source[span.clone()].trim_end().to_owned())
+            .collect();
+        let (Some(first), Some(last)) = (found.first(), found.last()) else {
+            return Ok(());
+        };
+        let (from, to) = (first.start, last.end);
+        let rebuilt = format!("{}\n", text.join("\n\n"));
+        self.source.replace_range(from..to, &rebuilt);
+        Ok(())
+    }
+
+    /// Move every row of a section to sit this far under its key.
+    pub fn set_indent(&mut self, section: &str, indent: usize) -> Result<()> {
+        loop {
+            let Some(row) = self
+                .rows(section)?
+                .into_iter()
+                .find(|row| self.depth_of(row.start) != indent)
+            else {
+                return Ok(());
+            };
+            let depth = self.depth_of(row.start);
+            let text = self.source[row.clone()].to_owned();
+            // A row's span runs to the next row's first line, so it carries the
+            // blank lines that separate them — and the last row's span stops at
+            // the end of its text. Whatever ended the span has to end it still.
+            let (body, tail) = text.split_at(text.trim_end().len());
+            let moved = indent_by(&dedent(body, depth), indent);
+            self.source
+                .replace_range(row.start..row.end, &format!("{moved}{tail}"));
+        }
+    }
+
+    /// A section from its key line through its last row, without the blank lines
+    /// or comments that follow it.
+    fn block_of(&self, section: &str) -> Result<Range<usize>> {
+        let (from, key_line_end) = self.key_line(section)?;
+        let end = self
+            .rows(section)?
+            .last()
+            .map_or(key_line_end, |last| last.end);
+        Ok(from..end.max(key_line_end))
+    }
+
+    /// How far the line at this offset is indented.
+    fn depth_of(&self, offset: usize) -> usize {
+        let line = &self.source[offset..];
+        line.len() - line.trim_start().len()
+    }
+
     /// Replace a top-level scalar, leaving its line where it was.
     pub fn set(&mut self, key: &str, value: Value) -> Result<()> {
         self.patch(&[Patch {

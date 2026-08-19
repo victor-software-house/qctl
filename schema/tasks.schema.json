@@ -1,13 +1,27 @@
 {
 	"$defs": {
+		"ArchiveOrder": {
+			"description": "What order the archive is kept in.",
+			"oneOf": [
+				{
+					"const": "newest_first",
+					"description": "Most recently completed first, which is what `check` requires.",
+					"type": "string"
+				},
+				{
+					"const": "as_written",
+					"description": "However the file has them. `fmt` will not reorder rows.",
+					"type": "string"
+				}
+			]
+		},
 		"ArchivedTask": {
 			"additionalProperties": false,
 			"description": "A task that has left the queue, either shipped or deliberately dropped.",
 			"properties": {
 				"completed": {
-					"description": "The instant it left the queue, as `YYYY-MM-DDThh:mm:ssZ`.",
-					"format": "date-time",
-					"pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+					"description": "The moment it left the queue, as `YYYY-MM-DDThh:mm:ss`, in the zone\n[`Style::timezone`] declares.",
+					"pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
 					"type": "string"
 				},
 				"disposition": {
@@ -293,6 +307,61 @@
 				"acceptance"
 			],
 			"type": "object"
+		},
+		"Section": {
+			"description": "One of a ledger's three lists.",
+			"enum": [
+				"queue",
+				"archive",
+				"horizon"
+			],
+			"type": "string"
+		},
+		"Style": {
+			"additionalProperties": false,
+			"description": "How a ledger is written, declared by the ledger itself.\n\nEvery option has a default that is what qctl already wrote, so a file with no\n`style` block keeps the shape it has. `qctl fmt` applies these; a verb writes\nany new text in them and, unless [`Style::normalize_on_write`] says otherwise,\nleaves the rest of the file alone.\n\nThis is meant to grow. A new option is a new field with a default equal to\ntoday's behaviour, which is a minor change rather than a migration.",
+			"properties": {
+				"archive_order": {
+					"$ref": "#/$defs/ArchiveOrder",
+					"default": "newest_first",
+					"description": "Whether `fmt` sorts the archive newest-first or leaves it as written."
+				},
+				"indent": {
+					"default": 2,
+					"description": "How far a row is indented under its list's key.",
+					"format": "uint8",
+					"maximum": 8,
+					"minimum": 1,
+					"type": "integer"
+				},
+				"normalize_on_write": {
+					"default": false,
+					"description": "Whether a verb normalizes the whole file on the way out.\n\nFalse, and a verb rewrites only the lines it changes — so a diff shows\nthe work and nothing else. True, and every verb leaves the file fully\nnormalized, at the price of touching lines nobody asked about.",
+					"type": "boolean"
+				},
+				"section_order": {
+					"default": [
+						"queue",
+						"archive",
+						"horizon"
+					],
+					"description": "The order the lists appear in the file. All three, once each, in whatever\norder reads best here.",
+					"items": {
+						"$ref": "#/$defs/Section"
+					},
+					"maxItems": 3,
+					"minItems": 3,
+					"type": "array",
+					"uniqueItems": true
+				},
+				"timezone": {
+					"default": "+00:00",
+					"description": "The fixed offset `completed` is written in. Stamps carry no offset of\ntheir own — this is where they say what zone they are.\n\nChanging it does not rewrite the stamps already written: nothing records\nwhich zone an existing stamp was taken in, so `fmt` cannot know, and\nguessing would move a moment. Change it deliberately, or not at all.",
+					"pattern": "^[+-][0-9]{2}:[0-9]{2}$",
+					"type": "string"
+				}
+			},
+			"type": "object"
 		}
 	},
 	"$id": "https://raw.githubusercontent.com/victor-software-house/qctl/main/schema/tasks.schema.json",
@@ -335,11 +404,26 @@
 			"type": "array"
 		},
 		"schema_version": {
-			"const": 2,
+			"const": 3,
 			"description": "Ledger schema version, the one this qctl writes and accepts. Increment\nonly with a coordinated schema and ledger migration.",
 			"format": "uint32",
 			"minimum": 0,
 			"type": "integer"
+		},
+		"style": {
+			"$ref": "#/$defs/Style",
+			"default": {
+				"archive_order": "newest_first",
+				"indent": 2,
+				"normalize_on_write": false,
+				"section_order": [
+					"queue",
+					"archive",
+					"horizon"
+				],
+				"timezone": "+00:00"
+			},
+			"description": "How this ledger is written. A file that says nothing here gets the\ndefaults, which are the shape qctl already wrote."
 		}
 	},
 	"required": [

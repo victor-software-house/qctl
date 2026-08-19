@@ -28,10 +28,22 @@ pub enum Command {
     Archive(ArchiveArgs),
     /// Print one queued, archived, or horizon task.
     Show(IdArgs),
+    /// Rewrite a ledger into the style it declares.
+    Fmt(FmtArgs),
     /// Write schema/tasks.schema.json from the ledger types.
     Schema(SchemaArgs),
     /// Print the installed-version operator contract.
     Instructions,
+}
+
+#[derive(Args)]
+pub struct FmtArgs {
+    #[command(flatten)]
+    pub ledger: LedgerArgs,
+
+    /// Say what is not in the declared style and exit non-zero, writing nothing.
+    #[arg(long)]
+    pub check: bool,
 }
 
 #[derive(Args)]
