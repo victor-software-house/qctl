@@ -117,6 +117,17 @@ queue:
       - The five other owned ledgers are migrated once a qctl that accepts 2 is released.
     patch: completed-instant
 
+  - id: QCTL-011
+    title: Migrate the five other owned ledgers to schema 2
+    scope: workspace
+    outcome: Every ledger under this operator's own repositories declares schema_version 2 and stamps completion with an instant.
+    blocked_by: [QCTL-003, QCTL-010]
+    acceptance:
+      - verctl, ctl-core, kodus-ai, pi-stuff and claude-code-source-recovery each declare schema_version 2.
+      - Each archived row carries the instant recovered from the commit that first shows it archived, and its recovered day matches the day it already recorded.
+      - verctl, ctl-core and claude-code-source-recovery bump their qctl pin in the same change, so their own check passes.
+      - The two ledgers under ~/workspace/omp are left alone; they are not ours.
+
 horizon:
   - id: QCTL-007
     title: Optional per-user daemon sharing one session and view

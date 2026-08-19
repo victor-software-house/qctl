@@ -34,7 +34,7 @@ binary. Use a local or `cargo install --git` build, then `qctl`.
 | List | Meaning |
 |:--|:--|
 | `queue` | Short-term work. File order is priority. Exactly one `active`, or `null`. |
-| `archive` | Finished or dropped. Newest `completed` date first. IDs never reused. `notes` stay. |
+| `archive` | Finished or dropped. Newest `completed` first. IDs never reused. `notes` stay. |
 | `horizon` | Mapped but not startable: research, evaluations, deferred. File order is not priority. `active` must never name a horizon id. |
 
 Horizon rows require `kind` (`research` / `evaluation` / `deferred`) and
@@ -43,6 +43,12 @@ only when `open` is resolved and the row has `acceptance` and `blocked_by`.
 
 IDs are `{prefix}-NNN` (at least three digits), unique across all three
 lists, never reused, never encode priority.
+
+`schema_version` is `2`. An archived row's `completed` is the instant it
+left the queue, `YYYY-MM-DDThh:mm:ssZ` — UTC, to the second, one shape, so
+two rows closed in the same session are told apart and ordered. `qctl show`
+prints it where the work happens. A ledger still on version 1 carries days
+and has to be migrated before this qctl will touch it.
 
 ## Workflow
 
