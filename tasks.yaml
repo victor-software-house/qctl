@@ -144,6 +144,17 @@ queue:
       - "The mise.toml template drops its [tools] entry, and the rendered comment says the include ref is the only pin — whatever kind of ref QCTL-017 settles on."
       - README says the same thing.
 
+  - id: QCTL-020
+    title: Let a row wait on work in another ledger
+    scope: qctl
+    outcome: A blocked_by entry may name a foreign prefix, and check treats it as a dependency it deliberately cannot resolve rather than an error. No registry, no sources — the dependency is data, and this is the half that is.
+    blocked_by: []
+    acceptance:
+      - A foreign prefix in blocked_by passes check, and status shows the row as blocked with the foreign id named.
+      - A same-prefix id that does not exist still fails, exactly as it does today.
+      - status says which foreign ids a row waits on, without claiming to know whether they are done.
+      - 'qctl instructions states the rule: a foreign prefix is recorded, never resolved, until QCTL-019 decides how resolution works.'
+
 horizon:
   - id: QCTL-019
     title: One view over every ledger, from wherever you are standing
@@ -206,6 +217,38 @@ horizon:
       What pi is right about, and worth copying: the user-level and project-level
       split, refs that reconcile an existing clone instead of floating to a newer
       one, and a clone cache keyed by host and path.
+      2026-08-19, decided by Victor: a remote source is structured fields, not a
+      URI. `repo` is parsed by gix-url — https, ssh, scp-like and file all parse,
+      and its Scheme carries the protocol distinction pi spends a prefix on —
+      with `dir` and `ref` beside it, and a local entry is just `path`. gix-url
+      derives serde, so the config deserializes without a line of parsing. The
+      shorter-syntax question dissolves rather than being answered: a URI is long
+      because it packs four facts into one string, and packing them is also what
+      forces a parser we would then own. PURL was the runner-up — the only
+      one-string form with a real spec and a maintained crate (packageurl 0.7.0,
+      `#subpath` first class) — and it loses on exactly the protocol point,
+      because ssh and self-hosted are qualifiers there, not types.
+      Also decided: not both halves at once. The phases are what the data/config
+      split says they are, and that split is the answer to where this belongs.
+      That a QCTL row waits on VER-025 is data: it is the work record, it reads
+      the same on every machine, and it is reviewed in a PR — so it lives in
+      tasks.yaml, as a foreign prefix in blocked_by. Where the VER ledger sits on
+      disk is config: a path on one machine, meaningless in a commit. So phase
+      one is foreign prefixes alone, which needs no registry, no sources and no
+      gix-url; phase two is resolution, and only it needs any of that.
+      It follows that a committed registry can only name prefixes — a checked-in
+      file of ~/workspace paths would be machine state in git. The machine-level
+      file maps prefix to source, the same way this workspace already splits what
+      a repo declares from where the machine keeps it.
+      Left open, and owned with verctl rather than here: whether project config
+      is `.qctl/` beside `.verctl/`, or one `.ctl/{verctl,qctl}.yaml` for both.
+      VER-025 is about to move verctl.toml into `.verctl/*.yaml`, so the name is
+      being chosen there whether or not anybody decides it.
+      One red line, so it does not get relitigated: a database may be a derived
+      cache and never the authority. The record reviews as a diff and orders by
+      file position, and both are gone the moment rows live in SQLite. An index
+      rebuilt from the files costs nothing, because deleting it changes no
+      answer.
   - id: QCTL-007
     title: Optional per-user daemon sharing one session and view
     scope: ctl-core
