@@ -301,6 +301,10 @@ impl Document {
         // The last row has no next row, so its span stops at the end of its text:
         // there the blank line above is the one to take, along with the line
         // ending, or the section keeps a blank line nobody wrote.
+        //
+        // A blank line above the *first* row is not a separator between rows —
+        // it sits between the list's key and the list. A verb leaves it, because
+        // it did not put it there; `fmt` is what removes it.
         let from = if last {
             self.start_of_blank_run(span.start)
         } else {
