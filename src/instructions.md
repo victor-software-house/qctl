@@ -44,11 +44,36 @@ only when `open` is resolved and the row has `acceptance` and `blocked_by`.
 IDs are `{prefix}-NNN` (at least three digits), unique across all three
 lists, never reused, never encode priority.
 
-`schema_version` is `2`. An archived row's `completed` is the instant it
-left the queue, `YYYY-MM-DDThh:mm:ssZ` — UTC, to the second, one shape, so
-two rows closed in the same session are told apart and ordered. `qctl show`
-prints it where the work happens. A ledger still on version 1 carries days
-and has to be migrated before this qctl will touch it.
+`schema_version` is `3`. An archived row's `completed` is the moment it left
+the queue, `YYYY-MM-DDThh:mm:ss`, to the second, in the zone the ledger
+declares — so two rows closed in the same session are told apart and
+ordered. A ledger on an earlier version has to be migrated before this qctl
+will touch it.
+
+## Style
+
+A ledger declares how it is written, under `style`. Every option is optional
+and defaults to what qctl already wrote, so a file with no `style` block is
+valid.
+
+| Option | Default | What it decides |
+|:--|:--|:--|
+| `timezone` | `+00:00` | The offset `completed` is written in. Stamps carry no offset of their own. |
+| `section_order` | `[queue, archive, horizon]` | The order the three lists appear in. |
+| `indent` | `2` | How far a row sits under its list's key. |
+| `archive_order` | `newest_first` | Whether `fmt` sorts the archive or leaves it as written. |
+| `normalize_on_write` | `false` | Whether every verb normalizes the whole file, or only the lines it changes. |
+
+`qctl fmt` writes a ledger in its declared style. `qctl fmt --check` writes
+nothing, names the lines that differ, and exits non-zero — that is the one
+for a hook.
+
+`fmt` does not guess. It changes what an option names, sorts the archive when
+asked, and removes whitespace nobody chose. It never adds a blank line, a
+comment, or a key, and it never rewrites a value.
+
+Changing `timezone` does not move the stamps already written: nothing records
+which zone an old stamp was taken in. Change it deliberately.
 
 ## Workflow
 

@@ -1,0 +1,16 @@
+---
+source: tests/mutations.rs
+description: qctl fmt
+---
+# -0 +0
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 3
+ prefix: DEMO
+ active: null
+ queue: []
+ 
+ # A note with blank lines around it, so it belongs to no list. Nothing here has
+ # to move, so nothing has to place it.
+ 
+ archive: []
+ horizon: []

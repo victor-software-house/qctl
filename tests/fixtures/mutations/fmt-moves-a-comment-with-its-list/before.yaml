@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=./schema/tasks.schema.json
+schema_version: 3
+prefix: DEMO
+
+style:
+  section_order: [queue, horizon, archive]
+
+active: null
+queue: []
+
+# Everything below this line is history, not work.
+archive:
+  - id: DEMO-001
+    title: First
+    scope: demo
+    completed: 2026-08-16T23:08:28
+    outcome: Something is true.
+    evidence: [It shipped.]
+    disposition: completed
+horizon: []

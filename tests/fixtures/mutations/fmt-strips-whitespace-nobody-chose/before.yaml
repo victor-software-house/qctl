@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=./schema/tasks.schema.json
+schema_version: 3
+prefix: DEMO   
+active: DEMO-001
+
+
+
+queue:
+
+  - id: DEMO-001
+    title: A row under three blank lines and a key   
+    scope: demo
+    outcome: Something is true.
+    blocked_by: []
+    acceptance: [It holds.]
+archive: []
+horizon: []
+
+

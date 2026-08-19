@@ -92,6 +92,132 @@ impl Document {
         self.paste_back(section, &as_item(&rendered))
     }
 
+    /// Put a section's rows in the order these ids name, keeping each row's
+    /// text — and the comment above it — as it was written.
+    pub fn reorder_rows(&mut self, section: &str, ids: &[String]) -> Result<()> {
+        if self.ids(section)? == ids {
+            return Ok(());
+        }
+        let mut rows = Vec::with_capacity(ids.len());
+        for id in ids {
+            rows.push(self.cut(section, id)?);
+        }
+        for row in rows {
+            self.paste_back(section, &row)?;
+        }
+        Ok(())
+    }
+
+    /// Put the lists in the order these names give, moving each one whole: its
+    /// key line, its rows, and the comments and blank lines between them.
+    ///
+    /// Everything above the first list — the version, the prefix, the style, the
+    /// active row — stays where it is.
+    pub fn reorder_sections(&mut self, order: &[&str]) -> Result<()> {
+        // Only the lists this file has: `horizon` is optional, and a ledger
+        // without one is still a ledger.
+        let mut blocks = Vec::with_capacity(order.len());
+        for section in order {
+            if let Some(span) = self.block_of(section)? {
+                blocks.push((*section, span));
+            }
+        }
+        if blocks.len() < 2 {
+            return Ok(());
+        }
+        let mut found: Vec<Range<usize>> = blocks.iter().map(|(_, span)| span.clone()).collect();
+        found.sort_by_key(|span| span.start);
+        let wanted: Vec<&str> = blocks.iter().map(|(section, _)| *section).collect();
+        let already: Vec<&str> = {
+            let mut named: Vec<(usize, &str)> = blocks
+                .iter()
+                .map(|(section, span)| (span.start, *section))
+                .collect();
+            named.sort_by_key(|(start, _)| *start);
+            named.into_iter().map(|(_, section)| section).collect()
+        };
+        // Nothing below moves anything, so a file already in its order is done —
+        // and must not be refused for a comment that only a move would disturb.
+        if already == wanted {
+            return Ok(());
+        }
+        for pair in found.windows(2) {
+            if pair[0].end > pair[1].start {
+                bail!("these lists overlap, which is not a file this can reorder");
+            }
+            // A comment directly above a key belongs to that list and moves with
+            // it. Anything else out here belongs to no list, and moving the
+            // lists around it would either take it along or lose it. Refuse
+            // instead: better a ledger this will not reorder than a comment
+            // silently gone.
+            if !self.source[pair[0].end..pair[1].start].trim().is_empty() {
+                bail!(
+                    "something between these lists belongs to neither; move it above a key or out of the way"
+                );
+            }
+        }
+        // The blank lines between the lists are the file's own spacing, so they
+        // stay in the sequence they were written in. Only the lists move.
+        let gaps: Vec<String> = found
+            .windows(2)
+            .map(|pair| self.source[pair[0].end..pair[1].start].to_owned())
+            .collect();
+        let mut rebuilt = String::new();
+        for (at, (_, span)) in blocks.iter().enumerate() {
+            rebuilt.push_str(self.source[span.clone()].trim_end());
+            if let Some(gap) = gaps.get(at) {
+                rebuilt.push_str(gap);
+            }
+        }
+        let (from, to) = (found[0].start, found[found.len() - 1].end);
+        self.source.replace_range(from..to, &rebuilt);
+        Ok(())
+    }
+
+    /// Move every row of a section to sit this far under its key.
+    pub fn set_indent(&mut self, section: &str, indent: usize) -> Result<()> {
+        loop {
+            let Some(row) = self
+                .rows(section)?
+                .into_iter()
+                .find(|row| self.depth_of(row.start) != indent)
+            else {
+                return Ok(());
+            };
+            let depth = self.depth_of(row.start);
+            let text = self.source[row.clone()].to_owned();
+            // A row's span runs to the next row's first line, so it carries the
+            // blank lines that separate them — and the last row's span stops at
+            // the end of its text. Whatever ended the span has to end it still.
+            let (body, tail) = text.split_at(text.trim_end().len());
+            let moved = indent_by(&dedent(body, depth), indent);
+            self.source
+                .replace_range(row.start..row.end, &format!("{moved}{tail}"));
+        }
+    }
+
+    /// A section from the comment above its key through its last row, without
+    /// the blank lines or comments that follow it. `None` when the file has no
+    /// such list, which `horizon` is allowed to be.
+    fn block_of(&self, section: &str) -> Result<Option<Range<usize>>> {
+        if self.parsed()?.query_key_only(&route!(section)).is_err() {
+            return Ok(None);
+        }
+        let (key_start, key_line_end) = self.key_line(section)?;
+        let from = self.line_holding(key_start);
+        let end = self
+            .rows(section)?
+            .last()
+            .map_or(key_line_end, |last| last.end);
+        Ok(Some(from..end.max(key_line_end)))
+    }
+
+    /// How far the line at this offset is indented.
+    fn depth_of(&self, offset: usize) -> usize {
+        let line = &self.source[offset..];
+        line.len() - line.trim_start().len()
+    }
+
     /// Replace a top-level scalar, leaving its line where it was.
     pub fn set(&mut self, key: &str, value: Value) -> Result<()> {
         self.patch(&[Patch {

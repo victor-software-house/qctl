@@ -39,7 +39,7 @@ fn check_accepts_own_repo_shape() {
 fn check_accepts_archive_notes() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 2
+        schema_version: 3
         prefix: QCTL
         active: null
         queue: []
@@ -47,7 +47,7 @@ fn check_accepts_archive_notes() {
           - id: QCTL-001
             title: done
             scope: s
-            completed: 2026-08-17T09:12:00Z
+            completed: 2026-08-17T09:12:00
             outcome: o
             evidence: [landed]
             notes: >-
@@ -57,24 +57,25 @@ fn check_accepts_archive_notes() {
     assert!(output.status.success(), "{}", stderr(&output));
 }
 
-/// The ledger stores UTC so stamps sort wherever they are read, but a person
-/// reading `show` wants the hour they were at the desk. This stamp is chosen to
-/// cross midnight: 02:08 UTC is the previous evening three hours behind, so a
-/// version that printed the stored text would name the wrong day, not just the
-/// wrong hour.
+/// The ledger declares its zone, so a stamp is already local and `show` must not
+/// shift it — only separate the day from the time. This stamp sits late in the
+/// evening on purpose: a version that converted it, in either direction, would
+/// name a different day and not merely a different hour.
 #[test]
-fn show_reads_a_stamp_where_the_work_happened() {
+fn show_reads_a_stamp_without_moving_it() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 2
+        schema_version: 3
         prefix: QCTL
+        style:
+          timezone: \"-03:00\"
         active: null
         queue: []
         archive:
           - id: QCTL-001
             title: Shipped late
             scope: qctl
-            completed: 2026-08-17T02:08:28Z
+            completed: 2026-08-16T23:08:28
             outcome: It shipped.
             evidence: [The tag exists.]
     "});
@@ -82,15 +83,130 @@ fn show_reads_a_stamp_where_the_work_happened() {
     assert!(output.status.success(), "{}", stderr(&output));
     assert_eq!(
         stdout(&output).trim_end(),
-        "QCTL-001  Shipped late  (archived 2026-08-16 23:08:28 -03:00)"
+        "QCTL-001  Shipped late  (archived 2026-08-16 23:08:28)"
     );
+}
+
+/// The zone a stamp is written in comes from the ledger, and the only way to see
+/// that is to read the stamp back as the declared zone and land on now. Written
+/// in UTC instead, it would be three hours out.
+#[test]
+fn archive_stamps_in_the_zone_the_ledger_declares() {
+    let dir = LedgerDir::empty();
+    dir.write(indoc! {"
+        schema_version: 3
+        prefix: QCTL
+        style:
+          timezone: \"-03:00\"
+        active: QCTL-001
+        queue:
+          - id: QCTL-001
+            title: About to close
+            scope: qctl
+            outcome: Something is true.
+            blocked_by: []
+            acceptance: [It holds.]
+        archive: []
+    "});
+    let archived = qctl(&[
+        "archive",
+        "QCTL-001",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-e",
+        "It shipped.",
+    ]);
+    assert!(archived.status.success(), "{}", stderr(&archived));
+
+    let body = dir.read();
+    let stamp = body
+        .lines()
+        .find_map(|line| line.trim().strip_prefix("completed: "))
+        .expect("a stamp");
+    let written = time::PrimitiveDateTime::parse(
+        stamp,
+        time::macros::format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]"),
+    )
+    .unwrap_or_else(|error| panic!("{stamp}: {error}"))
+    .assume_offset(time::macros::offset!(-3));
+    let drift = time::OffsetDateTime::now_utc() - written;
+    assert!(
+        drift.abs() < time::Duration::seconds(30),
+        "{stamp} read as -03:00 is {drift} from now, so it was not written in that zone"
+    );
+}
+
+/// `fmt --check` is for a hook: it writes nothing, exits non-zero, and says
+/// which line to look at rather than only that something is out of style.
+#[test]
+fn fmt_check_names_the_line_and_writes_nothing() {
+    let dir = LedgerDir::empty();
+    let untidy = indoc! {"
+        schema_version: 3
+        prefix: QCTL
+        active: null
+        queue: []
+        archive: []
+        horizon: []
+
+
+    "};
+    dir.write(untidy);
+    let output = qctl(&["fmt", "--check", "-f", dir.path.to_str().unwrap()]);
+    assert!(!output.status.success(), "accepted an untidy ledger");
+    assert!(
+        stderr(&output).contains("is not in its declared style"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(dir.read(), untidy, "--check wrote to the file");
+
+    let fixed = qctl(&["fmt", "-f", dir.path.to_str().unwrap()]);
+    assert!(fixed.status.success(), "{}", stderr(&fixed));
+    assert!(dir.read().ends_with("horizon: []\n"));
+    assert!(
+        qctl(&["fmt", "--check", "-f", dir.path.to_str().unwrap()])
+            .status
+            .success()
+    );
+}
+
+/// A comment directly above a key belongs to that list and moves with it. One
+/// with a blank line under it belongs to nothing, and reordering around it would
+/// either carry it to the wrong place or lose it. `fmt` refuses instead, and
+/// leaves the file exactly as it was.
+#[test]
+fn fmt_refuses_to_move_lists_around_a_comment_it_cannot_place() {
+    let dir = LedgerDir::empty();
+    let orphaned = indoc! {"
+        schema_version: 3
+        prefix: QCTL
+        style:
+          section_order: [queue, horizon, archive]
+        active: null
+        queue: []
+
+        # A note with a blank line under it, so it sits between the lists.
+
+        archive: []
+        horizon: []
+    "};
+    dir.write(orphaned);
+    let output = qctl(&["fmt", "-f", dir.path.to_str().unwrap()]);
+    assert!(!output.status.success(), "reordered around a loose comment");
+    assert!(
+        stderr(&output).contains("belongs to neither"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(dir.read(), orphaned, "the file was written to anyway");
 }
 
 #[test]
 fn check_rejects_unknown_field() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 2
+        schema_version: 3
         prefix: QCTL
         active: null
         queue: []
@@ -153,7 +269,7 @@ fn add_start_archive_round_trip() {
 fn start_refuses_blocked_or_horizon() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 2
+        schema_version: 3
         prefix: QCTL
         active: null
         queue:
@@ -200,7 +316,7 @@ fn instructions_prints_contract() {
 fn status_lists_horizon() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 2
+        schema_version: 3
         prefix: QCTL
         active: QCTL-001
         queue:

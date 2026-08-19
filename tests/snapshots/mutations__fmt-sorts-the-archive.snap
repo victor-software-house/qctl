@@ -1,0 +1,44 @@
+---
+source: tests/mutations.rs
+description: qctl fmt
+---
+# -8 +8
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 3
+ prefix: DEMO
+ active: null
+ queue: []
+ archive:
+-  - id: DEMO-001
+-    title: Oldest, written first
+-    scope: demo
+-    completed: 2026-08-14T09:00:00
+-    outcome: Something is true.
+-    evidence: [It shipped.]
+-    disposition: completed
+-
+   # This comment belongs to DEMO-003 and has to travel with it.
+   - id: DEMO-003
+     title: Newest, written last
+     scope: demo
+     completed: 2026-08-16T23:08:28
+     outcome: A third thing is true.
+     evidence: [It shipped too.]
+     disposition: completed
+ 
+   - id: DEMO-002
+     title: In the middle
+     scope: demo
+     completed: 2026-08-15T12:30:00
+     outcome: Something else is true.
+     evidence: [It also shipped.]
+     disposition: completed
++
++  - id: DEMO-001
++    title: Oldest, written first
++    scope: demo
++    completed: 2026-08-14T09:00:00
++    outcome: Something is true.
++    evidence: [It shipped.]
++    disposition: completed
+ horizon: []

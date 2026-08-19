@@ -1,0 +1,36 @@
+---
+source: tests/mutations.rs
+description: qctl fmt
+---
+# -10 +10
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 3
+ prefix: DEMO
+ 
+ style:
+   indent: 2
+ 
+ active: DEMO-001
+ queue:
+-    # This comment sits above DEMO-001 at the row's own depth.
+-    - id: DEMO-001
+-      title: Written four deep
+-      scope: demo
+-      outcome: >-
+-        A folded outcome whose continuation
+-        lines have to move with it.
+-      blocked_by: []
+-      acceptance:
+-        - It holds.
++  # This comment sits above DEMO-001 at the row's own depth.
++  - id: DEMO-001
++    title: Written four deep
++    scope: demo
++    outcome: >-
++      A folded outcome whose continuation
++      lines have to move with it.
++    blocked_by: []
++    acceptance:
++      - It holds.
+ archive: []
+ horizon: []

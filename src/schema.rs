@@ -19,10 +19,9 @@ use serde_json::{Value, json};
 use std::path::{Component, Path};
 use std::sync::LazyLock;
 
-/// The one version of this shape a ledger may declare. 2 made `completed` an
-/// instant rather than a day, so a row says when it was archived and not only
-/// on which day.
-pub const VERSION: u32 = 2;
+/// The one version of this shape a ledger may declare. 3 gave a ledger a
+/// `style` block and moved the zone out of every `completed` stamp into it.
+pub const VERSION: u32 = 3;
 
 /// The published identity of the generated schema.
 const SCHEMA_ID: &str =
@@ -62,8 +61,12 @@ pattern!(
     "A changeset name, which is a file stem on disk."
 );
 pattern!(
-    INSTANT = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$",
-    "An instant, to the second, in UTC. One shape, so stamps sort as they happened."
+    INSTANT = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$",
+    "A moment to the second, in the zone the ledger declares. One shape, so stamps sort as they happened."
+);
+pattern!(
+    ZONE = r"^[+-][0-9]{2}:[0-9]{2}$",
+    "A fixed offset from UTC, as the ledger declares it: -03:00, +00:00."
 );
 
 /// One repository's work queue.
@@ -83,6 +86,12 @@ pub struct Ledger {
     /// Stable id prefix for this repository. Never encodes priority.
     #[garde(pattern(*PREFIX))]
     pub prefix: String,
+
+    /// How this ledger is written. A file that says nothing here gets the
+    /// defaults, which are the shape qctl already wrote.
+    #[serde(default)]
+    #[garde(dive)]
+    pub style: Style,
 
     /// The one task currently being executed, or null when work is
     /// intentionally paused.
@@ -178,9 +187,9 @@ pub struct ArchivedTask {
     #[garde(length(min = 1))]
     pub scope: String,
 
-    /// The instant it left the queue, as `YYYY-MM-DDThh:mm:ssZ`.
+    /// The moment it left the queue, as `YYYY-MM-DDThh:mm:ss`, in the zone
+    /// [`Style::timezone`] declares.
     #[garde(pattern(*INSTANT), custom(a_real_instant))]
-    #[schemars(extend("format" = "date-time"))]
     pub completed: String,
 
     /// What became true.
@@ -276,6 +285,122 @@ pub struct HorizonTask {
     pub notes: Option<String>,
 }
 
+/// How a ledger is written, declared by the ledger itself.
+///
+/// Every option has a default that is what qctl already wrote, so a file with no
+/// `style` block keeps the shape it has. `qctl fmt` applies these; a verb writes
+/// any new text in them and, unless [`Style::normalize_on_write`] says otherwise,
+/// leaves the rest of the file alone.
+///
+/// This is meant to grow. A new option is a new field with a default equal to
+/// today's behaviour, which is a minor change rather than a migration.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema, Validate)]
+#[serde(deny_unknown_fields, default)]
+pub struct Style {
+    /// The fixed offset `completed` is written in. Stamps carry no offset of
+    /// their own — this is where they say what zone they are.
+    ///
+    /// Changing it does not rewrite the stamps already written: nothing records
+    /// which zone an existing stamp was taken in, so `fmt` cannot know, and
+    /// guessing would move a moment. Change it deliberately, or not at all.
+    #[garde(pattern(*ZONE))]
+    pub timezone: String,
+
+    /// The order the lists appear in the file. All three, once each, in whatever
+    /// order reads best here.
+    #[garde(custom(all_three_lists))]
+    #[schemars(extend("uniqueItems" = true, "minItems" = 3, "maxItems" = 3))]
+    pub section_order: Vec<Section>,
+
+    /// How far a row is indented under its list's key.
+    #[garde(range(min = 1, max = 8))]
+    pub indent: u8,
+
+    /// Whether `fmt` sorts the archive newest-first or leaves it as written.
+    #[garde(skip)]
+    pub archive_order: ArchiveOrder,
+
+    /// Whether a verb normalizes the whole file on the way out.
+    ///
+    /// False, and a verb rewrites only the lines it changes — so a diff shows
+    /// the work and nothing else. True, and every verb leaves the file fully
+    /// normalized, at the price of touching lines nobody asked about.
+    #[garde(skip)]
+    pub normalize_on_write: bool,
+}
+
+impl Default for Style {
+    fn default() -> Self {
+        Self {
+            timezone: "+00:00".to_owned(),
+            section_order: vec![Section::Queue, Section::Archive, Section::Horizon],
+            indent: 2,
+            archive_order: ArchiveOrder::NewestFirst,
+            normalize_on_write: false,
+        }
+    }
+}
+
+/// One of a ledger's three lists.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum Section {
+    Queue,
+    Archive,
+    Horizon,
+}
+
+impl Section {
+    /// Every list a ledger has.
+    pub const ALL: [Self; 3] = [Self::Queue, Self::Archive, Self::Horizon];
+
+    /// The key this list is written under.
+    #[must_use]
+    pub fn key(&self) -> &'static str {
+        match self {
+            Self::Queue => "queue",
+            Self::Archive => "archive",
+            Self::Horizon => "horizon",
+        }
+    }
+}
+
+impl ArchiveOrder {
+    /// The value this order is written as.
+    #[must_use]
+    pub fn key(&self) -> &'static str {
+        match self {
+            Self::NewestFirst => "newest_first",
+            Self::AsWritten => "as_written",
+        }
+    }
+}
+
+/// What order the archive is kept in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ArchiveOrder {
+    /// Most recently completed first, which is what `check` requires.
+    #[default]
+    NewestFirst,
+    /// However the file has them. `fmt` will not reorder rows.
+    AsWritten,
+}
+
+/// Every list, once. A ledger has exactly three, and an order that named two of
+/// them would leave `fmt` deciding where the third goes.
+fn all_three_lists<C>(order: &[Section], _: &C) -> garde::Result {
+    let mut seen: Vec<Section> = order.to_vec();
+    seen.sort_unstable_by_key(|section| format!("{section:?}"));
+    seen.dedup();
+    if seen.len() == 3 {
+        return Ok(());
+    }
+    Err(garde::Error::new(
+        "must name queue, archive and horizon, once each",
+    ))
+}
+
 /// How a task left the queue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
@@ -344,13 +469,24 @@ fn the_one_version<C>(value: &u32, _: &C) -> garde::Result {
 /// A moment that exists. [`INSTANT`] states the shape once: garde validates
 /// against it and schemars writes it into the schema, so `check` and the verbs
 /// cannot disagree about what a stamp looks like. This adds what a regex cannot
-/// know — that the calendar agrees — so `2026-02-31T00:00:00Z` never lands in
-/// the archive. The schema gets the same from its `date-time` format.
-fn a_real_instant<C>(value: &str, _: &C) -> garde::Result {
-    if time::OffsetDateTime::parse(value, &time::format_description::well_known::Rfc3339).is_err() {
-        return Err(garde::Error::new("must be a moment that exists"));
+/// know — that the calendar agrees — so `2026-02-31T00:00:00` never lands in the
+/// archive.
+///
+/// A stamp carries no offset now that the ledger declares one, and no JSON
+/// Schema `format` describes a moment without a zone. `check` therefore calls
+/// [`unreal_instants`] for the same rule rather than getting it from the schema.
+pub fn a_real_instant<C>(value: &str, _: &C) -> garde::Result {
+    if is_a_real_instant(value) {
+        return Ok(());
     }
-    Ok(())
+    Err(garde::Error::new("must be a moment that exists"))
+}
+
+/// Whether the calendar has this moment, for callers outside garde.
+#[must_use]
+pub fn is_a_real_instant(value: &str) -> bool {
+    let format = time::macros::format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]");
+    time::PrimitiveDateTime::parse(value, format).is_ok()
 }
 
 /// Where the generated schema is committed, relative to the repository root.

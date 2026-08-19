@@ -23,7 +23,7 @@ use rstest::rstest;
         - id: QCTL-001
           title: Shipped
           scope: qctl
-          completed: 2026-02-30T09:12:00Z
+          completed: 2026-02-30T09:12:00
           outcome: It shipped.
           evidence: [The tag exists.]
     "},
@@ -56,7 +56,7 @@ use rstest::rstest;
         - id: QCTL-001
           title: Shipped
           scope: qctl
-          completed: 2026-08-01T09:12:00.500Z
+          completed: 2026-08-01T09:12:00.500
           outcome: It shipped.
           evidence: [The tag exists.]
     "},
@@ -77,7 +77,7 @@ use rstest::rstest;
         - id: QCTL-001
           title: Shipped
           scope: qctl
-          completed: 2026-08-01T09:12:00Z
+          completed: 2026-08-01T09:12:00
           outcome: It shipped.
           evidence: []
     "},
@@ -88,7 +88,7 @@ use rstest::rstest;
         - id: QCTL-001
           title: Shipped
           scope: qctl
-          completed: 2026-08-01T09:12:00Z
+          completed: 2026-08-01T09:12:00
           outcome: It shipped.
           evidence: [The tag exists.]
           disposition: abandoned

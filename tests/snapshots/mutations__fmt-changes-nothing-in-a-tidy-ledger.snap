@@ -1,0 +1,40 @@
+---
+source: tests/mutations.rs
+description: qctl fmt
+---
+# -0 +0
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 3
+ prefix: DEMO
+ 
+ style:
+   section_order: [queue, horizon, archive]
+ 
+ active: DEMO-002
+ queue:
+   - id: DEMO-002
+     title: Second
+     scope: demo
+     outcome: >-
+       A folded outcome that wraps
+       across two lines.
+     blocked_by: []
+     acceptance: [It holds.]
+ 
+ horizon:
+   - id: DEMO-900
+     title: Someday
+     scope: demo
+     outcome: Something would be true.
+     kind: research
+     open: Nobody knows yet.
+ 
+ archive:
+   # This comment belongs to DEMO-001 and travels with it.
+   - id: DEMO-001
+     title: First
+     scope: demo
+     completed: 2026-08-16T23:08:28
+     outcome: Something is true.
+     evidence: [It shipped.]
+     disposition: completed

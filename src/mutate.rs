@@ -5,8 +5,8 @@ use crate::schema::QueuedTask;
 use anyhow::{Context, Result, bail, ensure};
 use std::fs;
 use std::path::Path;
-use time::OffsetDateTime;
 use time::macros::format_description;
+use time::{OffsetDateTime, UtcOffset};
 
 pub fn init(args: &InitArgs) -> Result<()> {
     let prefix = args.prefix.to_ascii_uppercase();
@@ -82,11 +82,7 @@ pub fn archive(args: &ArchiveArgs) -> Result<()> {
         "{} is not queued",
         args.id
     );
-    let now = OffsetDateTime::now_utc()
-        .format(format_description!(
-            "[year]-[month]-[day]T[hour]:[minute]:[second]Z"
-        ))
-        .context("format the moment this row left the queue")?;
+    let now = now_in(&ledger.style.timezone)?;
 
     let mut document = read(&path)?;
     // The row loses what only a queued row carries and gains what only an
@@ -133,6 +129,22 @@ pub fn archive(args: &ArchiveArgs) -> Result<()> {
     Ok(())
 }
 
+/// Now, in the zone this ledger declares, written the one way a stamp is
+/// written. No offset: the file says which zone its stamps are in, once.
+fn now_in(zone: &str) -> Result<String> {
+    let offset = UtcOffset::parse(
+        zone,
+        format_description!("[offset_hour sign:mandatory]:[offset_minute]"),
+    )
+    .with_context(|| format!("{zone} is not an offset from UTC"))?;
+    OffsetDateTime::now_utc()
+        .to_offset(offset)
+        .format(format_description!(
+            "[year]-[month]-[day]T[hour]:[minute]:[second]"
+        ))
+        .context("format the moment this row left the queue")
+}
+
 fn read(path: &Path) -> Result<Document> {
     let source = fs::read_to_string(path).with_context(|| path.display().to_string())?;
     Ok(Document::new(source))
@@ -140,9 +152,20 @@ fn read(path: &Path) -> Result<Document> {
 
 /// Write only a document that still reads as the ledger it was, so a verb can
 /// never leave a file behind that the next one cannot open.
+///
+/// A ledger whose style asks for it is normalized on the way out. Off by
+/// default, because normalizing touches lines the verb had no business in, and a
+/// diff that shows only the work is worth more than one that is always tidy.
 fn write(path: &Path, document: Document) -> Result<()> {
     let source = document.into_source();
     crate::document::must_still_parse(&source)?;
+    let edited: crate::ledger::Ledger =
+        serde_yml::from_str(&source).context("read back what this verb wrote")?;
+    let source = if edited.style.normalize_on_write {
+        crate::format::normalized(&source, &edited)?
+    } else {
+        source
+    };
     fs::write(path, source).with_context(|| path.display().to_string())
 }
 
