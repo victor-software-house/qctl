@@ -1,7 +1,8 @@
 use crate::cli::{AddArgs, ArchiveArgs, InitArgs};
+use crate::document::Document;
 use crate::ledger::{load, next_id, resolve_path};
+use crate::schema::QueuedTask;
 use anyhow::{Context, Result, bail, ensure};
-use serde_yml::{Mapping, Value};
 use std::fs;
 use std::path::Path;
 use time::OffsetDateTime;
@@ -34,24 +35,22 @@ pub fn add(args: &AddArgs) -> Result<()> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
     let id = next_id(&ledger)?;
-    let mut value = read_yaml(&path)?;
-    let mapping = root_map(&mut value)?;
-    let queue = sequence(mapping, "queue")?;
-    let mut item = Mapping::new();
-    item.insert(Value::from("id"), Value::from(id.clone()));
-    item.insert(Value::from("title"), Value::from(args.title.clone()));
-    item.insert(Value::from("scope"), Value::from(args.scope.clone()));
-    item.insert(Value::from("outcome"), Value::from(args.outcome.clone()));
-    item.insert(Value::from("blocked_by"), Value::Sequence(Vec::new()));
-    item.insert(
-        Value::from("acceptance"),
-        Value::from(args.acceptance.clone()),
-    );
-    if let Some(patch) = &args.patch {
-        item.insert(Value::from("patch"), Value::from(patch.clone()));
-    }
-    queue.push(Value::Mapping(item));
-    write_yaml(&path, &value)?;
+    let row = QueuedTask {
+        id: id.clone(),
+        title: args.title.clone(),
+        scope: args.scope.clone(),
+        outcome: args.outcome.clone(),
+        blocked_by: Vec::new(),
+        acceptance: args.acceptance.clone(),
+        patch: args.patch.clone(),
+        plan: None,
+        links: Vec::new(),
+        notes: None,
+    };
+
+    let mut document = read(&path)?;
+    document.append("queue", &yaml_serde::to_value(&row)?)?;
+    write(&path, document)?;
     println!("{id}");
     Ok(())
 }
@@ -59,85 +58,90 @@ pub fn add(args: &AddArgs) -> Result<()> {
 pub fn start(args: &crate::cli::IdArgs) -> Result<()> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
-    let index = ledger
+    let task = ledger
         .queue
         .iter()
-        .position(|task| task.id == args.id)
+        .find(|task| task.id == args.id)
         .with_context(|| format!("{} is not queued", args.id))?;
-    ensure!(
-        ledger.queue[index].blocked_by.is_empty(),
-        "{} is blocked",
-        args.id
-    );
-    let mut value = read_yaml(&path)?;
-    let mapping = root_map(&mut value)?;
-    let queue = sequence(mapping, "queue")?;
-    let item = queue.remove(index);
-    queue.insert(0, item);
-    mapping.insert(Value::from("active"), Value::from(args.id.clone()));
-    write_yaml(&path, &value)?;
+    ensure!(task.blocked_by.is_empty(), "{} is blocked", args.id);
+
+    let mut document = read(&path)?;
+    document.move_to_front("queue", &args.id)?;
+    document.set("active", yaml_serde::Value::from(args.id.as_str()))?;
+    write(&path, document)?;
     println!("active  {}", args.id);
     Ok(())
 }
 
 pub fn archive(args: &ArchiveArgs) -> Result<()> {
     let path = resolve_path(&args.ledger);
+    let ledger = load(&path)?;
+    ensure!(
+        ledger.queue.iter().any(|task| task.id == args.id),
+        "{} is not queued",
+        args.id
+    );
     let today = OffsetDateTime::now_utc()
         .date()
         .format(format_description!("[year]-[month]-[day]"))
-        .context("format date")?;
-    let mut value = read_yaml(&path)?;
-    let mapping = root_map(&mut value)?;
-    let queue = sequence(mapping, "queue")?;
-    let position = queue
-        .iter()
-        .position(|item| item.get("id").and_then(Value::as_str) == Some(args.id.as_str()))
-        .with_context(|| format!("{} is not queued", args.id))?;
-    let mut item = queue.remove(position);
-    if let Some(map) = item.as_mapping_mut() {
-        map.remove(Value::from("blocked_by"));
-        map.remove(Value::from("acceptance"));
-        map.insert(Value::from("completed"), Value::from(today));
-        map.insert(Value::from("evidence"), Value::from(args.evidence.clone()));
-        map.insert(
-            Value::from("disposition"),
-            Value::from(args.disposition.as_str()),
-        );
+        .context("format today")?;
+
+    let mut document = read(&path)?;
+    // The row loses what only a queued row carries and gains what only an
+    // archived one does on the way across, while it stands alone.
+    document.move_between(
+        "queue",
+        "archive",
+        &args.id,
+        &["blocked_by", "acceptance"],
+        &[
+            ("completed", yaml_serde::Value::from(today.as_str())),
+            ("evidence", yaml_serde::to_value(&args.evidence)?),
+            (
+                "disposition",
+                yaml_serde::Value::from(args.disposition.as_str()),
+            ),
+        ],
+    )?;
+    // A blocker is only resolved against the queue, so a row still naming this
+    // id would fail `check` the moment this verb returns. What each row keeps
+    // comes from the ledger this verb already validated, not from reading its
+    // own output back.
+    for task in &ledger.queue {
+        if !task.blocked_by.contains(&args.id) {
+            continue;
+        }
+        let kept: Vec<String> = task
+            .blocked_by
+            .iter()
+            .filter(|blocker| **blocker != args.id)
+            .cloned()
+            .collect();
+        document.rewrite_blockers("queue", &task.id, &kept)?;
     }
-    let archive = sequence(mapping, "archive")?;
-    archive.insert(0, item);
-    let next = mapping
-        .get("queue")
-        .and_then(Value::as_sequence)
-        .and_then(|queue| queue.first())
-        .and_then(|item| item.get("id"))
-        .cloned();
-    mapping.insert(Value::from("active"), next.unwrap_or(Value::Null));
-    write_yaml(&path, &value)?;
+    let next = document.ids("queue")?.first().cloned();
+    document.set(
+        "active",
+        next.map_or(yaml_serde::Value::Null, |id| {
+            yaml_serde::Value::from(id.as_str())
+        }),
+    )?;
+    write(&path, document)?;
     println!("archived  {}", args.id);
     Ok(())
 }
 
-fn read_yaml(path: &Path) -> Result<Value> {
-    let raw = fs::read_to_string(path).with_context(|| path.display().to_string())?;
-    serde_yml::from_str(&raw).with_context(|| format!("parse {}", path.display()))
+fn read(path: &Path) -> Result<Document> {
+    let source = fs::read_to_string(path).with_context(|| path.display().to_string())?;
+    Ok(Document::new(source))
 }
 
-fn write_yaml(path: &Path, value: &Value) -> Result<()> {
-    fs::write(path, serde_yml::to_string(value)?).with_context(|| path.display().to_string())
-}
-
-fn root_map(value: &mut Value) -> Result<&mut Mapping> {
-    value
-        .as_mapping_mut()
-        .context("ledger root must be a mapping")
-}
-
-fn sequence<'a>(mapping: &'a mut Mapping, key: &str) -> Result<&'a mut Vec<Value>> {
-    mapping
-        .get_mut(Value::from(key))
-        .and_then(Value::as_sequence_mut)
-        .with_context(|| format!("{key} must be a sequence"))
+/// Write only a document that still reads as the ledger it was, so a verb can
+/// never leave a file behind that the next one cannot open.
+fn write(path: &Path, document: Document) -> Result<()> {
+    let source = document.into_source();
+    crate::document::must_still_parse(&source)?;
+    fs::write(path, source).with_context(|| path.display().to_string())
 }
 
 fn valid_prefix(prefix: &str) -> bool {

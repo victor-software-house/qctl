@@ -1,0 +1,273 @@
+---
+source: tests/mutations.rs
+description: qctl start QCTL-009
+---
+# -29 +29
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 1
+ prefix: QCTL
+-active: QCTL-002
++active: QCTL-009
+ 
+ queue:
++  - id: QCTL-009
++    title: Declare this repo's served files so its tag stops lying
++    scope: qctl
++    outcome: >-
++      Every ref a consumer fetches out of a qctl tag names that tag's
++      version, without anybody bumping five files by hand.
++    blocked_by: []
++    acceptance:
++      - The verctl pin here is 0.0.4 or later — the release that renders served files and rewrites pins onto the Version PR commit.
++      - "`tasks/q/q` is a template: its `#MISE tools` header renders the released version, and the file stays 0755."
++      - "`examples/mise.toml` is a template too, so the `[tools]` pin and the `?ref=` move together."
++      - "README's `?ref=` and install hint are `[patterns]` entries with declared arity, since that file is written by hand."
++      - No pin site is bumped by hand, and none is left out — all five are declared.
++      - "Proven the way verctl proved it: `git show <new tag>:tasks/q/q` names the new version."
++    notes: >-
++      2026-08-18, verified against the published tag: `git show
++      v0.0.2:tasks/q/q` still says `"github:…/qctl" = "0.0.1"`, and
++      examples/mise.toml and README in that tree say `?ref=v0.0.1`. So the
++      current release ships a task file that installs the previous release —
++      the exact failure verctl VER-017/VER-018 were built to end, live in this
++      repo's latest tag. Five sites, counted: the [tools] pin and the ?ref= in
++      examples/mise.toml, the `#MISE tools` header at tasks/q/q line 5, and
++      the ?ref= plus the install hint in README. They were hand-bumped once as
++      a bridge and drifted again, which is the argument for declaring them
++      rather than remembering them. Split out of QCTL-003, which was about
++      publishing native binaries and got that done — this is the part that
++      never landed, and it is unblocked now that verctl 0.0.4 exists.
++
+   - id: QCTL-002
+     title: A mutation rewrites the lines it changes, not the file
+     scope: qctl
+     outcome: >-
+       add, start, and archive change only the bytes they must, so a ledger
+       edit is reviewable as a diff, two people can edit different rows
+       without conflicting, and the file still reads the way it was written.
+     blocked_by: []
+     acceptance:
+       - A ledger with comments and a yaml-language-server header still has them after add/start/archive.
+       - serde dump is not the write path.
+       - "add works on a freshly initialized ledger, where the sections are still `queue: []`."
+       - A generated row's values come from the ledger types serialized by serde, not from string building or a hand-written quoting helper.
+       - check still passes on the mutated file.
+       - A test mutates a fixture carrying comments in three positions — line 1, above a row, beside a key — and asserts all three survive.
+       - Blank lines between rows survive, so the file does not come back as one dense block.
+       - Sequence indentation survives; a queue written as two-space `  - id:` does not come back flush against the key.
+       - "A folded scalar stays folded at the width it had: no notes block comes back as one long line."
+       - Quote style is left alone — a double-quoted title does not become single-quoted.
+       - "A flow sequence stays inline; `blocked_by: [QCTL-001]` does not expand to a block list."
+       - "The diff is bounded and asserted as such: moving one row in a real ledger changes that row's lines, not every line in the file."
+       - Archiving an id removes it from every remaining blocked_by, so the ledger the verb leaves behind still passes check.
+       - archive refuses a ledger it cannot vouch for, the way add and start already do.
+     notes: >-
+       2026-08-18, measured on the real thing rather than assumed. One
+       `qctl start VER-020` against a copy of verctl's 427-line tasks.yaml
+       changed 641 lines — every line in the file — and stretched the longest
+       line from 153 to 2158 characters. Six distinct losses, all from the
+       same cause: mutate.rs parses to serde_yml `Value`, which keeps values
+       and drops everything else, then serializes from scratch. Gone are
+       comments (line 1 `# yaml-language-server: $schema=…` included), blank
+       lines between rows, two-space sequence indentation, folded `>-`
+       scalars (flattened to single long lines), double quotes (rewritten to
+       single), and inline flow sequences (expanded to block lists). The
+       values themselves survive — `check` still passes on the output — so
+       this is entirely a writer problem, not a schema one.
+       The shortest demonstration needs two commands and no existing file:
+       `qctl init` writes the `# yaml-language-server:` header, and the first
+       `qctl add` deletes it. The tool destroys its own output on the first
+       verb after creating it.
+       Why it matters beyond taste: a whole-file diff cannot be reviewed, and
+       two people editing different rows conflict on every line. It also
+       blocks verctl VER-021, which installs a `$schema` line in every ctl
+       repo that qctl would delete on the next verb.
+       Until this ships, a comment in a ledger does not survive the next verb,
+       so nothing belongs beside a key that could live in notes instead.
+       The writer, chosen against the alternatives rather than assumed:
+       yamlpath + yamlpatch (zizmor's crates, MIT, 460k and 236k downloads,
+       tree-sitter-yaml spans and comment-preserving patch ops). Rust has no
+       mature toml_edit equivalent for YAML, so the field was searched and
+       each candidate tried against the real ledger.
+       Rejected, with the reason each was rejected. yaml-edit 0.2.3 (rowan
+       lossless CST, the closest analogue on paper) reported this repo's
+       seven-row queue as three rows, so remove-then-insert silently did
+       nothing, and it dropped the `# yaml-language-server:` line — the exact
+       byte the task exists to protect. yaml-rt, edikt-yaml, yaml-serde-edit
+       and fyaml all describe the right thing, including a typed-overlay
+       writer, but were published weeks ago and have double- to
+       triple-digit downloads; this tool is a dependency of every ledger in
+       the workspace. rust-yaml has adoption but no span or patch API.
+       Two gaps in the chosen pair are ours to close, both measured.
+       One: tree-sitter attributes a comment to the row *above* it, so
+       `removal_span` on a row swallows the next row's leading comment while
+       excluding its own. Reordering therefore takes the item's own span from
+       `query_exact` and applies one attribution rule of our own — a comment
+       line directly above a row, with no blank line between, belongs to that
+       row — with the parser still deciding what is a comment. YAML has no
+       formal comment ownership, so every round-tripping library invents this
+       rule; ruamel.yaml included.
+       Two: `Op::Append` refuses a flow sequence, so `add` on a
+       freshly initialized ledger (`queue: []`) needs its own path.
+       Verified for the writer, so it does not have to be discovered mid-build:
+       the queued row type serializes into that value type with its absent
+       fields skipped, so a generated row carries no `patch: null` and no empty
+       `links`, and the serializer quotes what needs quoting.
+       Two defects this verb rewrite also owns. A blocker resolves against the
+       queue alone, so archiving an id leaves every row that named it failing
+       `check` with "is not queued" — the verb has to drop the archived id from
+       the rows that named it, which is also why every blocked row in this
+       ledger would otherwise break the moment its blocker ships. And `archive`
+       is the one verb that never loads the ledger before editing it, so it
+       alone will edit a file whose values do not pass.
+       Also known and accepted: a generated row's nested sequence items come
+       out at the serializer's indentation, one level shallower than the
+       hand-written rows. That applies only to rows with no prior formatting
+       to preserve.
+ 
+   - id: QCTL-003
+     title: "Publish native qctl so mise github: can install it"
+     scope: release
+     outcome: >-
+       A tagged release ships darwin-arm64 and linux-x64 binaries. The
+       tasks/q catalog pin is a real immutable ref.
+     blocked_by: []
+     acceptance:
+       - GitHub Release assets exist for darwin-arm64 and linux-x64.
+       - examples/mise.toml pins that tag.
+       - mise run q -- check works from a clean consumer after mise install.
+     notes: >-
+       2026-08-17: the lane exists — CI, Version PR, publish, and both
+       tarballs, all through released verctl, same shape as ctl-core.
+       0.0.1 was cut by hand from this workstation, which is why it
+       shipped macos-arm64 only.
+       2026-08-18: 0.0.2 never shipped — its Version PR bumped Cargo.toml
+       and left Cargo.lock at 0.0.1, so Verify's `cargo package --locked`
+       hit a dirty tree. Fixed by declaring `[prepare]` here and moving to
+       verctl 0.0.3, which is the release that commits `[prepare].stage`
+       files. The nscloud note is withdrawn, not deferred: this repo is
+       public, so macos-latest/ubuntu-latest are the runners it wants, and
+       verctl 0.0.3 makes them a default rather than a hardcoded map.
+       Still open here: examples/mise.toml does not exist yet.
+ 
+   - id: QCTL-004
+     title: Point consumers at qctl check instead of copied Ajv tests
+     scope: cross-repo
+     outcome: >-
+       OMX seed, then kodus and pi-stuff, call qctl check. Copied
+       test/tasks-ledger.test.ts files can die once the pin is real.
+     blocked_by: [QCTL-003]
+     acceptance:
+       - ompex/oh-my-pi seed uses mise run q -- check.
+       - pi-stuff and kodus-ai have a follow-up row or are converted.
+       - No consumer still vendors ajv or a copied tasks.schema.json.
+       - Each consumer $schema URL is a pinned qctl tag/release, not latest.
+ 
+   - id: QCTL-006
+     title: Archive from commit trailers in a pre-push hook
+     scope: qctl
+     outcome: >-
+       A merged or pushed commit that closes a ledger id archives that
+       row. An active id cannot sit on main after its close trailer landed.
+     blocked_by: [QCTL-002]
+     acceptance:
+       - "Trailers Closes PREFIX-NNN and Completes: PREFIX-NNN in the commit body are the only syntax. Subject-line slogans do not count."
+       - "qctl hook install writes a pre-push (and optional commit-msg) hook that runs qctl close-from-git."
+       - "qctl close-from-git reads commits being pushed (or main..HEAD), archives matching queued ids with evidence = the commit SHA, and fails if active still names a closed id."
+       - "CI qctl check on default branch fails when a commit already on that branch closed an id that is still queued."
+       - "The hook does not amend. It writes tasks.yaml in the working tree and requires that file to be part of the push (or a follow-up commit). No hook skip flags."
+       - "Does not invent GitHub issue linking. Closes #12 stays GitHub's."
+     notes: >-
+       check now fails if a Closes/Completes trailer names a still-queued
+       id. Auto-archive of tasks.yaml still needs QCTL-002. VER-003 went
+       stale because check did not look at git and no commit had a trailer.
+ 
+   - id: QCTL-008
+     title: Adopt ctl-core in qctl and forkctl
+     scope: cross-repo
+     outcome: >-
+       qctl and forkctl flatten ctl-core flags and go()/View::show.
+       No third copy of styled help, color, or format.
+     blocked_by: []
+     acceptance:
+       - qctl main uses ctl_core::prelude (go, OutputArgs or ColorLong, formatdoc).
+       - forkctl drops its local help/color/format chassis in favor of ctl-core.
+       - state-sync is a follow-up or the same PR if the diff stays small.
+       - Pin is a ctl-core git rev or crates.io version, not a path dep on main.
+     notes: >-
+       Blocked in practice on ctl-core CTC-004 (harden). qctl cannot
+       name a foreign prefix in blocked_by. Do not wait for QCTL-001.
+-
+-  - id: QCTL-009
+-    title: Declare this repo's served files so its tag stops lying
+-    scope: qctl
+-    outcome: >-
+-      Every ref a consumer fetches out of a qctl tag names that tag's
+-      version, without anybody bumping five files by hand.
+-    blocked_by: []
+-    acceptance:
+-      - The verctl pin here is 0.0.4 or later — the release that renders served files and rewrites pins onto the Version PR commit.
+-      - "`tasks/q/q` is a template: its `#MISE tools` header renders the released version, and the file stays 0755."
+-      - "`examples/mise.toml` is a template too, so the `[tools]` pin and the `?ref=` move together."
+-      - "README's `?ref=` and install hint are `[patterns]` entries with declared arity, since that file is written by hand."
+-      - No pin site is bumped by hand, and none is left out — all five are declared.
+-      - "Proven the way verctl proved it: `git show <new tag>:tasks/q/q` names the new version."
+-    notes: >-
+-      2026-08-18, verified against the published tag: `git show
+-      v0.0.2:tasks/q/q` still says `"github:…/qctl" = "0.0.1"`, and
+-      examples/mise.toml and README in that tree say `?ref=v0.0.1`. So the
+-      current release ships a task file that installs the previous release —
+-      the exact failure verctl VER-017/VER-018 were built to end, live in this
+-      repo's latest tag. Five sites, counted: the [tools] pin and the ?ref= in
+-      examples/mise.toml, the `#MISE tools` header at tasks/q/q line 5, and
+-      the ?ref= plus the install hint in README. They were hand-bumped once as
+-      a bridge and drifted again, which is the argument for declaring them
+-      rather than remembering them. Split out of QCTL-003, which was about
+-      publishing native binaries and got that done — this is the part that
+-      never landed, and it is unblocked now that verctl 0.0.4 exists.
+ 
+ horizon:
+   - id: QCTL-007
+     title: Optional per-user daemon sharing one session and view
+     scope: ctl-core
+     kind: evaluation
+     outcome: >-
+       Multiple *ctl clients can attach to one local session the way
+       skill-cli does (Unix socket, NDJSON protocol, one dispatcher).
+     open: >-
+       skill-cli already has daemon + UDS + protocol crates. ctl-core
+       should reuse that shape only after pretty/JSON views are adopted
+       by at least one *ctl. Not a default feature.
+     notes: >-
+       Lower priority than clap chassis and schema-first views. Do not
+       pull tokio into ctl-core default features.
+ 
+ archive:
+   - id: QCTL-001
+     title: Own the ledger contract as Rust types via schemars
+     scope: qctl
+     completed: "2026-08-19"
+     disposition: completed
+     outcome: >-
+       The work-queue shape is declared once, as Rust types. serde reads and
+       writes it, garde refuses the values a type cannot, and schemars
+       generates the committed JSON Schema from the same declarations.
+     evidence:
+       - "qctl main f35ccfd (#13), squashed from five commits"
+       - "src/schema.rs is the only statement of the shape; the hand-written schema stopped being source"
+       - "qctl schema regenerates schema/tasks.schema.json; a test fails when the committed file is stale"
+       - "12 suites, 45 cases; 4 mutations proved them: schema ignored fails 19, format-as-annotation fails 3, garde off fails both verb cases, one-pass off fails 1"
+       - "verctl and ctl-core ledgers still check ok against the generated schema"
+       - "the pinned versioned $schema URL is deliberately not here; QCTL-004 owns it"
+   - id: QCTL-005
+     title: Start the shared CLI crate (short/long, help, negations)
+     scope: cross-repo
+     completed: "2026-08-17"
+     disposition: completed
+     outcome: >-
+       forkctl, qctl, and verctl share one clap chassis instead of
+       copying flag style.
+     evidence:
+       - "github.com/victor-software-house/ctl-core main 02c7e9f"
+       - "verctl ver-004-version-pr consumes ctl-core via git rev"
+       - "prelude, Render, formatdoc, FormatArgs/ColorLong, View"

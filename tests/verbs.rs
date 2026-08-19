@@ -84,12 +84,9 @@ fn check_refuses_whatever_a_verb_refuses(#[case] ledger: &str) {
     );
 }
 
-/// `archive` is the one verb that edits a file it never loaded, so the wrong
-/// value above does not stop it. Ignored rather than deleted: the gap is real,
-/// it is an acceptance criterion of QCTL-002, and this is the check that will
-/// say when it closes.
+/// `archive` used to be the one verb that edited a file it never loaded, so the
+/// wrong value above did not stop it. It loads now, like the other two.
 #[test]
-#[ignore = "QCTL-002: archive edits without loading, so nothing vouches for the file"]
 fn archive_refuses_a_ledger_it_cannot_vouch_for() {
     let dir = LedgerDir::empty();
     dir.write(ONE_WRONG_VALUE);

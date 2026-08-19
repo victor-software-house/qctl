@@ -27,6 +27,13 @@ depends = ["format", "lint", "test"]
 description = "Build the release binary"
 run = "cargo build --release"
 
+[tasks.snapshots]
+description = "Read and accept what a verb wrote, one scenario at a time"
+# The reviewer is the task's own tool, at the library's version. CI loads this
+# file for the toolchain and never reviews, so it should not fetch this.
+tools = { "github:mitsuhiko/insta" = { version = "1.48.0", exe = "cargo-insta" } }
+run = "cargo insta review"
+
 [tasks.schema]
 description = "Regenerate schema/tasks.schema.json from the ledger types"
 run = "cargo run --quiet -- schema"

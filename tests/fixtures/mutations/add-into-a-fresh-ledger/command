@@ -1,0 +1,1 @@
+add --title "Teach it to write" --scope demo --outcome "The file comes back as it went in." --acceptance "It holds."

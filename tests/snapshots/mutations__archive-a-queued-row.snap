@@ -1,0 +1,43 @@
+---
+source: tests/mutations.rs
+description: "qctl archive DEMO-001 --evidence \"The tag exists.\""
+---
+# -13 +13
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 1
+ prefix: DEMO
+-active: DEMO-001
++active: DEMO-002
+ 
+ queue:
++  # This comment belongs to DEMO-002 and travels with it.
++  - id: DEMO-002
++    title: Second
++    scope: release   # a trailing comment beside a key
++    outcome: Second outcome.
++    blocked_by: []
++    acceptance: [It also holds.]
++archive:
+   - id: DEMO-001
+     title: "Quoted: a title with a colon"
+     scope: demo
+     outcome: >-
+       A folded outcome that wraps
+       across two lines.
+-    blocked_by: []
+-    acceptance:
+-      - It holds.
+-
+-  # This comment belongs to DEMO-002 and travels with it.
+-  - id: DEMO-002
+-    title: Second
+-    scope: release   # a trailing comment beside a key
+-    outcome: Second outcome.
+-    blocked_by: [DEMO-001]
+-    acceptance: [It also holds.]
+-archive: []
++    completed: [TODAY]
++    evidence:
++      - The tag exists.
++    disposition: completed
+ horizon: []
