@@ -1,4 +1,1 @@
-archive
-DEMO-001
---evidence
-The tag exists.
+archive DEMO-001 --evidence "The tag exists."

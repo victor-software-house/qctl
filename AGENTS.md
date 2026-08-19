@@ -8,4 +8,7 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   them on `queue` and do not set `active` to a horizon id.
 - Schema is types + schemars (QCTL-001). Generated JSON lives only here.
   Consumers pin a `$schema` URL and run `qctl check`.
-- Mutations should become surgical YAML edits (QCTL-002).
+- Mutations rewrite only the lines they change (QCTL-002). Each scenario in
+  `tests/fixtures/mutations/` records what the verb wrote as one marked-up
+  file: `-` removed, `+` added. When a change to that output is intended,
+  `mise run snapshots` shows it scenario by scenario and accepts it.

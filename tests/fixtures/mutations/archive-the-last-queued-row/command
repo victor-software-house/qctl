@@ -1,4 +1,1 @@
-archive
-DEMO-001
---evidence
-It shipped.
+archive DEMO-001 --evidence "It shipped."
