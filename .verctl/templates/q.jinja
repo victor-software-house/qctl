@@ -10,4 +10,4 @@
 #MISE tools = { "github:victor-software-house/qctl" = "{{ versions["qctl"] }}" }
 
 set -euo pipefail
-exec "$(mise where github:victor-software-house/qctl)/qctl" "$@"
+exec qctl "$@"

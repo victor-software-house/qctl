@@ -8,4 +8,4 @@
 #MISE tools = { "github:victor-software-house/qctl" = "0.1.1" }
 
 set -euo pipefail
-exec "$(mise where github:victor-software-house/qctl)/qctl" "$@"
+exec qctl "$@"
