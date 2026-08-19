@@ -39,7 +39,7 @@ fn check_accepts_own_repo_shape() {
 fn check_accepts_archive_notes() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: null
         queue: []
@@ -47,7 +47,7 @@ fn check_accepts_archive_notes() {
           - id: QCTL-001
             title: done
             scope: s
-            completed: '2026-08-17'
+            completed: 2026-08-17T09:12:00Z
             outcome: o
             evidence: [landed]
             notes: >-
@@ -57,11 +57,40 @@ fn check_accepts_archive_notes() {
     assert!(output.status.success(), "{}", stderr(&output));
 }
 
+/// The ledger stores UTC so stamps sort wherever they are read, but a person
+/// reading `show` wants the hour they were at the desk. This stamp is chosen to
+/// cross midnight: 02:08 UTC is the previous evening three hours behind, so a
+/// version that printed the stored text would name the wrong day, not just the
+/// wrong hour.
+#[test]
+fn show_reads_a_stamp_where_the_work_happened() {
+    let dir = LedgerDir::empty();
+    dir.write(indoc! {"
+        schema_version: 2
+        prefix: QCTL
+        active: null
+        queue: []
+        archive:
+          - id: QCTL-001
+            title: Shipped late
+            scope: qctl
+            completed: 2026-08-17T02:08:28Z
+            outcome: It shipped.
+            evidence: [The tag exists.]
+    "});
+    let output = qctl(&["show", "QCTL-001", "-f", dir.path.to_str().unwrap()]);
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert_eq!(
+        stdout(&output).trim_end(),
+        "QCTL-001  Shipped late  (archived 2026-08-16 23:08:28 -03:00)"
+    );
+}
+
 #[test]
 fn check_rejects_unknown_field() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: null
         queue: []
@@ -124,7 +153,7 @@ fn add_start_archive_round_trip() {
 fn start_refuses_blocked_or_horizon() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: null
         queue:
@@ -171,7 +200,7 @@ fn instructions_prints_contract() {
 fn status_lists_horizon() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: QCTL-001
         queue:

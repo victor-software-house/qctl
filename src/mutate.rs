@@ -23,8 +23,9 @@ pub fn init(args: &InitArgs) -> Result<()> {
     {
         fs::create_dir_all(parent)?;
     }
+    let version = crate::schema::VERSION;
     let body = format!(
-        "# yaml-language-server: $schema=https://raw.githubusercontent.com/victor-software-house/qctl/main/schema/tasks.schema.json\nschema_version: 1\nprefix: {prefix}\nactive: null\nqueue: []\narchive: []\nhorizon: []\n"
+        "# yaml-language-server: $schema=https://raw.githubusercontent.com/victor-software-house/qctl/main/schema/tasks.schema.json\nschema_version: {version}\nprefix: {prefix}\nactive: null\nqueue: []\narchive: []\nhorizon: []\n"
     );
     fs::write(&path, body).with_context(|| path.display().to_string())?;
     println!("wrote {}", path.display());
@@ -81,10 +82,11 @@ pub fn archive(args: &ArchiveArgs) -> Result<()> {
         "{} is not queued",
         args.id
     );
-    let today = OffsetDateTime::now_utc()
-        .date()
-        .format(format_description!("[year]-[month]-[day]"))
-        .context("format today")?;
+    let now = OffsetDateTime::now_utc()
+        .format(format_description!(
+            "[year]-[month]-[day]T[hour]:[minute]:[second]Z"
+        ))
+        .context("format the moment this row left the queue")?;
 
     let mut document = read(&path)?;
     // The row loses what only a queued row carries and gains what only an
@@ -95,7 +97,7 @@ pub fn archive(args: &ArchiveArgs) -> Result<()> {
         &args.id,
         &["blocked_by", "acceptance"],
         &[
-            ("completed", yaml_serde::Value::from(today.as_str())),
+            ("completed", yaml_serde::Value::from(now.as_str())),
             ("evidence", yaml_serde::to_value(&args.evidence)?),
             (
                 "disposition",

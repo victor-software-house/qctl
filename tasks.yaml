@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=./schema/tasks.schema.json
-schema_version: 1
+schema_version: 2
 prefix: QCTL
 active: QCTL-003
 
@@ -105,6 +105,29 @@ queue:
       publishing native binaries and got that done — this is the part that
       never landed, and it is unblocked now that verctl 0.0.4 exists.
 
+  - id: QCTL-010
+    title: Stamp completion with an instant, not a day
+    scope: qctl
+    outcome: An archived row says when it left the queue, to the second, in one shape that sorts.
+    blocked_by: []
+    acceptance:
+      - completed is YYYY-MM-DDThh:mm:ssZ, stated once and enforced by both check and the verbs.
+      - schema_version is 2, and a ledger still saying 1 is refused.
+      - Every archived row in this repo carries the instant recovered from the commit that archived it.
+      - The five other owned ledgers are migrated once a qctl that accepts 2 is released.
+    patch: completed-instant
+
+  - id: QCTL-011
+    title: Migrate the five other owned ledgers to schema 2
+    scope: workspace
+    outcome: Every ledger under this operator's own repositories declares schema_version 2 and stamps completion with an instant.
+    blocked_by: [QCTL-003, QCTL-010]
+    acceptance:
+      - verctl, ctl-core, kodus-ai, pi-stuff and claude-code-source-recovery each declare schema_version 2.
+      - Each archived row carries the instant recovered from the commit that first shows it archived, and its recovered day matches the day it already recorded.
+      - verctl, ctl-core and claude-code-source-recovery bump their qctl pin in the same change, so their own check passes.
+      - The two ledgers under ~/workspace/omp are left alone; they are not ours.
+
 horizon:
   - id: QCTL-007
     title: Optional per-user daemon sharing one session and view
@@ -192,7 +215,7 @@ archive:
       out at the serializer's indentation, one level shallower than the
       hand-written rows. That applies only to rows with no prior formatting
       to preserve.
-    completed: 2026-08-19
+    completed: 2026-08-19T02:00:41Z
     evidence:
       - 'qctl PR #15'
       - 'one start on verctl''s 479-line ledger: 641 changed lines before, 67 after; longest line 235 both ways'
@@ -204,7 +227,7 @@ archive:
   - id: QCTL-001
     title: Own the ledger contract as Rust types via schemars
     scope: qctl
-    completed: "2026-08-19"
+    completed: 2026-08-19T01:46:12Z
     disposition: completed
     outcome: >-
       The work-queue shape is declared once, as Rust types. serde reads and
@@ -220,7 +243,7 @@ archive:
   - id: QCTL-005
     title: Start the shared CLI crate (short/long, help, negations)
     scope: cross-repo
-    completed: "2026-08-17"
+    completed: 2026-08-17T02:08:28Z
     disposition: completed
     outcome: >-
       forkctl, qctl, and verctl share one clap chassis instead of

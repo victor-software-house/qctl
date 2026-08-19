@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=./schema/tasks.schema.json
-schema_version: 1
+schema_version: 2
 prefix: QCTL
 active: QCTL-002
 
@@ -212,7 +212,7 @@ archive:
   - id: QCTL-001
     title: Own the ledger contract as Rust types via schemars
     scope: qctl
-    completed: "2026-08-19"
+    completed: 2026-08-19T01:46:12Z
     disposition: completed
     outcome: >-
       The work-queue shape is declared once, as Rust types. serde reads and
@@ -228,7 +228,7 @@ archive:
   - id: QCTL-005
     title: Start the shared CLI crate (short/long, help, negations)
     scope: cross-repo
-    completed: "2026-08-17"
+    completed: 2026-08-17T02:08:28Z
     disposition: completed
     outcome: >-
       forkctl, qctl, and verctl share one clap chassis instead of

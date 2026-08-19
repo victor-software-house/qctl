@@ -8,7 +8,7 @@ use indoc::indoc;
 use rstest::rstest;
 
 const ONE_WRONG_VALUE: &str = indoc! {"
-    schema_version: 1
+    schema_version: 2
     prefix: QCTL
     active: null
     queue:
@@ -55,7 +55,7 @@ fn a_verb_refuses_a_ledger_it_cannot_vouch_for(#[case] verb: &[&str]) {
 /// where the two could drift apart.
 #[rstest]
 #[case::a_plan_outside_the_repository(indoc! {"
-    schema_version: 1
+    schema_version: 2
     prefix: QCTL
     active: null
     queue:
@@ -68,7 +68,24 @@ fn a_verb_refuses_a_ledger_it_cannot_vouch_for(#[case] verb: &[&str]) {
         plan: ../elsewhere/plan.md
     archive: []
 "})]
-#[case::a_completed_that_is_not_a_date(ONE_WRONG_VALUE)]
+#[case::a_completed_that_is_not_a_moment(ONE_WRONG_VALUE)]
+// A ledger from before `completed` became an instant, whose archive happens to
+// be empty. Every value in it is fine, so nothing but the version says it is
+// from another era — and a verb that edited it would leave a file declaring 1
+// and written as 2.
+#[case::the_version_this_one_replaced(indoc! {"
+    schema_version: 1
+    prefix: QCTL
+    active: null
+    queue:
+      - id: QCTL-002
+        title: A row a verb could act on
+        scope: qctl
+        outcome: Something is true.
+        blocked_by: []
+        acceptance: [It holds.]
+    archive: []
+"})]
 fn check_refuses_whatever_a_verb_refuses(#[case] ledger: &str) {
     let dir = LedgerDir::empty();
     dir.write(ledger);

@@ -58,11 +58,11 @@ fn a_verb_changes_only_what_it_must(
         stderr(&checked)
     );
 
-    // The date `archive` stamps is the one value a case cannot pin, so it is
-    // the one value held loosely — and only on the line the verb wrote, so the
-    // dates already in a ledger stay under assertion.
+    // The instant `archive` stamps is the one value a case cannot pin, so it
+    // is the one held loosely — and only on the line the verb wrote, so the
+    // stamps already in a ledger stay under assertion.
     insta::with_settings!({
-        filters => vec![(r"(?m)^(\+\s*completed: )\d{4}-\d{2}-\d{2}$", "${1}[TODAY]")],
+        filters => vec![(r"(?m)^(\+\s*completed: )\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", "${1}[NOW]")],
         description => format!("qctl {line}"),
         omit_expression => true,
     }, {

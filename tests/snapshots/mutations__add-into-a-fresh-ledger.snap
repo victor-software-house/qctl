@@ -4,7 +4,7 @@ description: "qctl add --title \"Teach it to write\" --scope demo --outcome \"Th
 ---
 # -1 +8
  # yaml-language-server: $schema=./schema/tasks.schema.json
- schema_version: 1
+ schema_version: 2
  prefix: DEMO
  active: null
 -queue: []
