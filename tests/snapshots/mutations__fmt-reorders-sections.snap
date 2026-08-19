@@ -2,7 +2,7 @@
 source: tests/mutations.rs
 description: qctl fmt
 ---
-# -7 +9
+# -7 +7
  # yaml-language-server: $schema=./schema/tasks.schema.json
  schema_version: 3
  prefix: DEMO
@@ -20,7 +20,6 @@ description: qctl fmt
        across two lines.
      blocked_by: []
      acceptance: [It holds.]
-+
 +horizon:
 +  - id: DEMO-900
 +    title: Someday
@@ -28,7 +27,6 @@ description: qctl fmt
 +    outcome: Something would be true.
 +    kind: research
 +    open: Nobody knows yet.
-+
  archive:
    # This comment belongs to DEMO-001 and travels with it.
    - id: DEMO-001

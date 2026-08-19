@@ -1,0 +1,16 @@
+---
+source: tests/mutations.rs
+description: qctl fmt
+---
+# -1 +1
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 3
+ prefix: DEMO
+ 
+ style:
+   section_order: [archive, queue, horizon]
+ 
+ active: null
++archive: []
+ queue: []
+-archive: []

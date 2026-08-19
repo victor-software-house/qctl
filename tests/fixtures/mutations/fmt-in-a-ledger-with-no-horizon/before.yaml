@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=./schema/tasks.schema.json
+schema_version: 3
+prefix: DEMO
+
+style:
+  section_order: [archive, queue, horizon]
+
+active: null
+queue: []
+archive: []
