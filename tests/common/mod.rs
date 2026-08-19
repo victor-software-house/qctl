@@ -31,6 +31,13 @@ impl LedgerDir {
     pub fn read(&self) -> String {
         fs::read_to_string(&self.path).expect("read ledger")
     }
+
+    /// Put a document beside the ledger, for the rows that point at one.
+    pub fn plant(&self, relative: &str, body: &str) {
+        let path = self.parent().join(relative);
+        fs::create_dir_all(path.parent().expect("parent")).expect("create dirs");
+        fs::write(path, body).expect("write document");
+    }
 }
 
 pub fn qctl(args: &[&str]) -> Output {
