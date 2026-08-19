@@ -5,85 +5,16 @@ prefix: QCTL
 style:
   timezone: "-03:00"
   section_order: [queue, horizon, archive]
-active: QCTL-009
+active: QCTL-004
 
 queue:
-  - id: QCTL-009
-    title: Declare this repo's served files so its tag stops lying
-    scope: qctl
-    outcome: >-
-      Every ref a consumer fetches out of a qctl tag names that tag's
-      version, without anybody bumping five files by hand.
-    blocked_by: []
-    acceptance:
-      - The verctl pin here is 0.0.4 or later — the release that renders served files and rewrites pins onto the Version PR commit.
-      - "`tasks/q/q` is a template: its `#MISE tools` header renders the released version, and the file stays 0755."
-      - "`examples/mise.toml` is a template too, so the `[tools]` pin and the `?ref=` move together."
-      - "README's `?ref=` and install hint are `[patterns]` entries with declared arity, since that file is written by hand."
-      - No pin site is bumped by hand, and none is left out — all five are declared.
-      - "Proven the way verctl proved it: `git show <new tag>:tasks/q/q` names the new version."
-    notes: >-
-      2026-08-18, verified against the published tag: `git show
-      v0.0.2:tasks/q/q` still says `"github:…/qctl" = "0.0.1"`, and
-      examples/mise.toml and README in that tree say `?ref=v0.0.1`. So the
-      current release ships a task file that installs the previous release —
-      the exact failure verctl VER-017/VER-018 were built to end, live in this
-      repo's latest tag. Five sites, counted: the [tools] pin and the ?ref= in
-      examples/mise.toml, the `#MISE tools` header at tasks/q/q line 5, and
-      the ?ref= plus the install hint in README. They were hand-bumped once as
-      a bridge and drifted again, which is the argument for declaring them
-      rather than remembering them. Split out of QCTL-003, which was about
-      publishing native binaries and got that done — this is the part that
-      never landed, and it is unblocked now that verctl 0.0.4 exists.
-      2026-08-19: declared. `.verctl/templates/q.jinja` and
-      `mise.toml.jinja` render `tasks/q/q` (0755) and `examples/mise.toml`,
-      README's two spellings are `[patterns.catalog]` and
-      `[patterns.install]` at arity once, and the release lane runs verctl
-      0.0.4. Proven locally in a clone: `verctl prepare` renders all three
-      files byte-identical to the committed ones with only 0.1.0 → 0.1.1
-      moved. One thing worth knowing: a template git does not track renders
-      nothing — the dry run listed README alone until the templates were
-      staged. The last line waits on the 0.1.1 tag.
-
-  - id: QCTL-003
-    title: "Publish native qctl so mise github: can install it"
-    scope: release
-    outcome: >-
-      A tagged release ships darwin-arm64 and linux-x64 binaries. The
-      tasks/q catalog pin is a real immutable ref.
-    blocked_by: [QCTL-009]
-    acceptance:
-      - GitHub Release assets exist for darwin-arm64 and linux-x64.
-      - examples/mise.toml pins that tag.
-      - mise run q -- check works from a clean consumer after mise install.
-    notes: >-
-      2026-08-17: the lane exists — CI, Version PR, publish, and both
-      tarballs, all through released verctl, same shape as ctl-core.
-      0.0.1 was cut by hand from this workstation, which is why it
-      shipped macos-arm64 only.
-      2026-08-18: 0.0.2's first Version PR bumped Cargo.toml and left
-      Cargo.lock at 0.0.1, so Verify's `cargo package --locked` hit a dirty
-      tree. Fixed by declaring `[prepare]` here and moving to verctl 0.0.3,
-      which is the release that commits `[prepare].stage` files. The nscloud
-      note is withdrawn, not deferred: this repo is public, so
-      macos-latest/ubuntu-latest are the runners it wants, and verctl 0.0.3
-      makes them a default rather than a hardcoded map.
-      2026-08-19, corrected: 0.0.2 did ship after that fix. Its release
-      carries qctl_0.0.2_linux_x64.tar.gz and qctl_0.0.2_macos_arm64.tar.gz
-      alongside tasks.schema.json, so the first acceptance line is already
-      met and the earlier "never shipped" note was stale. What is left is
-      proving a clean consumer can install and check against a real tag.
-      examples/mise.toml does exist, and said `?ref=v0.0.1` — correcting that
-      is QCTL-009's subject, which is why this row now waits on it: a tag
-      whose task file installs 0.0.1 cannot prove the last line.
-
   - id: QCTL-004
     title: Point consumers at qctl check instead of copied Ajv tests
     scope: cross-repo
     outcome: >-
       OMX seed, then kodus and pi-stuff, call qctl check. Copied
       test/tasks-ledger.test.ts files can die once the pin is real.
-    blocked_by: [QCTL-003]
+    blocked_by: []
     acceptance:
       - ompex/oh-my-pi seed uses mise run q -- check.
       - pi-stuff and kodus-ai have a follow-up row or are converted.
@@ -129,7 +60,7 @@ queue:
     title: Migrate the five other owned ledgers to schema 3
     scope: workspace
     outcome: Every ledger under this operator's own repositories declares schema_version 3, stamps completion with a moment, and declares the zone that moment is in.
-    blocked_by: [QCTL-003]
+    blocked_by: []
     acceptance:
       - verctl, ctl-core, kodus-ai, pi-stuff and claude-code-source-recovery each declare schema_version 3 and a style block naming their timezone.
       - Each archived row carries the moment recovered from the commit that first shows it archived, shifted into the declared zone; its recovered day matched the day it already recorded.
@@ -146,6 +77,16 @@ queue:
       - With it on, fmt inserts a missing separator and removes a doubled one; the first row of a list never gets one above it.
       - The two separators repaired by hand in QCTL-013 would have been fixed by running fmt.
     patch: blank-between-rows
+
+  - id: QCTL-015
+    title: Write a ledger atomically so a crash cannot truncate it
+    scope: qctl
+    outcome: A verb that dies mid-write leaves the ledger as it was, not half of it. The file is written beside itself and renamed over the original, so a reader sees one version or the other.
+    blocked_by: []
+    acceptance:
+      - Every write goes through a temp file in the ledger's own directory, then a rename.
+      - A test proves the original survives when the write fails after the temp file exists.
+      - No verb calls fs::write on the ledger path.
 
 horizon:
   - id: QCTL-007
@@ -164,6 +105,70 @@ horizon:
       pull tokio into ctl-core default features.
 
 archive:
+  - id: QCTL-003
+    title: "Publish native qctl so mise github: can install it"
+    scope: release
+    outcome: >-
+      A tagged release ships darwin-arm64 and linux-x64 binaries. The
+      tasks/q catalog pin is a real immutable ref.
+    notes: >-
+      2026-08-17: the lane exists — CI, Version PR, publish, and both
+      tarballs, all through released verctl, same shape as ctl-core.
+      0.0.1 was cut by hand from this workstation, which is why it
+      shipped macos-arm64 only.
+      2026-08-18: 0.0.2's first Version PR bumped Cargo.toml and left
+      Cargo.lock at 0.0.1, so Verify's `cargo package --locked` hit a dirty
+      tree. Fixed by declaring `[prepare]` here and moving to verctl 0.0.3,
+      which is the release that commits `[prepare].stage` files. The nscloud
+      note is withdrawn, not deferred: this repo is public, so
+      macos-latest/ubuntu-latest are the runners it wants, and verctl 0.0.3
+      makes them a default rather than a hardcoded map.
+      2026-08-19, corrected: 0.0.2 did ship after that fix. Its release
+      carries qctl_0.0.2_linux_x64.tar.gz and qctl_0.0.2_macos_arm64.tar.gz
+      alongside tasks.schema.json, so the first acceptance line is already
+      met and the earlier "never shipped" note was stale. What is left is
+      proving a clean consumer can install and check against a real tag.
+      examples/mise.toml does exist, and said `?ref=v0.0.1` — correcting that
+      is QCTL-009's subject, which is why this row now waits on it: a tag
+      whose task file installs 0.0.1 cannot prove the last line.
+    completed: 2026-08-19T16:12:33
+    evidence:
+      - v0.1.1 ships qctl_0.1.1_macos_arm64.tar.gz and qctl_0.1.1_linux_x64.tar.gz, examples/mise.toml at that tag pins 0.1.1, and a scratch consumer holding only that file ran mise install, then mise run q -- init and check ok against qctl 0.1.1 fetched from the tagged include.
+    disposition: completed
+
+  - id: QCTL-009
+    title: Declare this repo's served files so its tag stops lying
+    scope: qctl
+    outcome: >-
+      Every ref a consumer fetches out of a qctl tag names that tag's
+      version, without anybody bumping five files by hand.
+    notes: >-
+      2026-08-18, verified against the published tag: `git show
+      v0.0.2:tasks/q/q` still says `"github:…/qctl" = "0.0.1"`, and
+      examples/mise.toml and README in that tree say `?ref=v0.0.1`. So the
+      current release ships a task file that installs the previous release —
+      the exact failure verctl VER-017/VER-018 were built to end, live in this
+      repo's latest tag. Five sites, counted: the [tools] pin and the ?ref= in
+      examples/mise.toml, the `#MISE tools` header at tasks/q/q line 5, and
+      the ?ref= plus the install hint in README. They were hand-bumped once as
+      a bridge and drifted again, which is the argument for declaring them
+      rather than remembering them. Split out of QCTL-003, which was about
+      publishing native binaries and got that done — this is the part that
+      never landed, and it is unblocked now that verctl 0.0.4 exists.
+      2026-08-19: declared. `.verctl/templates/q.jinja` and
+      `mise.toml.jinja` render `tasks/q/q` (0755) and `examples/mise.toml`,
+      README's two spellings are `[patterns.catalog]` and
+      `[patterns.install]` at arity once, and the release lane runs verctl
+      0.0.4. Proven locally in a clone: `verctl prepare` renders all three
+      files byte-identical to the committed ones with only 0.1.0 → 0.1.1
+      moved. One thing worth knowing: a template git does not track renders
+      nothing — the dry run listed README alone until the templates were
+      staged. The last line waits on the 0.1.1 tag.
+    completed: 2026-08-19T16:12:33
+    evidence:
+      - Rendered from .verctl/templates and declared as [patterns]; verctl 0.0.4 rewrote all five sites onto the Version PR commit. git show v0.1.1:tasks/q/q names 0.1.1, mode 100755, and examples/mise.toml and README say v0.1.1 in that tree.
+    disposition: completed
+
   - id: QCTL-013
     title: Stop a cut row taking two separators with it
     scope: qctl
