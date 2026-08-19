@@ -1,11 +1,13 @@
+{%- set path = "tasks/q" -%}
+{%- set executable = true -%}
 #!/usr/bin/env bash
 # Served: rendered from .verctl/templates/q.jinja onto the Version PR commit,
 # which is the commit the tag names, so the tag installs itself. Edit the
 # template, never this file.
 #MISE description="Run the qctl work-queue CLI"
-#MISE dir="{{cwd}}"
+#MISE dir="{% raw %}{{cwd}}{% endraw %}"
 #MISE raw_args=true
-#MISE tools = { "github:victor-software-house/qctl" = "0.1.0" }
+#MISE tools = { "github:victor-software-house/qctl" = "{{ versions["qctl"] }}" }
 
 set -euo pipefail
 exec "$(mise where github:victor-software-house/qctl)/qctl" "$@"
