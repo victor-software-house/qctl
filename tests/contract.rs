@@ -615,6 +615,43 @@ fn a_verb_refuses_a_ledger_it_cannot_vouch_for(#[case] verb: &[&str]) {
     assert_eq!(dir.read(), ONE_WRONG_VALUE, "the verb wrote to it anyway");
 }
 
+/// `check` and the verbs read the contract through different engines, and only
+/// one of them is what a consumer runs. So every rule garde knows has to be a
+/// rule the schema knows too: a value the verbs refuse must never pass `check`,
+/// or a defect would be invisible until someone tried to edit the file. These
+/// two are the rules garde states in Rust rather than as a keyword, which is
+/// where the two could drift apart.
+#[rstest]
+#[case::a_plan_outside_the_repository(indoc! {"
+    schema_version: 1
+    prefix: QCTL
+    active: null
+    queue:
+      - id: QCTL-002
+        title: A row a verb could act on
+        scope: qctl
+        outcome: Something is true.
+        blocked_by: []
+        acceptance: [It holds.]
+        plan: ../elsewhere/plan.md
+    archive: []
+"})]
+#[case::a_completed_that_is_not_a_date(ONE_WRONG_VALUE)]
+fn check_refuses_whatever_a_verb_refuses(#[case] ledger: &str) {
+    let dir = LedgerDir::empty();
+    dir.write(ledger);
+    let path = dir.path.to_string_lossy().into_owned();
+
+    let verb = qctl(&["start", "QCTL-002", "--file", &path]);
+    assert!(!verb.status.success(), "the verb accepted it");
+
+    let (ok, complaint) = check_in(&dir, ledger);
+    assert!(
+        !ok,
+        "the verb refused this and check did not:\n{ledger}\n{complaint}"
+    );
+}
+
 /// `archive` is the one verb that edits a file it never loaded, so the wrong
 /// value above does not stop it. Ignored rather than deleted: the gap is real,
 /// it is an acceptance criterion of QCTL-002, and this is the check that will
