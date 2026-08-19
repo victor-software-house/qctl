@@ -55,55 +55,86 @@ fn a_verb_changes_only_what_it_must(
     );
 }
 
-/// The fixtures pin small files exactly. This one takes the real ledger of this
-/// repository — hundreds of lines, comments, folded scalars — and says the thing
-/// the fixtures cannot say at that size: every line outside the row that moved,
-/// and the `active` line, is the line it was.
+/// The row this ledger's last queued id names, moved to the front — the longest
+/// journey a move can make in it, and so the one with the most to disturb.
+const MOVED: &str = "QCTL-009";
+
+/// The fixtures pin small files exactly. This says what they cannot at size: on
+/// a 239-line ledger with seventeen folded scalars, the row arrives whole and at
+/// the front, once, and every other line is still where it was.
+///
+/// The ledger is a frozen copy rather than this repository's live one, which
+/// would change what the test exercises every time a row is archived.
 #[test]
-fn moving_a_row_in_a_real_ledger_leaves_every_other_line_alone() {
-    let before = fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("tasks.yaml"))
-        .expect("this repository's own ledger");
+fn a_row_moved_in_a_real_ledger_arrives_whole_and_disturbs_nothing() {
+    let before = fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/a-real-ledger.yaml"),
+    )
+    .expect("the frozen ledger");
+    let row = rows_of(&before, MOVED);
 
     let dir = LedgerDir::empty();
     dir.write(&before);
     let path = dir.path.to_string_lossy().into_owned();
-    let moved = last_queued_id(&before);
-    let output = qctl(&["start", &moved, "--file", &path]);
+    let output = qctl(&["start", MOVED, "--file", &path]);
     assert!(output.status.success(), "{}", stderr(&output));
     let after = dir.read();
 
-    let untouched = |body: &str| -> Vec<String> {
-        body.lines()
-            .filter(|line| !line.starts_with("active:"))
-            .map(str::to_owned)
-            .collect()
-    };
-    let mut was = untouched(&before);
-    let mut is = untouched(&after);
-    was.sort();
-    is.sort();
-    assert_eq!(
-        was, is,
-        "moving {moved} changed a line that was not the row moving or `active`"
+    let block = row.join("\n");
+    assert!(
+        after.contains(&format!("queue:\n{block}\n")),
+        "{MOVED} did not arrive whole at the front of the queue"
     );
-    assert_ne!(before, after, "nothing moved at all");
+    assert_eq!(
+        after.matches(&block).count(),
+        1,
+        "{MOVED} appears more than once"
+    );
+
+    // In order, so a row that landed somewhere unexpected, or two rows that
+    // swapped, is a failure rather than the same lines in a different sequence.
+    assert_eq!(
+        kept(&before, &row),
+        kept(&after, &row),
+        "moving {MOVED} disturbed a line that was not its own"
+    );
+    assert!(
+        after.contains(&format!("active: {MOVED}")),
+        "active is stale"
+    );
 }
 
-/// The id of the last row on the queue, which is the furthest one a move can
-/// travel and so the one that would disturb the most. A ledger writes its
-/// sections in whatever order it likes, so the queue ends at the next key.
-fn last_queued_id(ledger: &str) -> String {
+/// The lines of the row this id names, from `- id:` to the line before the next
+/// row or section.
+fn rows_of(ledger: &str, id: &str) -> Vec<String> {
+    let lines: Vec<&str> = ledger.lines().collect();
+    let start = lines
+        .iter()
+        .position(|line| line.trim_start() == format!("- id: {id}"))
+        .expect("the row is in this ledger");
+    let depth = lines[start].len() - lines[start].trim_start().len();
+    let end = lines
+        .iter()
+        .enumerate()
+        .skip(start + 1)
+        .find(|(_, line)| !line.trim().is_empty() && line.len() - line.trim_start().len() <= depth)
+        .map_or(lines.len(), |(at, _)| at);
+    lines[start..end]
+        .iter()
+        .map(|line| (*line).to_owned())
+        .filter(|line| !line.trim().is_empty())
+        .collect()
+}
+
+/// Everything the move was not about: every line except the row's own, the
+/// `active` line, and the blank lines the fixtures already pin exactly.
+fn kept(ledger: &str, row: &[String]) -> Vec<String> {
     ledger
         .lines()
-        .skip_while(|line| !line.starts_with("queue:"))
-        .skip(1)
-        .take_while(|line| line.starts_with([' ', '#']) || line.trim().is_empty())
-        .filter_map(|line| line.trim_start().strip_prefix("- id:"))
-        .last()
-        .expect("a queued row")
-        .trim()
-        .trim_matches('"')
-        .to_owned()
+        .filter(|line| !line.trim().is_empty() && !line.starts_with("active:"))
+        .map(str::to_owned)
+        .filter(|line| !row.contains(line))
+        .collect()
 }
 
 fn read(case: &Path, name: &str) -> String {
