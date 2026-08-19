@@ -180,7 +180,7 @@ pub struct ArchivedTask {
 
     /// The instant it left the queue, as `YYYY-MM-DDThh:mm:ssZ`.
     #[garde(pattern(*INSTANT), custom(a_real_instant))]
-    #[schemars(pattern(*INSTANT), extend("format" = "date-time"))]
+    #[schemars(extend("format" = "date-time"))]
     pub completed: String,
 
     /// What became true.
@@ -327,10 +327,11 @@ fn inside_the_repo<C>(path: &str, _: &C) -> garde::Result {
     Ok(())
 }
 
-/// A moment that exists. [`INSTANT`] states the shape for both readers of this
-/// contract; this says the calendar agrees, so `2026-02-31T00:00:00Z` cannot
-/// pass a regex and land in the archive. The schema gets the same from its
-/// `date-time` format.
+/// A moment that exists. [`INSTANT`] states the shape once: garde validates
+/// against it and schemars writes it into the schema, so `check` and the verbs
+/// cannot disagree about what a stamp looks like. This adds what a regex cannot
+/// know — that the calendar agrees — so `2026-02-31T00:00:00Z` never lands in
+/// the archive. The schema gets the same from its `date-time` format.
 fn a_real_instant<C>(value: &str, _: &C) -> garde::Result {
     if time::OffsetDateTime::parse(value, &time::format_description::well_known::Rfc3339).is_err() {
         return Err(garde::Error::new("must be a moment that exists"));
