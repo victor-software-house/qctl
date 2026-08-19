@@ -19,3 +19,8 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
 - `qctl fmt` applies the declared style; `qctl fmt --check` is the hook form.
   New style options are additive: a field with a default equal to today's
   behaviour is a minor change, not a migration.
+- Served files — `tasks/q/q` and `examples/mise.toml` — are rendered from
+  `.verctl/templates/`, and README's `?ref=` and install line are declared as
+  `[patterns]` in `verctl.toml` (QCTL-009). Edit the template or the pattern,
+  never the rendered file; the Version PR rewrites all five sites onto the
+  commit the tag names. A template git does not track renders nowhere.
