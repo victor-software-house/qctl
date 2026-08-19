@@ -20,6 +20,19 @@ queue:
       - pi-stuff and kodus-ai have a follow-up row or are converted.
       - No consumer still vendors ajv or a copied tasks.schema.json.
       - Each consumer $schema URL is a pinned qctl tag/release, not latest.
+    notes: >-
+      2026-08-19: three of four lines are met. kodus-ai#1 deleted the vendored
+      tasks.schema.json and the Ajv spec, pi-stuff#94 deleted the copied schema
+      and the check-jsonschema tool that only existed to run it, and both now
+      gate on `q check` from `?ref=v0.1.2`; ctl-core#9 and verctl#41 moved their
+      $schema URLs to the same release. What is left is
+      claude-code-source-recovery, whose change is open as #18 and deliberately
+      not merged by us — that ledger churns, so the PR carries the recipe to
+      regenerate rather than a rebase.
+      The ompex/oh-my-pi line needs a decision rather than work: QCTL-011
+      settled that the two ledgers under ~/workspace/omp are not ours, which
+      contradicts this line. Either that seed is a different thing than those
+      ledgers, or the line should go.
 
   - id: QCTL-006
     title: Archive from commit trailers in a pre-push hook
@@ -66,6 +79,20 @@ queue:
       - Each archived row carries the moment recovered from the commit that first shows it archived, shifted into the declared zone; its recovered day matched the day it already recorded.
       - verctl, ctl-core and claude-code-source-recovery bump their qctl pin in the same change, so their own check passes.
       - The two ledgers under ~/workspace/omp are left alone; they are not ours.
+    notes: >-
+      2026-08-19: four of five migrated — ctl-core#9, verctl#41, kodus-ai#1 and
+      pi-stuff#94, each with a style block naming -03:00 and every archived row
+      carrying an instant recovered from git. claude-code-source-recovery is
+      open as #18 and is ours to leave alone; its stamps were placeholders
+      reading 12:00:00, now real instants in that PR.
+      Two corrections to this row's own wording, both learned by doing it. The
+      moment is the commit in which a row **last** entered the archive, not the
+      first: pi-stuff had three rows archived, re-queued, and archived again,
+      and the first commit dates a stay that ended. And the day gate cannot be
+      absolute — PST-051, PST-052 and PST-056 entered the archive at 00:21 on
+      2026-08-18 while the row said 2026-08-17, the day the work finished. The
+      commit instant is what `completed` means, so those three were accepted by
+      name rather than by loosening the rule for everything.
 
   - id: QCTL-014
     title: Let a ledger declare whether rows are blank-separated
