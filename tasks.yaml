@@ -24,14 +24,19 @@ queue:
       tarballs, all through released verctl, same shape as ctl-core.
       0.0.1 was cut by hand from this workstation, which is why it
       shipped macos-arm64 only.
-      2026-08-18: 0.0.2 never shipped — its Version PR bumped Cargo.toml
-      and left Cargo.lock at 0.0.1, so Verify's `cargo package --locked`
-      hit a dirty tree. Fixed by declaring `[prepare]` here and moving to
-      verctl 0.0.3, which is the release that commits `[prepare].stage`
-      files. The nscloud note is withdrawn, not deferred: this repo is
-      public, so macos-latest/ubuntu-latest are the runners it wants, and
-      verctl 0.0.3 makes them a default rather than a hardcoded map.
-      Still open here: examples/mise.toml does not exist yet.
+      2026-08-18: 0.0.2's first Version PR bumped Cargo.toml and left
+      Cargo.lock at 0.0.1, so Verify's `cargo package --locked` hit a dirty
+      tree. Fixed by declaring `[prepare]` here and moving to verctl 0.0.3,
+      which is the release that commits `[prepare].stage` files. The nscloud
+      note is withdrawn, not deferred: this repo is public, so
+      macos-latest/ubuntu-latest are the runners it wants, and verctl 0.0.3
+      makes them a default rather than a hardcoded map.
+      2026-08-19, corrected: 0.0.2 did ship after that fix. Its release
+      carries qctl_0.0.2_linux_x64.tar.gz and qctl_0.0.2_macos_arm64.tar.gz
+      alongside tasks.schema.json, so the first acceptance line is already
+      met and the earlier "never shipped" note was stale. What is left is
+      examples/mise.toml, which still does not exist, and proving a clean
+      consumer can install and check against a real tag.
 
   - id: QCTL-004
     title: Point consumers at qctl check instead of copied Ajv tests
@@ -120,18 +125,6 @@ queue:
       - verctl, ctl-core and claude-code-source-recovery bump their qctl pin in the same change, so their own check passes.
       - The two ledgers under ~/workspace/omp are left alone; they are not ours.
 
-  - id: QCTL-013
-    title: Stop a cut row taking two separators with it
-    scope: qctl
-    outcome: Removing a row from between two others leaves those two separated the way they were.
-    blocked_by: []
-    acceptance:
-      - Archiving a middle row leaves exactly one blank line between the rows it sat between.
-      - Archiving the last row of a section leaves no trailing blank line, as it already did.
-      - A fixture archives from the middle, which none did — that is why this went unseen.
-      - This repo's own two damaged separators are repaired.
-    patch: cut-separator
-
   - id: QCTL-014
     title: Let a ledger declare whether rows are blank-separated
     scope: qctl
@@ -160,6 +153,16 @@ horizon:
       pull tokio into ctl-core default features.
 
 archive:
+  - id: QCTL-013
+    title: Stop a cut row taking two separators with it
+    scope: qctl
+    outcome: Removing a row from between two others leaves those two separated the way they were.
+    patch: cut-separator
+    completed: 2026-08-19T02:03:57
+    evidence:
+      - 'qctl PR #18, squashed 5dc2467.'
+    disposition: completed
+
   - id: QCTL-012
     title: Declare a ledger's style, and add qctl fmt to apply it
     scope: qctl
