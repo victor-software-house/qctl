@@ -28,8 +28,17 @@ pub enum Command {
     Archive(ArchiveArgs),
     /// Print one queued, archived, or horizon task.
     Show(IdArgs),
+    /// Write schema/tasks.schema.json from the ledger types.
+    Schema(SchemaArgs),
     /// Print the installed-version operator contract.
     Instructions,
+}
+
+#[derive(Args)]
+pub struct SchemaArgs {
+    /// Where to write it. Defaults to schema/tasks.schema.json.
+    #[arg(short = 'o', long, value_hint = clap::ValueHint::FilePath)]
+    pub out: Option<PathBuf>,
 }
 
 #[derive(Args, Clone)]

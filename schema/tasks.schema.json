@@ -1,145 +1,353 @@
 {
-	"$schema": "https://json-schema.org/draft/2020-12/schema",
-	"$id": "https://github.com/victor-software-house/qctl/blob/main/schema/tasks.schema.json",
-	"title": "qctl work queue",
-	"type": "object",
-	"additionalProperties": false,
-	"required": ["schema_version", "prefix", "active", "queue", "archive"],
-	"properties": {
-		"schema_version": {
-			"const": 1,
-			"description": "Ledger schema version. Increment only with a coordinated schema and ledger migration."
-		},
-		"prefix": {
-			"type": "string",
-			"pattern": "^[A-Z][A-Z0-9]{1,7}$",
-			"description": "Stable ID prefix for this repository, such as PST, KAI, or OMX. Never encodes priority."
-		},
-		"active": {
-			"description": "The one task currently being executed, or null when work is intentionally paused.",
-			"oneOf": [{ "$ref": "#/$defs/taskId" }, { "type": "null" }]
-		},
-		"queue": {
-			"type": "array",
-			"description": "Pending work in priority order. Array order is the priority.",
-			"items": { "$ref": "#/$defs/task" }
-		},
-		"archive": {
-			"type": "array",
-			"description": "Completed or deliberately dropped work, newest first. Archived IDs are never reused.",
-			"items": { "$ref": "#/$defs/archiveTask" }
-		},
-		"horizon": {
-			"type": "array",
-			"description": "Mapped work that is not on the short-term queue: research, evaluations, or deferred items without a start condition. File order is not priority. active must never name a horizon id.",
-			"items": { "$ref": "#/$defs/horizonTask" }
-		}
-	},
 	"$defs": {
-		"taskId": {
-			"type": "string",
-			"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$"
-		},
-		"nonEmptyString": {
-			"type": "string",
-			"minLength": 1
-		},
-		"nonEmptyStringList": {
-			"type": "array",
-			"items": { "$ref": "#/$defs/nonEmptyString" },
-			"minItems": 1,
-			"uniqueItems": true
-		},
-		"repoPath": {
-			"type": "string",
-			"pattern": "^(?!/)(?!.*\\.\\.).+\\.md$"
-		},
-		"task": {
-			"type": "object",
+		"ArchivedTask": {
 			"additionalProperties": false,
-			"required": ["id", "title", "scope", "outcome", "blocked_by", "acceptance"],
+			"description": "A task that has left the queue, either shipped or deliberately dropped.",
 			"properties": {
-				"id": { "$ref": "#/$defs/taskId" },
-				"title": { "$ref": "#/$defs/nonEmptyString" },
-				"scope": { "$ref": "#/$defs/nonEmptyString" },
-				"outcome": { "$ref": "#/$defs/nonEmptyString" },
-				"blocked_by": {
-					"type": "array",
-					"items": { "$ref": "#/$defs/taskId" },
-					"uniqueItems": true
+				"completed": {
+					"description": "The day it left the queue, as `YYYY-MM-DD`.",
+					"format": "date",
+					"type": "string"
 				},
-				"acceptance": { "$ref": "#/$defs/nonEmptyStringList" },
-				"patch": {
-					"type": "string",
-					"pattern": "^[a-z][a-z0-9-]*$"
-				},
-				"plan": { "$ref": "#/$defs/repoPath" },
-				"links": {
-					"type": "array",
-					"items": { "type": "string", "format": "uri" },
-					"uniqueItems": true
-				},
-				"notes": { "$ref": "#/$defs/nonEmptyString" }
-			}
-		},
-		"archiveTask": {
-			"type": "object",
-			"additionalProperties": false,
-			"required": ["id", "title", "scope", "completed", "outcome", "evidence"],
-			"properties": {
-				"id": { "$ref": "#/$defs/taskId" },
-				"title": { "$ref": "#/$defs/nonEmptyString" },
-				"scope": { "$ref": "#/$defs/nonEmptyString" },
-				"completed": { "type": "string", "format": "date" },
-				"outcome": { "$ref": "#/$defs/nonEmptyString" },
-				"evidence": { "$ref": "#/$defs/nonEmptyStringList" },
-				"patch": {
-					"type": "string",
-					"pattern": "^[a-z][a-z0-9-]*$"
-				},
-				"plan": { "$ref": "#/$defs/repoPath" },
-				"links": {
-					"type": "array",
-					"items": { "type": "string", "format": "uri" },
-					"uniqueItems": true
-				},
-				"notes": { "$ref": "#/$defs/nonEmptyString" },
 				"disposition": {
-					"type": "string",
-					"enum": ["completed", "dropped"]
+					"anyOf": [
+						{
+							"$ref": "#/$defs/Disposition"
+						},
+						{
+							"type": "null"
+						}
+					],
+					"description": "Whether the work shipped or was dropped."
+				},
+				"evidence": {
+					"description": "Where to look to see that it is true.",
+					"items": {
+						"minLength": 1,
+						"type": "string"
+					},
+					"minItems": 1,
+					"type": "array",
+					"uniqueItems": true
+				},
+				"id": {
+					"description": "The id it held on the queue, never reused after this.",
+					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
+					"type": "string"
+				},
+				"links": {
+					"description": "Anything outside this repository worth following.",
+					"items": {
+						"format": "uri",
+						"type": "string"
+					},
+					"type": "array",
+					"uniqueItems": true
+				},
+				"notes": {
+					"description": "What a later reader will want to know and cannot reconstruct.",
+					"minLength": 1,
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"outcome": {
+					"description": "What became true.",
+					"minLength": 1,
+					"type": "string"
+				},
+				"patch": {
+					"description": "The changeset that carried its release note.",
+					"pattern": "^[a-z][a-z0-9-]*$",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"plan": {
+					"description": "The plan it was worked from, if it had one.",
+					"pattern": "^(?!/)(?!.*\\.\\.).+\\.md$",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"scope": {
+					"description": "Where the work landed.",
+					"minLength": 1,
+					"type": "string"
+				},
+				"title": {
+					"description": "What the task was, in one line.",
+					"minLength": 1,
+					"type": "string"
 				}
-			}
+			},
+			"required": [
+				"id",
+				"title",
+				"scope",
+				"completed",
+				"outcome",
+				"evidence"
+			],
+			"type": "object"
 		},
-		"horizonTask": {
-			"type": "object",
+		"Disposition": {
+			"description": "How a task left the queue.",
+			"oneOf": [
+				{
+					"const": "completed",
+					"description": "The outcome was reached.",
+					"type": "string"
+				},
+				{
+					"const": "dropped",
+					"description": "The task was abandoned on purpose, and the row says why.",
+					"type": "string"
+				}
+			]
+		},
+		"HorizonTask": {
 			"additionalProperties": false,
-			"required": ["id", "title", "scope", "outcome", "kind", "open"],
+			"description": "Work that is mapped but has no place on the queue yet.",
 			"properties": {
-				"id": { "$ref": "#/$defs/taskId" },
-				"title": { "$ref": "#/$defs/nonEmptyString" },
-				"scope": { "$ref": "#/$defs/nonEmptyString" },
-				"outcome": { "$ref": "#/$defs/nonEmptyString" },
+				"id": {
+					"description": "Its id, drawn from the same sequence as the queue's.",
+					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
+					"type": "string"
+				},
 				"kind": {
-					"type": "string",
-					"enum": ["research", "evaluation", "deferred"],
-					"description": "research = unknown facts; evaluation = known options, no start condition; deferred = start condition is explicit and not met."
+					"$ref": "#/$defs/Kind",
+					"description": "Why it is not on the queue."
+				},
+				"links": {
+					"description": "Anything outside this repository worth following.",
+					"items": {
+						"format": "uri",
+						"type": "string"
+					},
+					"type": "array",
+					"uniqueItems": true
+				},
+				"notes": {
+					"description": "Context a reader needs and the row cannot carry in its other fields.",
+					"minLength": 1,
+					"type": [
+						"string",
+						"null"
+					]
 				},
 				"open": {
-					"$ref": "#/$defs/nonEmptyString",
-					"description": "The missing start condition or the question that keeps this off the queue."
+					"description": "The missing start condition, or the question that keeps it off the\nqueue.",
+					"minLength": 1,
+					"type": "string"
+				},
+				"outcome": {
+					"description": "What would be true once it is done.",
+					"minLength": 1,
+					"type": "string"
 				},
 				"patch": {
-					"type": "string",
-					"pattern": "^[a-z][a-z0-9-]*$"
+					"description": "The changeset it would carry its release note in.",
+					"pattern": "^[a-z][a-z0-9-]*$",
+					"type": [
+						"string",
+						"null"
+					]
 				},
-				"plan": { "$ref": "#/$defs/repoPath" },
-				"links": {
+				"plan": {
+					"description": "A plan document in this repository, when it already has one.",
+					"pattern": "^(?!/)(?!.*\\.\\.).+\\.md$",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"scope": {
+					"description": "Where the work would land.",
+					"minLength": 1,
+					"type": "string"
+				},
+				"title": {
+					"description": "What it is, in one line.",
+					"minLength": 1,
+					"type": "string"
+				}
+			},
+			"required": [
+				"id",
+				"title",
+				"scope",
+				"outcome",
+				"kind",
+				"open"
+			],
+			"type": "object"
+		},
+		"Kind": {
+			"description": "Why a task sits on the horizon instead of the queue.",
+			"oneOf": [
+				{
+					"const": "research",
+					"description": "Facts are missing.",
+					"type": "string"
+				},
+				{
+					"const": "evaluation",
+					"description": "The options are known, but nothing says when to choose.",
+					"type": "string"
+				},
+				{
+					"const": "deferred",
+					"description": "The start condition is explicit and not met.",
+					"type": "string"
+				}
+			]
+		},
+		"QueuedTask": {
+			"additionalProperties": false,
+			"description": "A task on the queue.",
+			"properties": {
+				"acceptance": {
+					"description": "What has to be demonstrably true to close it.",
+					"items": {
+						"minLength": 1,
+						"type": "string"
+					},
+					"minItems": 1,
 					"type": "array",
-					"items": { "type": "string", "format": "uri" },
 					"uniqueItems": true
 				},
-				"notes": { "$ref": "#/$defs/nonEmptyString" }
-			}
+				"blocked_by": {
+					"description": "Ids that must ship first. Each has to sit earlier in this queue.",
+					"items": {
+						"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
+						"type": "string"
+					},
+					"type": "array",
+					"uniqueItems": true
+				},
+				"id": {
+					"description": "This task's id, unique for the life of the repository.",
+					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
+					"type": "string"
+				},
+				"links": {
+					"description": "Anything outside this repository worth following.",
+					"items": {
+						"format": "uri",
+						"type": "string"
+					},
+					"type": "array",
+					"uniqueItems": true
+				},
+				"notes": {
+					"description": "Context a reader needs and the row cannot carry in its other fields.",
+					"minLength": 1,
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"outcome": {
+					"description": "What is true once this is done.",
+					"minLength": 1,
+					"type": "string"
+				},
+				"patch": {
+					"description": "The changeset that will carry this task's release note.",
+					"pattern": "^[a-z][a-z0-9-]*$",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"plan": {
+					"description": "A plan document in this repository, when the task needs one.",
+					"pattern": "^(?!/)(?!.*\\.\\.).+\\.md$",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"scope": {
+					"description": "Where the work lands.",
+					"minLength": 1,
+					"type": "string"
+				},
+				"title": {
+					"description": "What the task is, in one line.",
+					"minLength": 1,
+					"type": "string"
+				}
+			},
+			"required": [
+				"id",
+				"title",
+				"scope",
+				"outcome",
+				"blocked_by",
+				"acceptance"
+			],
+			"type": "object"
 		}
-	}
+	},
+	"$id": "https://raw.githubusercontent.com/victor-software-house/qctl/main/schema/tasks.schema.json",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"additionalProperties": false,
+	"description": "One repository's work queue.",
+	"properties": {
+		"active": {
+			"description": "The one task currently being executed, or null when work is\nintentionally paused.",
+			"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
+			"type": [
+				"string",
+				"null"
+			]
+		},
+		"archive": {
+			"description": "Completed or deliberately dropped work, newest first. Archived ids are\nnever reused.",
+			"items": {
+				"$ref": "#/$defs/ArchivedTask"
+			},
+			"type": "array"
+		},
+		"horizon": {
+			"description": "Mapped work that is not on the short-term queue: research, evaluations,\nor deferred items without a start condition. File order is not\npriority, and `active` must never name a horizon id.",
+			"items": {
+				"$ref": "#/$defs/HorizonTask"
+			},
+			"type": "array"
+		},
+		"prefix": {
+			"description": "Stable id prefix for this repository. Never encodes priority.",
+			"pattern": "^[A-Z][A-Z0-9]{1,7}$",
+			"type": "string"
+		},
+		"queue": {
+			"description": "Pending work in priority order. The order is the priority.",
+			"items": {
+				"$ref": "#/$defs/QueuedTask"
+			},
+			"type": "array"
+		},
+		"schema_version": {
+			"const": 1,
+			"description": "Ledger schema version. Increment only with a coordinated schema and\nledger migration.",
+			"format": "uint32",
+			"minimum": 0,
+			"type": "integer"
+		}
+	},
+	"required": [
+		"schema_version",
+		"prefix",
+		"active",
+		"queue",
+		"archive"
+	],
+	"title": "qctl work queue",
+	"type": "object"
 }

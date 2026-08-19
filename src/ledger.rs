@@ -1,56 +1,15 @@
 use crate::cli::LedgerArgs;
 use anyhow::{Context, Result, bail, ensure};
-use serde::Deserialize;
+use garde::Validate;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+pub use crate::schema::Ledger;
+
+/// The schema qctl was built with, generated from [`crate::schema`].
 pub const CANONICAL_SCHEMA: &str = include_str!("../schema/tasks.schema.json");
-
-#[derive(Debug, Deserialize)]
-pub struct Ledger {
-    pub schema_version: u32,
-    pub prefix: String,
-    pub active: Option<String>,
-    pub queue: Vec<QueuedTask>,
-    pub archive: Vec<ArchivedTask>,
-    #[serde(default)]
-    pub horizon: Vec<HorizonTask>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct QueuedTask {
-    pub id: String,
-    pub title: String,
-    pub scope: String,
-    pub outcome: String,
-    pub blocked_by: Vec<String>,
-    #[allow(dead_code)]
-    pub acceptance: Vec<String>,
-    pub patch: Option<String>,
-    pub plan: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ArchivedTask {
-    pub id: String,
-    pub title: String,
-    pub completed: String,
-    pub plan: Option<String>,
-    pub notes: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct HorizonTask {
-    pub id: String,
-    pub title: String,
-    pub scope: String,
-    pub outcome: String,
-    pub kind: String,
-    pub open: String,
-    pub plan: Option<String>,
-}
 
 #[must_use]
 pub fn resolve_path(args: &LedgerArgs) -> PathBuf {
@@ -60,9 +19,40 @@ pub fn resolve_path(args: &LedgerArgs) -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("tasks.yaml"))
 }
 
+/// The ledger, refusing to hand back one whose values are wrong. This is what
+/// the verbs use: none of them should edit a file they cannot vouch for.
 pub fn load(path: &Path) -> Result<Ledger> {
+    let ledger = read(path)?;
+    let complaints = value_errors(&ledger);
+    ensure!(
+        complaints.is_empty(),
+        "validate {}: {}",
+        path.display(),
+        complaints.join("; ")
+    );
+    Ok(ledger)
+}
+
+/// The ledger as written, whether or not its values pass.
+///
+/// `check` reports every problem in one run, so it needs the parsed rows even
+/// when a value is wrong — a hard failure here would throw away the schema and
+/// graph findings it already has.
+pub fn read(path: &Path) -> Result<Ledger> {
     let raw = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
     serde_yml::from_str(&raw).with_context(|| format!("parse {}", path.display()))
+}
+
+/// What the contract says is wrong with these values, field by field.
+#[must_use]
+pub fn value_errors(ledger: &Ledger) -> Vec<String> {
+    match ledger.validate() {
+        Ok(()) => Vec::new(),
+        Err(report) => report
+            .iter()
+            .map(|(field, error)| format!("{field}: {error}"))
+            .collect(),
+    }
 }
 
 pub fn load_value(path: &Path) -> Result<Value> {

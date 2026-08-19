@@ -18,10 +18,23 @@ queue:
       - jsonschema still validates from the schema embedded in the qctl binary.
       - Hand-written schema JSON is not edited as source.
     notes: >-
-      Do not implement this until the type layout is settled. Graph rules
-      (unique ids, blocker order, active is queue[0]) stay as Rust checks,
-      not JSON Schema. Preferred URL shape is an immutable tag or release
-      asset, including schema_version (not /latest).
+      Graph rules (unique ids, blocker order, active is queue[0]) stay as
+      Rust checks, not JSON Schema. Preferred URL shape is an immutable tag
+      or release asset, including schema_version (not /latest).
+      The root cause: this repo states the same contract twice. There are
+      serde structs in src/ledger.rs and a hand-written
+      schema/tasks.schema.json embedded by include_str!, and nothing makes
+      them agree. Either can drift from the other silently, and a row shape
+      only one of them knows about passes one gate and fails the next.
+      2026-08-18: this leads QCTL-002 rather than following it. The writer
+      generates a row for `add` and adds completed/evidence/disposition for
+      `archive`, and those values are serialized from these types — that is
+      what keeps a quoting helper out of the writer. Verified against the
+      chosen crates: a typed struct serializes into the value type
+      yamlpatch consumes, and it quotes what needs quoting. So the slice
+      that unblocks the writer is the types as the serialization source;
+      the schemars derive, the versioned $id, and the CI drift check are
+      the rest of this row and do not gate it.
 
   - id: QCTL-002
     title: A mutation rewrites the lines it changes, not the file
@@ -30,10 +43,12 @@ queue:
       add, start, and archive change only the bytes they must, so a ledger
       edit is reviewable as a diff, two people can edit different rows
       without conflicting, and the file still reads the way it was written.
-    blocked_by: []
+    blocked_by: [QCTL-001]
     acceptance:
       - A ledger with comments and a yaml-language-server header still has them after add/start/archive.
       - serde dump is not the write path.
+      - "add works on a freshly initialized ledger, where the sections are still `queue: []`."
+      - A generated row's values come from the ledger types serialized by serde, not from string building or a hand-written quoting helper.
       - check still passes on the mutated file.
       - A test mutates a fixture carrying comments in three positions — line 1, above a row, beside a key — and asserts all three survive.
       - Blank lines between rows survive, so the file does not come back as one dense block.
@@ -42,6 +57,8 @@ queue:
       - Quote style is left alone — a double-quoted title does not become single-quoted.
       - "A flow sequence stays inline; `blocked_by: [QCTL-001]` does not expand to a block list."
       - "The diff is bounded and asserted as such: moving one row in a real ledger changes that row's lines, not every line in the file."
+      - Archiving an id removes it from every remaining blocked_by, so the ledger the verb leaves behind still passes check.
+      - archive refuses a ledger it cannot vouch for, the way add and start already do.
     notes: >-
       2026-08-18, measured on the real thing rather than assumed. One
       `qctl start VER-020` against a copy of verctl's 427-line tasks.yaml
@@ -55,21 +72,56 @@ queue:
       single), and inline flow sequences (expanded to block lists). The
       values themselves survive — `check` still passes on the output — so
       this is entirely a writer problem, not a schema one.
+      The shortest demonstration needs two commands and no existing file:
+      `qctl init` writes the `# yaml-language-server:` header, and the first
+      `qctl add` deletes it. The tool destroys its own output on the first
+      verb after creating it.
       Why it matters beyond taste: a whole-file diff cannot be reviewed, and
       two people editing different rows conflict on every line. It also
       blocks verctl VER-021, which installs a `$schema` line in every ctl
-      repo that qctl would delete on the next verb. The fix is a
-      round-tripping representation that edits the document in place
-      (yaml-rust2, or a line-oriented edit against the parsed span) — not a
-      prettier serializer, which would still rewrite untouched rows.
+      repo that qctl would delete on the next verb.
       Until this ships, a comment in a ledger does not survive the next verb,
       so nothing belongs beside a key that could live in notes instead.
-      The QCTL-001 blocker is dropped, and it was never real: a
-      round-tripping writer edits the document it was given and never names a
-      field, so generated types cannot change what it does. `qctl start`
-      refuses a blocked row, so that blocker parked the worst defect in this
-      repo behind a refactor whose own note says not to start it until the
-      type layout settles.
+      The writer, chosen against the alternatives rather than assumed:
+      yamlpath + yamlpatch (zizmor's crates, MIT, 460k and 236k downloads,
+      tree-sitter-yaml spans and comment-preserving patch ops). Rust has no
+      mature toml_edit equivalent for YAML, so the field was searched and
+      each candidate tried against the real ledger.
+      Rejected, with the reason each was rejected. yaml-edit 0.2.3 (rowan
+      lossless CST, the closest analogue on paper) reported this repo's
+      seven-row queue as three rows, so remove-then-insert silently did
+      nothing, and it dropped the `# yaml-language-server:` line — the exact
+      byte the task exists to protect. yaml-rt, edikt-yaml, yaml-serde-edit
+      and fyaml all describe the right thing, including a typed-overlay
+      writer, but were published weeks ago and have double- to
+      triple-digit downloads; this tool is a dependency of every ledger in
+      the workspace. rust-yaml has adoption but no span or patch API.
+      Two gaps in the chosen pair are ours to close, both measured.
+      One: tree-sitter attributes a comment to the row *above* it, so
+      `removal_span` on a row swallows the next row's leading comment while
+      excluding its own. Reordering therefore takes the item's own span from
+      `query_exact` and applies one attribution rule of our own — a comment
+      line directly above a row, with no blank line between, belongs to that
+      row — with the parser still deciding what is a comment. YAML has no
+      formal comment ownership, so every round-tripping library invents this
+      rule; ruamel.yaml included.
+      Two: `Op::Append` refuses a flow sequence, so `add` on a
+      freshly initialized ledger (`queue: []`) needs its own path.
+      Verified for the writer, so it does not have to be discovered mid-build:
+      the queued row type serializes into that value type with its absent
+      fields skipped, so a generated row carries no `patch: null` and no empty
+      `links`, and the serializer quotes what needs quoting.
+      Two defects this verb rewrite also owns. A blocker resolves against the
+      queue alone, so archiving an id leaves every row that named it failing
+      `check` with "is not queued" — the verb has to drop the archived id from
+      the rows that named it, which is also why every blocked row in this
+      ledger would otherwise break the moment its blocker ships. And `archive`
+      is the one verb that never loads the ledger before editing it, so it
+      alone will edit a file whose values do not pass.
+      Also known and accepted: a generated row's nested sequence items come
+      out at the serializer's indentation, one level shallower than the
+      hand-written rows. That applies only to rows with no prior formatting
+      to preserve.
 
   - id: QCTL-003
     title: "Publish native qctl so mise github: can install it"

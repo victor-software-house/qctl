@@ -16,7 +16,10 @@ fn git(root: &std::path::Path, args: &[&str]) {
 
 #[test]
 fn parse_log_needs_body_trailer() {
-    assert!(trailers::parse_log("abc\0Closes CTC-001 only in subject\n").is_empty());
+    assert_eq!(
+        trailers::parse_log("abc\0Closes CTC-001 only in subject\n"),
+        Vec::new()
+    );
 }
 
 #[test]
