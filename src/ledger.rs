@@ -103,20 +103,19 @@ pub fn print_status(args: &LedgerArgs) -> Result<()> {
 /// desk. Brazil has not observed daylight saving since 2019, so that is a fixed
 /// three hours — deliberately fixed, not the reader's local zone, so the same
 /// ledger reads the same everywhere. The offset is printed with it, because a
-/// bare wall-clock time copied out of a terminal says nothing. An unparseable
-/// stamp is printed as written, because `show` has to keep working on a row
-/// somebody hand-edited wrong.
-fn where_the_work_happens(stamp: &str) -> String {
+/// bare wall-clock time copied out of a terminal says nothing.
+///
+/// Its one caller has already been through [`load`], which refuses a stamp that
+/// is not an instant, so a parse failure here would mean the two disagree.
+fn where_the_work_happens(stamp: &str) -> Result<String> {
     let shown = format_description!(
         "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hour sign:mandatory]:[offset_minute]"
     );
-    match OffsetDateTime::parse(stamp, &Rfc3339) {
-        Ok(at) => at
-            .to_offset(offset!(-3))
-            .format(shown)
-            .unwrap_or_else(|_| stamp.to_owned()),
-        Err(_) => stamp.to_owned(),
-    }
+    OffsetDateTime::parse(stamp, &Rfc3339)
+        .with_context(|| format!("{stamp} passed validation and is not an instant"))?
+        .to_offset(offset!(-3))
+        .format(shown)
+        .context("render a stamp")
 }
 
 pub fn print_show(args: &crate::cli::IdArgs) -> Result<()> {
@@ -136,7 +135,7 @@ pub fn print_show(args: &crate::cli::IdArgs) -> Result<()> {
             "{}  {}  (archived {})",
             task.id,
             task.title,
-            where_the_work_happens(&task.completed)
+            where_the_work_happens(&task.completed)?
         );
         if let Some(notes) = &task.notes {
             println!("notes     {notes}");
