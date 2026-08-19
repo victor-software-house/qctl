@@ -101,10 +101,15 @@ pub fn print_status(args: &LedgerArgs) -> Result<()> {
 /// A stamp as it reads where the work happened. The ledger stores UTC so that
 /// stamps sort wherever they are read; a person wants the hour they were at the
 /// desk. Brazil has not observed daylight saving since 2019, so that is a fixed
-/// three hours. An unparseable stamp is printed as written, because `show` has
-/// to keep working on a row somebody hand-edited wrong.
+/// three hours — deliberately fixed, not the reader's local zone, so the same
+/// ledger reads the same everywhere. The offset is printed with it, because a
+/// bare wall-clock time copied out of a terminal says nothing. An unparseable
+/// stamp is printed as written, because `show` has to keep working on a row
+/// somebody hand-edited wrong.
 fn where_the_work_happens(stamp: &str) -> String {
-    let shown = format_description!("[year]-[month]-[day] [hour]:[minute]");
+    let shown = format_description!(
+        "[year]-[month]-[day] [hour]:[minute] [offset_hour sign:mandatory]:[offset_minute]"
+    );
     match OffsetDateTime::parse(stamp, &Rfc3339) {
         Ok(at) => at
             .to_offset(offset!(-3))
@@ -152,14 +157,6 @@ pub fn print_show(args: &crate::cli::IdArgs) -> Result<()> {
 pub fn graph_errors(ledger: &Ledger, root: &Path) -> Vec<String> {
     let mut errors = Vec::new();
     let prefix = &ledger.prefix;
-
-    if ledger.schema_version != crate::schema::VERSION {
-        errors.push(format!(
-            "schema_version must be {}, got {}",
-            crate::schema::VERSION,
-            ledger.schema_version
-        ));
-    }
 
     let mut seen = HashSet::new();
     for id in ledger

@@ -76,7 +76,7 @@ pattern!(
 pub struct Ledger {
     /// Ledger schema version, the one this qctl writes and accepts. Increment
     /// only with a coordinated schema and ledger migration.
-    #[garde(skip)]
+    #[garde(custom(the_one_version))]
     #[schemars(extend("const" = VERSION))]
     pub schema_version: u32,
 
@@ -323,6 +323,20 @@ fn inside_the_repo<C>(path: &str, _: &C) -> garde::Result {
     }
     if candidate.extension().is_none_or(|kind| kind != "md") {
         return Err(garde::Error::new("must be a markdown document"));
+    }
+    Ok(())
+}
+
+/// The version this qctl speaks. A verb has to refuse another one before it
+/// edits: a ledger declaring 1 whose archive happens to be empty passes every
+/// other rule, and would be rewritten into a file that says 1 and means 2.
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "garde hands a custom validator a reference, whatever the type"
+)]
+fn the_one_version<C>(value: &u32, _: &C) -> garde::Result {
+    if *value != VERSION {
+        return Err(garde::Error::new(format!("must be {VERSION}")));
     }
     Ok(())
 }
