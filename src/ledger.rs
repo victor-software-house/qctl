@@ -1,56 +1,15 @@
 use crate::cli::LedgerArgs;
 use anyhow::{Context, Result, bail, ensure};
-use serde::Deserialize;
+use garde::Validate;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+pub use crate::schema::Ledger;
+
+/// The schema qctl was built with, generated from [`crate::schema`].
 pub const CANONICAL_SCHEMA: &str = include_str!("../schema/tasks.schema.json");
-
-#[derive(Debug, Deserialize)]
-pub struct Ledger {
-    pub schema_version: u32,
-    pub prefix: String,
-    pub active: Option<String>,
-    pub queue: Vec<QueuedTask>,
-    pub archive: Vec<ArchivedTask>,
-    #[serde(default)]
-    pub horizon: Vec<HorizonTask>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct QueuedTask {
-    pub id: String,
-    pub title: String,
-    pub scope: String,
-    pub outcome: String,
-    pub blocked_by: Vec<String>,
-    #[allow(dead_code)]
-    pub acceptance: Vec<String>,
-    pub patch: Option<String>,
-    pub plan: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ArchivedTask {
-    pub id: String,
-    pub title: String,
-    pub completed: String,
-    pub plan: Option<String>,
-    pub notes: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct HorizonTask {
-    pub id: String,
-    pub title: String,
-    pub scope: String,
-    pub outcome: String,
-    pub kind: String,
-    pub open: String,
-    pub plan: Option<String>,
-}
 
 #[must_use]
 pub fn resolve_path(args: &LedgerArgs) -> PathBuf {
@@ -62,7 +21,12 @@ pub fn resolve_path(args: &LedgerArgs) -> PathBuf {
 
 pub fn load(path: &Path) -> Result<Ledger> {
     let raw = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
-    serde_yml::from_str(&raw).with_context(|| format!("parse {}", path.display()))
+    let ledger: Ledger =
+        serde_yml::from_str(&raw).with_context(|| format!("parse {}", path.display()))?;
+    ledger
+        .validate()
+        .with_context(|| format!("validate {}", path.display()))?;
+    Ok(ledger)
 }
 
 pub fn load_value(path: &Path) -> Result<Value> {

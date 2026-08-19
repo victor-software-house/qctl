@@ -6,4 +6,5 @@ pub mod check;
 pub mod cli;
 pub mod ledger;
 pub mod mutate;
+pub mod schema;
 pub mod trailers;

@@ -47,7 +47,7 @@ fn missing_horizon_defaults_to_empty() {
 }
 
 #[test]
-fn rejects_wrong_prefix_and_short_id() {
+fn rejects_an_id_from_another_repository() {
     let found = errors(indoc! {"
         schema_version: 1
         prefix: QCTL
@@ -59,16 +59,37 @@ fn rejects_wrong_prefix_and_short_id() {
             outcome: o
             blocked_by: []
             acceptance: [a]
-          - id: QCTL-01
-            title: t
-            scope: s
-            outcome: o
-            blocked_by: []
-            acceptance: [a]
         archive: []
     "});
     assert!(found.iter().any(|e| e.contains("OMX-001")));
-    assert!(found.iter().any(|e| e.contains("QCTL-01")));
+}
+
+/// A well-formed id that belongs to another repository is this ledger's own
+/// business, so `graph_errors` reports it. An id that is not an id at all never
+/// reaches the graph: the types refuse it at the boundary.
+#[test]
+fn refuses_a_malformed_id_before_the_graph_sees_it() {
+    let root = TempDir::new().expect("tempdir");
+    let path = root.path().join("tasks.yaml");
+    fs::write(
+        &path,
+        indoc! {"
+            schema_version: 1
+            prefix: QCTL
+            active: null
+            queue:
+              - id: QCTL-01
+                title: t
+                scope: s
+                outcome: o
+                blocked_by: []
+                acceptance: [a]
+            archive: []
+        "},
+    )
+    .expect("write");
+    let error = format!("{:#}", load(&path).expect_err("QCTL-01 is not an id"));
+    assert!(error.contains("queue[0].id"), "{error}");
 }
 
 #[test]

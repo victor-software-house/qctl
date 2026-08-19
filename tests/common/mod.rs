@@ -1,3 +1,7 @@
+//! Shared fixtures. Each integration binary compiles this module on its own,
+//! so anything one of them does not reach looks unused here.
+#![allow(dead_code)]
+
 use indoc::indoc;
 use std::fs;
 use std::path::{Path, PathBuf};

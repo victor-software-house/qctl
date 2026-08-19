@@ -26,3 +26,7 @@ depends = ["format", "lint", "test"]
 [tasks.build]
 description = "Build the release binary"
 run = "cargo build --release"
+
+[tasks.schema]
+description = "Regenerate schema/tasks.schema.json from the ledger types"
+run = "cargo run --quiet -- schema"

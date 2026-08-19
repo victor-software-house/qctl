@@ -96,6 +96,6 @@ mod tests {
     #[test]
     fn ignores_subject_slogans() {
         let log = "abc\0Closes CTC-001 in the subject only\n\nNo trailer.\n";
-        assert!(parse_log(log).is_empty());
+        assert_eq!(parse_log(log), Vec::new());
     }
 }
