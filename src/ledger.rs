@@ -108,7 +108,7 @@ pub fn print_status(args: &LedgerArgs) -> Result<()> {
 /// somebody hand-edited wrong.
 fn where_the_work_happens(stamp: &str) -> String {
     let shown = format_description!(
-        "[year]-[month]-[day] [hour]:[minute] [offset_hour sign:mandatory]:[offset_minute]"
+        "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hour sign:mandatory]:[offset_minute]"
     );
     match OffsetDateTime::parse(stamp, &Rfc3339) {
         Ok(at) => at

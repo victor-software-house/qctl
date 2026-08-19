@@ -82,7 +82,7 @@ fn show_reads_a_stamp_where_the_work_happened() {
     assert!(output.status.success(), "{}", stderr(&output));
     assert_eq!(
         stdout(&output).trim_end(),
-        "QCTL-001  Shipped late  (archived 2026-08-16 23:08 -03:00)"
+        "QCTL-001  Shipped late  (archived 2026-08-16 23:08:28 -03:00)"
     );
 }
 
