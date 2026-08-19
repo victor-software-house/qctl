@@ -127,6 +127,20 @@ impl Document {
         }
         let mut found: Vec<Range<usize>> = blocks.iter().map(|(_, span)| span.clone()).collect();
         found.sort_by_key(|span| span.start);
+        let wanted: Vec<&str> = blocks.iter().map(|(section, _)| *section).collect();
+        let already: Vec<&str> = {
+            let mut named: Vec<(usize, &str)> = blocks
+                .iter()
+                .map(|(section, span)| (span.start, *section))
+                .collect();
+            named.sort_by_key(|(start, _)| *start);
+            named.into_iter().map(|(_, section)| section).collect()
+        };
+        // Nothing below moves anything, so a file already in its order is done —
+        // and must not be refused for a comment that only a move would disturb.
+        if already == wanted {
+            return Ok(());
+        }
         for pair in found.windows(2) {
             if pair[0].end > pair[1].start {
                 bail!("these lists overlap, which is not a file this can reorder");
@@ -141,18 +155,6 @@ impl Document {
                     "something between these lists belongs to neither; move it above a key or out of the way"
                 );
             }
-        }
-        let wanted: Vec<&str> = blocks.iter().map(|(section, _)| *section).collect();
-        let already: Vec<&str> = {
-            let mut named: Vec<(usize, &str)> = blocks
-                .iter()
-                .map(|(section, span)| (span.start, *section))
-                .collect();
-            named.sort_by_key(|(start, _)| *start);
-            named.into_iter().map(|(_, section)| section).collect()
-        };
-        if already == wanted {
-            return Ok(());
         }
         // The blank lines between the lists are the file's own spacing, so they
         // stay in the sequence they were written in. Only the lists move.
