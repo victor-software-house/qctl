@@ -194,6 +194,27 @@ fn refuses_the_same_blocker_twice() {
     assert!(complaint.contains("blocked_by"), "{complaint}");
 }
 
+/// One run has to say everything that is wrong. A reader who fixes the first
+/// complaint and runs again should not find a second one that was known all
+/// along — and a check that stops at the first rule cannot be trusted to have
+/// looked at the rest.
+#[test]
+fn reports_every_defect_in_one_pass() {
+    let body = but("title: Second", "title: \"\"").replacen(
+        "blocked_by: [QCTL-001]",
+        "blocked_by: [QCTL-001, QCTL-001]",
+        1,
+    );
+    let (ok, complaint) = check(&body.replacen("id: QCTL-900", "id: QCTL-001", 1));
+    assert!(!ok);
+    for expected in ["title", "blocked_by", "duplicate id QCTL-001"] {
+        assert!(
+            complaint.contains(expected),
+            "no {expected} in:\n{complaint}"
+        );
+    }
+}
+
 /// The committed schema is generated, so a change to the types that forgets to
 /// regenerate it is a defect in itself: editors would read one contract while
 /// the binary enforced another.

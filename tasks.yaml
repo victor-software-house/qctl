@@ -57,6 +57,8 @@ queue:
       - Quote style is left alone — a double-quoted title does not become single-quoted.
       - "A flow sequence stays inline; `blocked_by: [QCTL-001]` does not expand to a block list."
       - "The diff is bounded and asserted as such: moving one row in a real ledger changes that row's lines, not every line in the file."
+      - Archiving an id removes it from every remaining blocked_by, so the ledger the verb leaves behind still passes check.
+      - archive refuses a ledger it cannot vouch for, the way add and start already do.
     notes: >-
       2026-08-18, measured on the real thing rather than assumed. One
       `qctl start VER-020` against a copy of verctl's 427-line tasks.yaml
@@ -101,6 +103,17 @@ queue:
       rule; ruamel.yaml included.
       Two: `Op::Append` refuses a flow sequence, so `add` on a
       freshly initialized ledger (`queue: []`) needs its own path.
+      Verified for the writer, so it does not have to be discovered mid-build:
+      the queued row type serializes into that value type with its absent
+      fields skipped, so a generated row carries no `patch: null` and no empty
+      `links`, and the serializer quotes what needs quoting.
+      Two defects this verb rewrite also owns. A blocker resolves against the
+      queue alone, so archiving an id leaves every row that named it failing
+      `check` with "is not queued" — the verb has to drop the archived id from
+      the rows that named it, which is also why every blocked row in this
+      ledger would otherwise break the moment its blocker ships. And `archive`
+      is the one verb that never loads the ledger before editing it, so it
+      alone will edit a file whose values do not pass.
       Also known and accepted: a generated row's nested sequence items come
       out at the serializer's indentation, one level shallower than the
       hand-written rows. That applies only to rows with no prior formatting

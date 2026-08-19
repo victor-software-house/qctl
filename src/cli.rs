@@ -39,9 +39,6 @@ pub struct SchemaArgs {
     /// Where to write it. Defaults to schema/tasks.schema.json.
     #[arg(short = 'o', long, value_hint = clap::ValueHint::FilePath)]
     pub out: Option<PathBuf>,
-    /// Fail instead of writing when the file on disk is not what the types say.
-    #[arg(long)]
-    pub check: bool,
 }
 
 #[derive(Args, Clone)]

@@ -346,24 +346,14 @@ pub fn generated() -> anyhow::Result<String> {
     Ok(String::from_utf8(out)?)
 }
 
-/// Write the schema, or say how the committed one differs.
+/// Write the schema where it is committed. Whether the file on disk is current
+/// is the test suite's question, not a second flag here.
 pub fn write(args: &crate::cli::SchemaArgs) -> anyhow::Result<()> {
     let path = args
         .out
         .clone()
         .unwrap_or_else(|| std::path::PathBuf::from(COMMITTED));
-    let wanted = generated()?;
-    if !args.check {
-        std::fs::write(&path, &wanted)?;
-        println!("wrote {}", path.display());
-        return Ok(());
-    }
-    let found = std::fs::read_to_string(&path)?;
-    anyhow::ensure!(
-        found == wanted,
-        "{} is not what the ledger types say — run `qctl schema` and commit the result",
-        path.display()
-    );
-    println!("ok  {}", path.display());
+    std::fs::write(&path, generated()?)?;
+    println!("wrote {}", path.display());
     Ok(())
 }
