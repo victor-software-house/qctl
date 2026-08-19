@@ -5,8 +5,9 @@
 			"description": "A task that has left the queue, either shipped or deliberately dropped.",
 			"properties": {
 				"completed": {
-					"description": "The day it left the queue, as `YYYY-MM-DD`.",
-					"format": "date",
+					"description": "The instant it left the queue, as `YYYY-MM-DDThh:mm:ssZ`.",
+					"format": "date-time",
+					"pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
 					"type": "string"
 				},
 				"disposition": {
@@ -334,8 +335,8 @@
 			"type": "array"
 		},
 		"schema_version": {
-			"const": 1,
-			"description": "Ledger schema version. Increment only with a coordinated schema and\nledger migration.",
+			"const": 2,
+			"description": "Ledger schema version, the one this qctl writes and accepts. Increment\nonly with a coordinated schema and ledger migration.",
 			"format": "uint32",
 			"minimum": 0,
 			"type": "integer"

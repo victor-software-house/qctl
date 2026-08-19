@@ -19,6 +19,11 @@ use serde_json::{Value, json};
 use std::path::{Component, Path};
 use std::sync::LazyLock;
 
+/// The one version of this shape a ledger may declare. 2 made `completed` an
+/// instant rather than a day, so a row says when it was archived and not only
+/// on which day.
+pub const VERSION: u32 = 2;
+
 /// The published identity of the generated schema.
 const SCHEMA_ID: &str =
     "https://raw.githubusercontent.com/victor-software-house/qctl/main/schema/tasks.schema.json";
@@ -56,6 +61,10 @@ pattern!(
     PATCH = r"^[a-z][a-z0-9-]*$",
     "A changeset name, which is a file stem on disk."
 );
+pattern!(
+    INSTANT = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$",
+    "An instant, to the second, in UTC. One shape, so stamps sort as they happened."
+);
 
 /// One repository's work queue.
 #[derive(Debug, Serialize, Deserialize, JsonSchema, Validate)]
@@ -65,10 +74,10 @@ pattern!(
     extend("$id" = SCHEMA_ID)
 )]
 pub struct Ledger {
-    /// Ledger schema version. Increment only with a coordinated schema and
-    /// ledger migration.
+    /// Ledger schema version, the one this qctl writes and accepts. Increment
+    /// only with a coordinated schema and ledger migration.
     #[garde(skip)]
-    #[schemars(extend("const" = 1))]
+    #[schemars(extend("const" = VERSION))]
     pub schema_version: u32,
 
     /// Stable id prefix for this repository. Never encodes priority.
@@ -169,9 +178,9 @@ pub struct ArchivedTask {
     #[garde(length(min = 1))]
     pub scope: String,
 
-    /// The day it left the queue, as `YYYY-MM-DD`.
-    #[garde(custom(a_calendar_date))]
-    #[schemars(extend("format" = "date"))]
+    /// The instant it left the queue, as `YYYY-MM-DDThh:mm:ssZ`.
+    #[garde(pattern(*INSTANT), custom(a_real_instant))]
+    #[schemars(pattern(*INSTANT), extend("format" = "date-time"))]
     pub completed: String,
 
     /// What became true.
@@ -318,11 +327,13 @@ fn inside_the_repo<C>(path: &str, _: &C) -> garde::Result {
     Ok(())
 }
 
-/// A day, written the one way the ledger writes days.
-fn a_calendar_date<C>(value: &str, _: &C) -> garde::Result {
-    let format = time::macros::format_description!("[year]-[month]-[day]");
-    if time::Date::parse(value, format).is_err() {
-        return Err(garde::Error::new("must be a date, as YYYY-MM-DD"));
+/// A moment that exists. [`INSTANT`] states the shape for both readers of this
+/// contract; this says the calendar agrees, so `2026-02-31T00:00:00Z` cannot
+/// pass a regex and land in the archive. The schema gets the same from its
+/// `date-time` format.
+fn a_real_instant<C>(value: &str, _: &C) -> garde::Result {
+    if time::OffsetDateTime::parse(value, &time::format_description::well_known::Rfc3339).is_err() {
+        return Err(garde::Error::new("must be a moment that exists"));
     }
     Ok(())
 }

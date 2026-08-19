@@ -4,7 +4,7 @@ description: "qctl archive DEMO-001 --evidence \"The tag exists.\""
 ---
 # -13 +13
  # yaml-language-server: $schema=./schema/tasks.schema.json
- schema_version: 1
+ schema_version: 2
  prefix: DEMO
 -active: DEMO-001
 +active: DEMO-002
@@ -36,7 +36,7 @@ description: "qctl archive DEMO-001 --evidence \"The tag exists.\""
 -    blocked_by: [DEMO-001]
 -    acceptance: [It also holds.]
 -archive: []
-+    completed: [TODAY]
++    completed: [NOW]
 +    evidence:
 +      - The tag exists.
 +    disposition: completed

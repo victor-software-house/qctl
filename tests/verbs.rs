@@ -8,7 +8,7 @@ use indoc::indoc;
 use rstest::rstest;
 
 const ONE_WRONG_VALUE: &str = indoc! {"
-    schema_version: 1
+    schema_version: 2
     prefix: QCTL
     active: null
     queue:
@@ -55,7 +55,7 @@ fn a_verb_refuses_a_ledger_it_cannot_vouch_for(#[case] verb: &[&str]) {
 /// where the two could drift apart.
 #[rstest]
 #[case::a_plan_outside_the_repository(indoc! {"
-    schema_version: 1
+    schema_version: 2
     prefix: QCTL
     active: null
     queue:
@@ -68,7 +68,7 @@ fn a_verb_refuses_a_ledger_it_cannot_vouch_for(#[case] verb: &[&str]) {
         plan: ../elsewhere/plan.md
     archive: []
 "})]
-#[case::a_completed_that_is_not_a_date(ONE_WRONG_VALUE)]
+#[case::a_completed_that_is_not_a_moment(ONE_WRONG_VALUE)]
 fn check_refuses_whatever_a_verb_refuses(#[case] ledger: &str) {
     let dir = LedgerDir::empty();
     dir.write(ledger);

@@ -39,7 +39,7 @@ fn check_accepts_own_repo_shape() {
 fn check_accepts_archive_notes() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: null
         queue: []
@@ -47,7 +47,7 @@ fn check_accepts_archive_notes() {
           - id: QCTL-001
             title: done
             scope: s
-            completed: '2026-08-17'
+            completed: 2026-08-17T09:12:00Z
             outcome: o
             evidence: [landed]
             notes: >-
@@ -61,7 +61,7 @@ fn check_accepts_archive_notes() {
 fn check_rejects_unknown_field() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: null
         queue: []
@@ -124,7 +124,7 @@ fn add_start_archive_round_trip() {
 fn start_refuses_blocked_or_horizon() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: null
         queue:
@@ -171,7 +171,7 @@ fn instructions_prints_contract() {
 fn status_lists_horizon() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: QCTL-001
         queue:

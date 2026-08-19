@@ -5,6 +5,9 @@ use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
+use time::OffsetDateTime;
+use time::format_description::well_known::Rfc3339;
+use time::macros::{format_description, offset};
 
 pub use crate::schema::Ledger;
 
@@ -95,6 +98,22 @@ pub fn print_status(args: &LedgerArgs) -> Result<()> {
     Ok(())
 }
 
+/// A stamp as it reads where the work happened. The ledger stores UTC so that
+/// stamps sort wherever they are read; a person wants the hour they were at the
+/// desk. Brazil has not observed daylight saving since 2019, so that is a fixed
+/// three hours. An unparseable stamp is printed as written, because `show` has
+/// to keep working on a row somebody hand-edited wrong.
+fn where_the_work_happens(stamp: &str) -> String {
+    let shown = format_description!("[year]-[month]-[day] [hour]:[minute]");
+    match OffsetDateTime::parse(stamp, &Rfc3339) {
+        Ok(at) => at
+            .to_offset(offset!(-3))
+            .format(shown)
+            .unwrap_or_else(|_| stamp.to_owned()),
+        Err(_) => stamp.to_owned(),
+    }
+}
+
 pub fn print_show(args: &crate::cli::IdArgs) -> Result<()> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
@@ -108,7 +127,12 @@ pub fn print_show(args: &crate::cli::IdArgs) -> Result<()> {
         return Ok(());
     }
     if let Some(task) = ledger.archive.iter().find(|task| task.id == args.id) {
-        println!("{}  {}  (archived {})", task.id, task.title, task.completed);
+        println!(
+            "{}  {}  (archived {})",
+            task.id,
+            task.title,
+            where_the_work_happens(&task.completed)
+        );
         if let Some(notes) = &task.notes {
             println!("notes     {notes}");
         }
@@ -129,9 +153,10 @@ pub fn graph_errors(ledger: &Ledger, root: &Path) -> Vec<String> {
     let mut errors = Vec::new();
     let prefix = &ledger.prefix;
 
-    if ledger.schema_version != 1 {
+    if ledger.schema_version != crate::schema::VERSION {
         errors.push(format!(
-            "schema_version must be 1, got {}",
+            "schema_version must be {}, got {}",
+            crate::schema::VERSION,
             ledger.schema_version
         ));
     }

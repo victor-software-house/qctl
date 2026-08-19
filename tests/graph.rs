@@ -17,7 +17,7 @@ fn errors(body: &str) -> Vec<String> {
 fn empty_ledger_is_clean() {
     assert_eq!(
         errors(indoc! {"
-            schema_version: 1
+            schema_version: 2
             prefix: QCTL
             active: null
             queue: []
@@ -34,7 +34,7 @@ fn missing_horizon_defaults_to_empty() {
     fs::write(
         &path,
         indoc! {"
-            schema_version: 1
+            schema_version: 2
             prefix: PST
             active: null
             queue: []
@@ -49,7 +49,7 @@ fn missing_horizon_defaults_to_empty() {
 #[test]
 fn rejects_an_id_from_another_repository() {
     let found = errors(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: null
         queue:
@@ -74,7 +74,7 @@ fn refuses_a_malformed_id_before_the_graph_sees_it() {
     fs::write(
         &path,
         indoc! {"
-            schema_version: 1
+            schema_version: 2
             prefix: QCTL
             active: null
             queue:
@@ -95,7 +95,7 @@ fn refuses_a_malformed_id_before_the_graph_sees_it() {
 #[test]
 fn rejects_duplicate_ids_across_lists() {
     let found = errors(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: null
         queue:
@@ -109,7 +109,7 @@ fn rejects_duplicate_ids_across_lists() {
           - id: QCTL-001
             title: t
             scope: s
-            completed: '2026-08-16'
+            completed: 2026-08-16T09:12:00Z
             outcome: o
             evidence: [e]
         horizon:
@@ -126,7 +126,7 @@ fn rejects_duplicate_ids_across_lists() {
 #[test]
 fn rejects_active_that_is_not_queue_head() {
     let found = errors(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: QCTL-002
         queue:
@@ -150,7 +150,7 @@ fn rejects_active_that_is_not_queue_head() {
 #[test]
 fn rejects_blocked_active() {
     let found = errors(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: QCTL-002
         queue:
@@ -174,7 +174,7 @@ fn rejects_blocked_active() {
 #[test]
 fn rejects_horizon_active() {
     let found = errors(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: QCTL-009
         queue: []
@@ -193,7 +193,7 @@ fn rejects_horizon_active() {
 #[test]
 fn rejects_blocker_not_earlier_or_missing() {
     let found = errors(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: null
         queue:
@@ -218,7 +218,7 @@ fn rejects_blocker_not_earlier_or_missing() {
 #[test]
 fn rejects_archive_not_newest_first() {
     let found = errors(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: null
         queue: []
@@ -226,13 +226,13 @@ fn rejects_archive_not_newest_first() {
           - id: QCTL-001
             title: old
             scope: s
-            completed: '2026-01-01'
+            completed: 2026-01-01T09:12:00Z
             outcome: o
             evidence: [e]
           - id: QCTL-002
             title: new
             scope: s
-            completed: '2026-08-16'
+            completed: 2026-08-16T09:12:00Z
             outcome: o
             evidence: [e]
     "});
@@ -242,7 +242,7 @@ fn rejects_archive_not_newest_first() {
 #[test]
 fn rejects_missing_plan_path() {
     let found = errors(indoc! {"
-        schema_version: 1
+        schema_version: 2
         prefix: QCTL
         active: null
         queue:
@@ -265,7 +265,7 @@ fn next_id_skips_horizon_and_archive() {
     fs::write(
         &path,
         indoc! {"
-            schema_version: 1
+            schema_version: 2
             prefix: QCTL
             active: null
             queue: []
@@ -273,7 +273,7 @@ fn next_id_skips_horizon_and_archive() {
               - id: QCTL-002
                 title: t
                 scope: s
-                completed: '2026-08-16'
+                completed: 2026-08-16T09:12:00Z
                 outcome: o
                 evidence: [e]
             horizon:
