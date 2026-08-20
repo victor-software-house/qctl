@@ -293,9 +293,12 @@ queue:
     notes: >-
       pi-stuff adoption report, ask 10. They read status and check with agents
       far more often than with humans. This is qctl-only: verctl already has a
-      global --format json, measured at HEAD on status, check, ci and assets,
-      so that half of their ask is stale — they read verctl v0.1.1. Spell it
-      the same way verctl does, so one convention covers the family.
+      global --format json, measured at HEAD on status, check, ci and assets —
+      and `git show v0.1.1:src/cli.rs` carries `FormatArgs` too, so it was
+      already there in the release they read and they missed it rather than
+      reading an old tool. Which is itself the argument for QCTL-023: a feature
+      nobody can find is a feature nobody has. Spell it the way verctl does, so
+      one convention covers the family.
 
 horizon:
   - id: QCTL-019
