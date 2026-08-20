@@ -106,29 +106,37 @@ queue:
       - "Which prefixes a ledger may name is declared in tasks.yaml, beside the rows — it is data about the work, so this phase adds no second file."
 
   - id: QCTL-021
-    title: One ledger writes one stamp shape
+    title: Style says how a scalar is quoted
     scope: qctl
-    outcome: Every completed stamp in a ledger is written the same way, whoever wrote the row.
+    outcome: >-
+      A ledger declares its quoting the way it declares its indent, so one
+      file writes one fact one way whoever wrote the row.
     blocked_by: []
     acceptance:
-      - archive writes the stamp in one decided shape, and fmt rewrites a row that carries the other one.
-      - fmt --check fails a ledger that mixes both, so the mix cannot survive a hook.
+      - "`style` carries the option, defaulting to what the serializer does today, so an existing ledger is unchanged until it asks."
+      - "`fmt` rewrites a scalar that disagrees with the declared style, and `fmt --check` fails it, so a mix cannot survive a hook."
+      - Every writer honours it, so a row a verb writes and a row fmt rewrites come out identical.
       - A test asserts the shape on a written row rather than on a hand-built string.
     notes: >-
-      2026-08-19, found on verctl#46. `qctl archive` writes
-      `completed: 2026-08-19T23:57:38` unquoted — all ten stamps in this
-      ledger are — while the eighty-eight stamps QCTL-011 recovered from git
-      were written quoted by the recovery script. So verctl's ledger now
-      carries both shapes and neither `check` nor `fmt --check` minds.
-      Nothing is broken today: yaml_serde reads an unquoted ISO-8601 scalar as
-      a string, and every reader we ship agrees. The risk is a reader that
-      does not — a YAML 1.1 resolver takes it as a timestamp node, and the
-      `$schema` line says string — plus the plain fact that one file writes
-      one fact two ways. Decide the shape rather than patch a file:
-      hand-quoting a row loses to the next `archive`, which is why this is a row
-      about the writer and not a fix in verctl. Quoted is the likely answer,
-      because it is what the schema says and what a stamp already looks like
-      after recovery, but that is the decision, not the assumption.
+      2026-08-19, raised on verctl#46 and corrected here after reading the
+      code rather than the symptom. The first write-up called this qctl
+      disagreeing with itself. It is not: every stamp qctl has ever written is
+      unquoted, because `yaml_serde`'s emitter decides, and CTC's writer row
+      already stated that intent — "the serializer quotes what needs quoting".
+      The mix in verctl's ledger came from a foreign writer, the QCTL-011
+      recovery script, which wrote `completed: "…"` as literal text.
+      So the gap is a missing option, not a bug, and the code already says so:
+      `format.rs` names "row key order and quote style" as the obvious next
+      options, deliberately not decided, and `document.rs` disclaims deciding
+      "how to quote a value". `style` has five options — timezone,
+      section_order, indent, archive_order, normalize_on_write — and none is
+      about scalar style. `check` cannot see quoting at all, because it
+      validates the parsed value, where both forms are the same String.
+      Nothing is broken today: every reader we ship takes an unquoted ISO-8601
+      scalar as a string. The risk is a reader that does not — a YAML 1.1
+      resolver takes it as a timestamp node while the `$schema` line says
+      string. Do this with row key order, since format.rs pairs them, and
+      leave the default at today's behaviour so no ledger moves unasked.
 
 horizon:
   - id: QCTL-019
