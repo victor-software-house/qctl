@@ -138,6 +138,29 @@ queue:
       string. Do this with row key order, since format.rs pairs them, and
       leave the default at today's behaviour so no ledger moves unasked.
 
+  - id: QCTL-022
+    title: The bundled skill says which release it describes
+    scope: qctl
+    outcome: A reader can tell whether skills/qctl/SKILL.md predates the qctl they hold, without leaving the file.
+    blocked_by: []
+    acceptance:
+      - 'skills/qctl/SKILL.md carries version: in its frontmatter, and the Version PR moves it with every other version site.'
+      - 'It is a patterns pin, not a template: the skill is hand-authored prose and a template would own the whole document.'
+      - 'The arity is once, so a second version: line stops the release instead of rewriting the wrong one.'
+      - The vendored copy in the global skill set shows the released version, checked after the release rather than assumed.
+    notes: >-
+      2026-08-20, from the bundle contract written down as the
+      `ctl-bundle-contract` skill (dotfiles b944acf9). A ctl CLI ships a usage
+      skill, an installed instruction sheet and docs beside the binary, and the
+      skill is vendored into the global set at `latest-release` — so the text a
+      consumer loads is a released snapshot they cannot date from the outside.
+      verctl did it first in verctl#50 and that is the shape to copy: a
+      `patterns` entry matching `version: {version}` at arity `once`, plus a
+      `pins` entry naming `skills/qctl/SKILL.md`. Not a template — the served
+      files doc reaches for a template only when a file can be generated, and a
+      skill is prose. Confirm no other `version: ` line exists in the document
+      first, since the match is literal and the arity would fail the release.
+
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
