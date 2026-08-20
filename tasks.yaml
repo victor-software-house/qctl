@@ -240,10 +240,13 @@ horizon:
       file of ~/workspace paths would be machine state in git. The machine-level
       file maps prefix to source, the same way this workspace already splits what
       a repo declares from where the machine keeps it.
-      Left open, and owned with verctl rather than here: whether project config
-      is `.qctl/` beside `.verctl/`, or one `.ctl/{verctl,qctl}.yaml` for both.
-      VER-025 is about to move verctl.toml into `.verctl/*.yaml`, so the name is
-      being chosen there whether or not anybody decides it.
+      Settled the same day, on verctl VER-025 where the name was being chosen:
+      one `.ctl/` directory, one file per tool, and the file drops the ctl —
+      `.ctl/q.yaml` here, `.ctl/ver.yaml` there, `.ctl/fork.yaml` for forkctl,
+      with served-file templates shared at `.ctl/templates/`. A file is named
+      after the task an operator runs, not after the crate that reads it. So
+      this row's project half has a home before it has content: `.ctl/q.yaml`,
+      carrying prefixes and never paths.
       One red line, so it does not get relitigated: a database may be a derived
       cache and never the authority. The record reviews as a diff and orders by
       file position, and both are gone the moment rows live in SQLite. An index
