@@ -12,7 +12,7 @@ env:
   GIT_CONFIG_COUNT: "1"
   GIT_CONFIG_KEY_0: init.defaultBranch
   GIT_CONFIG_VALUE_0: main
-  # `dev` for the toolchain [prepare].after needs, `release` for the verctl
+  # `dev` for the toolchain prepare.after needs, `release` for the verctl
   # tarball that runs it. Not `dev` alone: verctl is not built from this repo.
   MISE_ENV: dev,release
 
@@ -40,4 +40,4 @@ jobs:
         with:
           shared-key: qctl-verify
           save-if: false
-      - uses: victor-software-house/verctl/actions/version-pr@0eb0a2a11a50e6a651edabddf8bad00b8334ae99 # v0.0.4
+      - uses: victor-software-house/verctl/actions/version-pr@52a7d3742bfd30c5a7144316403d7e0655341b14 # v0.1.0

@@ -1,0 +1,35 @@
+# Cargo.lock carries the version too, so a bump leaves it stale. `after`
+# regenerates it and `stage` puts it on the Version PR commit; without both,
+# Verify's `cargo package --locked` fails on a dirty tree.
+prepare:
+  after: [cargo, update, --workspace]
+  stage: [Cargo.lock]
+
+packages:
+  - name: qctl
+    path: Cargo.toml
+
+# One key per host binary; the name is the job, the tarball, and the platform.
+# Both are built-in records, so the runner labels, os, arch, and triple come
+# from verctl — this repo is public, so those defaults are the free hosted
+# runners it wants. PR CI never builds these.
+assets:
+  darwin-arm64: {}
+  linux-x64: {}
+
+# tasks/q/q and examples/mise.toml are served from .ctl/templates, so they need
+# no entry here: a rendered file cannot drift. README is written by hand, so its
+# two version spellings are declared instead — named once, listed by the file
+# that carries them, and both too few and too many stop the release.
+patterns:
+  catalog:
+    match: "qctl.git//tasks/q?ref=v{version}"
+    occurrences: once
+  install:
+    match: "github:victor-software-house/qctl@{version}"
+    occurrences: once
+
+pins:
+  - file: README.md
+    package: qctl
+    patterns: [catalog, install]
