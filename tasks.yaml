@@ -124,8 +124,8 @@ queue:
       a string, and every reader we ship agrees. The risk is a reader that
       does not — a YAML 1.1 resolver takes it as a timestamp node, and the
       `$schema` line says string — plus the plain fact that one file writes
-      one fact two ways. Decide the shape rather than patch a file: hand-
-      quoting a row loses to the next `archive`, which is why this is a row
+      one fact two ways. Decide the shape rather than patch a file:
+      hand-quoting a row loses to the next `archive`, which is why this is a row
       about the writer and not a fix in verctl. Quoted is the likely answer,
       because it is what the schema says and what a stamp already looks like
       after recovery, but that is the decision, not the assumption.
