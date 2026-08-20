@@ -245,8 +245,19 @@ horizon:
       `.ctl/q.yaml` here, `.ctl/ver.yaml` there, `.ctl/fork.yaml` for forkctl,
       with served-file templates shared at `.ctl/templates/`. A file is named
       after the task an operator runs, not after the crate that reads it. So
-      this row's project half has a home before it has content: `.ctl/q.yaml`,
-      carrying prefixes and never paths.
+      this row's project half has a home before it has content: `.ctl/q.yaml`.
+      Correcting "prefixes and never paths", which was written here first and is
+      too strict: the line is portable against machine-local, not prefixes
+      against sources. A git source — repo, ref, and dir — is true on every
+      machine and belongs in the committed file, and CI needs it there, because
+      CI has no user config to read. What cannot be committed is a path:
+      `~/workspace/victor/devtools-cli/verctl` is one machine's truth, so the
+      machine-level file is where a checkout overrides a clone.
+      And the part that may make the committed file unnecessary at first: if a
+      foreign prefix is recorded and never resolved, as QCTL-020 has it, then the
+      only thing to declare is which prefixes a ledger may name — which is data
+      about the work and can sit in tasks.yaml beside the rows. `.ctl/q.yaml`
+      earns its existence when something resolves a prefix, not before.
       One red line, so it does not get relitigated: a database may be a derived
       cache and never the authority. The record reviews as a diff and orders by
       file position, and both are gone the moment rows live in SQLite. An index
