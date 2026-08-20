@@ -158,135 +158,64 @@ queue:
 
 horizon:
   - id: QCTL-019
-    title: One view over every ledger, from wherever you are standing
+    title: Let a row name a blocker in another ledger
     scope: qctl
     kind: evaluation
     open: >-
-      Five repositories speak schema 3 with a sixth in review, and the only way
-      to see the work is to cd into each one and run status again. What is the smallest thing
-      that gives one board and lets a row in one ledger name a blocker in
-      another, without turning qctl into a service?
+      Five repositories speak schema 3 with a sixth in review, and an order that
+      runs between them — a qctl row waiting on VER-025 — is recorded nowhere.
+      What is the smallest thing that lets one ledger name a row in another?
     outcome: >-
-      A decision, written down, on whether qctl learns a ledger registry — and
-      if so, what a source is, where the registry lives, and what a foreign
-      blocked_by means when the other ledger is not on this machine.
+      A decision, written down, on what a source is, where it is declared, and
+      what a foreign blocked_by means.
     notes: >-
       2026-08-19, from migrating ctl-core, verctl, kodus-ai and pi-stuff by
       hand in one pass. What the pass actually taught:
       Cross-repo order is real and invisible. QCTL-003 waited on QCTL-009 in the
       same ledger and that was easy to see; verctl VER-025 will rewrite the
-      verctl.toml this repo just gained, and nothing anywhere records that. A
-      foreign blocked_by is the first thing worth having.
+      config this repo just gained, and nothing anywhere records that. A foreign
+      blocked_by is the first thing worth having.
       Prefixes already carry the repository. QCTL-, VER-, CTC-, KAI-, PST-,
       CCS- are unique across the six, and this ledger already reserves the rule
-      that a foreign prefix in blocked_by is not waited on. A registry that maps
-      prefix to source is most of the design.
-      pi's package model is the shape to copy, and it is worth reading before
-      designing: sources are `npm:`, `git:host/user/repo@ref`, protocol URLs,
-      and local paths; settings split user-level (~/.pi/agent/settings.json)
-      from project-level (.pi/settings.json); git sources clone to
-      ~/.pi/agent/git/<host>/<path> and refs are pinned, with `update`
-      reconciling an existing clone rather than floating it. A qctl registry
-      wants the same split — a user-level list for `qctl status` at the root,
-      a project-level one for a repo that reads its siblings — and the same
-      refusal to move a pinned ref on its own.
-      The cheap half is local paths. Five of the six ledgers are checkouts on
-      this machine, so a registry of paths answers "one board" without any
-      network at all. Git sources are what a fresh machine or CI would need,
-      and they are the part that can wait.
-      QCTL-016 is the single-ledger half of the same question and should land
-      first: `next` has to mean something in one file before it can mean
-      anything across six.
+      that a foreign prefix in blocked_by is not waited on.
       2026-08-19, read from pi's parser rather than its docs
       (packages/coding-agent/src/utils/git.ts): a git source there is always a
       whole repository. `buildGitSource` refuses a path that is not exactly
       user/project, the hosted branch builds it as `${info.user}/${info.project}`,
       and `GitSource` carries no subdirectory at all — selection inside a package
-      is done by globs in its own package.json, and the only way to point at part
-      of a tree is a local path. Protocol is gated deliberately: without a `git:`
-      prefix the string must match `^(https?|ssh|git)://`, and the prefix is what
-      buys the shorthands `git:github.com/user/repo` and
+      is done by globs in its own package.json. Protocol is gated deliberately:
+      without a `git:` prefix the string must match `^(https?|ssh|git)://`, and
+      the prefix is what buys the shorthands `git:github.com/user/repo` and
       `git:git@github.com:user/repo`. A ref is `@ref`, with `#committish` also
       parsed, and `pinned` is simply whether one was given.
       So pi is the wrong donor for the path half. A ledger is a file inside a
       repository, and the syntax that says protocol, subpath, and ref at once is
       the go-getter form this repo's own task includes already use:
-      `git::https://github.com/o/r.git//tasks/q?ref=v0.1.2` — `git::` forces the
-      protocol the way pi's `git:` does, `//` selects a directory pi cannot
-      address, and `?ref=` pins. Whatever a registry entry looks like, it should
-      read like the includes a consumer already writes, not like a second dialect.
-      What pi is right about, and worth copying: the user-level and project-level
-      split, refs that reconcile an existing clone instead of floating to a newer
-      one, and a clone cache keyed by host and path.
-      2026-08-19, decided by Victor: a remote source is structured fields, not a
-      URI. `repo` is parsed by gix-url — https, ssh, scp-like and file all parse,
-      and its Scheme carries the protocol distinction pi spends a prefix on —
-      with `dir` and `ref` beside it, and a local entry is just `path`. gix-url
-      derives serde, so the config deserializes without a line of parsing. The
-      shorter-syntax question dissolves rather than being answered: a URI is long
-      because it packs four facts into one string, and packing them is also what
-      forces a parser we would then own. PURL was the runner-up — the only
-      one-string form with a real spec and a maintained crate (packageurl 0.7.0,
-      `#subpath` first class) — and it loses on exactly the protocol point,
-      because ssh and self-hosted are qualifiers there, not types.
-      Also decided: not both halves at once. The phases are what the data/config
-      split says they are, and that split is the answer to where this belongs.
-      That a QCTL row waits on VER-025 is data: it is the work record, it reads
-      the same on every machine, and it is reviewed in a PR — so it lives in
-      tasks.yaml, as a foreign prefix in blocked_by. Where the VER ledger sits on
-      disk is config: a path on one machine, meaningless in a commit. So phase
-      one is foreign prefixes alone, which needs no registry, no sources and no
-      gix-url; phase two is resolution, and only it needs any of that.
-      It follows that a committed registry can only name prefixes — a checked-in
-      file of ~/workspace paths would be machine state in git. The machine-level
-      file maps prefix to source, the same way this workspace already splits what
-      a repo declares from where the machine keeps it.
-      Settled the same day, on verctl VER-025 where the name was being chosen:
-      one `.ctl/` directory, one file per tool, and the file drops the ctl —
-      `.ctl/q.yaml` here, `.ctl/ver.yaml` there, `.ctl/fork.yaml` for forkctl,
-      with served-file templates shared at `.ctl/templates/`. A file is named
-      after the task an operator runs, not after the crate that reads it. So
-      this row's project half has a home before it has content: `.ctl/q.yaml`.
-      Correcting "prefixes and never paths" twice over. The first correction was
-      that the line is portable against machine-local: a git source — repo, ref,
-      and dir — is true on every machine and belongs in the committed file, and
-      CI needs it there because CI has no user config to read.
-      The second, from Victor, goes further and settles it: resolution reads a
-      pinned ref and never a checkout. A working tree can be dirty, on a branch,
-      or behind, so a path override reintroduces the "works here" drift that
-      pinning exists to remove, and it buys a second code path to maintain. A
-      foreign row's state is its state at the ref this repo names. So there is
-      no machine-local half at all: one committed map, prefix to
-      `{repo, ref, dir}`, with clones cached by host, path and ref.
-      That leaves paths with exactly one honest use, and it is a different
-      feature: a personal board over the checkouts on this machine, uncommitted
-      rows included. If that is ever built it should read this workspace's
-      existing inventory — `mani list projects --headers project,path` — rather
-      than have qctl keep a second list of where repos live.
-      And the part that may make the committed file unnecessary at first: if a
-      foreign prefix is recorded and never resolved, as QCTL-020 has it, then the
-      only thing to declare is which prefixes a ledger may name — which is data
-      about the work and can sit in tasks.yaml beside the rows. `.ctl/q.yaml`
-      earns its existence when something resolves a prefix, not before.
+      `git::https://github.com/o/r.git//tasks/q?ref=v0.1.2`.
+      2026-08-19, decided by Victor: a source is structured fields, not a URI.
+      `repo` is parsed by gix-url — https, ssh, scp-like and file all parse, and
+      its Scheme carries the protocol distinction pi spends a prefix on — with
+      `dir` and `ref` beside it. gix-url derives serde, so the config
+      deserializes without a line of parsing. The shorter-syntax question
+      dissolves rather than being answered: a URI is long because it packs four
+      facts into one string, and packing them is also what forces a parser we
+      would then own. PURL was the runner-up — the only one-string form with a
+      real spec and a maintained crate (packageurl 0.7.0, `#subpath` first
+      class) — and it loses on exactly the protocol point, because ssh and
+      self-hosted are qualifiers there, not types.
+      Decided with it: resolution reads a pinned ref, never a checkout. A working
+      tree can be dirty, on a branch, or behind, so reading one would reintroduce
+      the drift a pin exists to remove. A foreign row's state is its state at the
+      ref this repo names.
+      Where it goes: `.ctl/q.yaml`, settled on verctl VER-025 where the name was
+      being chosen — one `.ctl/` directory, one file per tool, named after the
+      task an operator runs rather than the crate that reads it, with served-file
+      templates shared at `.ctl/templates/`.
       One red line, so it does not get relitigated: a database may be a derived
       cache and never the authority. The record reviews as a diff and orders by
       file position, and both are gone the moment rows live in SQLite. An index
       rebuilt from the files costs nothing, because deleting it changes no
       answer.
-  - id: QCTL-007
-    title: Optional per-user daemon sharing one session and view
-    scope: ctl-core
-    kind: evaluation
-    outcome: >-
-      Multiple *ctl clients can attach to one local session the way
-      skill-cli does (Unix socket, NDJSON protocol, one dispatcher).
-    open: >-
-      skill-cli already has daemon + UDS + protocol crates. ctl-core
-      should reuse that shape only after pretty/JSON views are adopted
-      by at least one *ctl. Not a default feature.
-    notes: >-
-      Lower priority than clap chassis and schema-first views. Do not
-      pull tokio into ctl-core default features.
 
 archive:
   - id: QCTL-003
