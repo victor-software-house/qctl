@@ -154,6 +154,7 @@ queue:
       - A same-prefix id that does not exist still fails, exactly as it does today.
       - status says which foreign ids a row waits on, without claiming to know whether they are done.
       - 'qctl instructions states the rule: a foreign prefix is recorded, never resolved, until QCTL-019 decides how resolution works.'
+      - "Which prefixes a ledger may name is declared in tasks.yaml, beside the rows — it is data about the work, so this phase adds no second file."
 
 horizon:
   - id: QCTL-019
