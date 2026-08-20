@@ -325,26 +325,23 @@ horizon:
       same ledger and that was easy to see; verctl VER-025 will rewrite the
       config this repo just gained, and nothing anywhere records that. A foreign
       blocked_by is the first thing worth having.
-      Prefixes already carry the repository. QCTL-, VER-, CTC-, KAI-, PST-,
-      CCS- are unique across the six, and this ledger already reserves the rule
-      that a foreign prefix in blocked_by is not waited on.
-      2026-08-19, read from pi's parser rather than its docs
-      (packages/coding-agent/src/utils/git.ts): a git source there is always a
-      whole repository. `buildGitSource` refuses a path that is not exactly
-      user/project, the hosted branch builds it as `${info.user}/${info.project}`,
-      and `GitSource` carries no subdirectory at all — selection inside a package
-      is done by globs in its own package.json. Protocol is gated deliberately:
-      without a `git:` prefix the string must match `^(https?|ssh|git)://`, and
-      the prefix is what buys the shorthands `git:github.com/user/repo` and
-      `git:git@github.com:user/repo`. A ref is `@ref`, with `#committish` also
-      parsed, and `pinned` is simply whether one was given.
-      So pi is the wrong donor for the path half. A ledger is a file inside a
+      Prefixes already carry the repository. Every one of the six is unique,
+      and this ledger already reserves the rule that a foreign prefix in
+      blocked_by is not waited on.
+      2026-08-19, read from a package manager's own source rather than its docs.
+      The donor considered first treats a git source as always a **whole
+      repository**: it refuses a path that is not exactly user/project, and its
+      source type carries no subdirectory at all, because selection inside a
+      package is done by globs in that package's own manifest. Protocol is gated
+      deliberately — without a scheme prefix the string must already name one —
+      and the prefix is what buys the host shorthands. A ref is `@ref`.
+      So it is the wrong donor for the path half. A ledger is a file inside a
       repository, and the syntax that says protocol, subpath, and ref at once is
       the go-getter form this repo's own task includes already use:
       `git::https://github.com/o/r.git//tasks/q?ref=v0.1.2`.
       2026-08-19, decided by Victor: a source is structured fields, not a URI.
       `repo` is parsed by gix-url — https, ssh, scp-like and file all parse, and
-      its Scheme carries the protocol distinction pi spends a prefix on — with
+      its Scheme carries the protocol distinction the donor spends a prefix on —
       `dir` and `ref` beside it. gix-url derives serde, so the config
       deserializes without a line of parsing. The shorter-syntax question
       dissolves rather than being answered: a URI is long because it packs four

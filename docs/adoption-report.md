@@ -122,8 +122,8 @@ Filed as **QCTL-027**.
 
 ## 6. There is no populated example to copy
 
-Writing their first horizon row by hand, their first attempt used a string where
-`evidence` takes an array. The error was good and specific —
+Writing their first archived row by hand, their first attempt used a string
+where `evidence` takes an array. The error was good and specific —
 `/archive/0/evidence: "Shipped." is not of type "array"` — but they found it by
 trial. `init` writes an empty ledger, and there is no fully populated row of each
 kind anywhere to copy from.
