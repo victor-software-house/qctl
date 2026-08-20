@@ -171,7 +171,7 @@ queue:
       - The inventory is machine-readable, so a consumer can diff it against their own rule set.
       - It is generated from the checks themselves, so it cannot drift from them.
     notes: >-
-      pi-stuff adoption report, ask 9 — they call it the cheapest item on their
+      docs/adoption-report.md §1 — they call it the cheapest item on their
       whole list and the most valuable for adoption, because it is a document
       rather than code. They proved `check` subsumes their 209 lines of Rego
       and Bun policy by writing ten defect ledgers by hand, one per rule, and
@@ -194,7 +194,7 @@ queue:
       - promote respects the active invariant and refuses rather than corrupting it.
       - instructions.md no longer tells a reader that horizon is edited in the yaml.
     notes: >-
-      pi-stuff adoption report, ask 7. instructions.md is already upfront that
+      docs/adoption-report.md §2. instructions.md is already upfront that
       horizon is edited by hand until these verbs exist; they hit it on day
       one, and the hand edit is the thing the same document tells agents not to
       do. Worth keeping from their write-up: they call the HorizonTask schema
@@ -216,7 +216,7 @@ queue:
       - A blocker that does not sit earlier than the resolved insertion index is refused, including when --before or --after places the row ahead of it.
       - add --horizon writes a horizon row through the same verb.
     notes: >-
-      pi-stuff adoption report, asks 8 and 2.6, filed together because both are
+      docs/adoption-report.md §3, filed together because both halves are
       the same verb falling short of the schema. `AddArgs` (src/cli.rs:85) is
       title, scope, outcome, acceptance and patch; QueuedTask also has notes,
       blocked_by, plan and links. Every row they added needed a hand edit
@@ -245,7 +245,7 @@ queue:
       - The scan is skipped, and says it was, when the ledger resolves outside the repository that surrounds the cwd.
       - A test proves the silence is gone.
     notes: >-
-      pi-stuff adoption report, §2.8. `trailer_errors` (src/check.rs:50) does
+      docs/adoption-report.md §4. `trailer_errors` (src/check.rs:50) does
       `let Ok(closed) = trailers::closed_ids(root) else { return Vec::new() }`
       — an environment where the git call fails drops a whole check class and
       the run passes quietly. The discoverability half is the same shape from
@@ -264,7 +264,7 @@ queue:
       - check prints one line per problem and a bail that counts them, not both.
       - The --no-git help text names the scratch-file case that makes it necessary.
     notes: >-
-      pi-stuff adoption report, §2.7. src/check.rs:40 prints each problem on
+      docs/adoption-report.md §5. src/check.rs:40 prints each problem on
       its own line, then line 42 bails with all of them joined — twenty lines
       for ten facts, and the joined form is the one that wraps badly. Keep the
       per-line output and reduce the bail to the count and the path.
@@ -278,7 +278,7 @@ queue:
       - examples/tasks.yaml carries one maximal QueuedTask, one ArchivedTask and one HorizonTask.
       - A test parses it, so it cannot drift from the types.
     notes: >-
-      pi-stuff adoption report, §2.9. Writing their first horizon row by hand,
+      docs/adoption-report.md §6. Writing their first horizon row by hand,
       their first attempt used `evidence: Shipped.` on an archive fixture. The
       error was good and specific — `/archive/0/evidence: "Shipped." is not of
       type "array"` — but they found it by trial. `qctl init` writes an empty
@@ -296,7 +296,7 @@ queue:
       - A --format json option on status and check, matching how verctl spells it.
       - check exits non-zero with a JSON array of problems.
     notes: >-
-      pi-stuff adoption report, ask 10. They read status and check with agents
+      docs/adoption-report.md §7. They read status and check with agents
       far more often than with humans. This is qctl-only: verctl already has a
       global --format json, measured at HEAD on status, check, ci and assets —
       and `git -C ../verctl show v0.1.1:src/cli.rs` carries `FormatArgs` too,
@@ -319,8 +319,8 @@ horizon:
       A decision, written down, on what a source is, where it is declared, and
       what reading one costs.
     notes: >-
-      2026-08-19, from migrating ctl-core, verctl, kodus-ai and pi-stuff by
-      hand in one pass. What the pass actually taught:
+      2026-08-19, from migrating six owned ledgers by hand in one pass, of
+      which three are private. What the pass actually taught:
       Cross-repo order is real and invisible. QCTL-003 waited on QCTL-009 in the
       same ledger and that was easy to see; verctl VER-025 will rewrite the
       config this repo just gained, and nothing anywhere records that. A foreign
