@@ -213,7 +213,7 @@ queue:
     acceptance:
       - add takes notes, blocked_by (repeatable), plan and link (repeatable).
       - add --after ID and --before ID place the row; the tail stays the default.
-      - A blocker that is not an earlier queued id is refused.
+      - A blocker that does not sit earlier than the resolved insertion index is refused, including when --before or --after places the row ahead of it.
       - add --horizon writes a horizon row through the same verb.
     notes: >-
       pi-stuff adoption report, asks 8 and 2.6, filed together because both are
@@ -222,13 +222,18 @@ queue:
       blocked_by, plan and links. Every row they added needed a hand edit
       straight after `add`, always for notes, which is where their conventions
       put the evidence — so the verb bought them the id and the placement and
-      they edited the file anyway. blocked_by is safe to accept even though it
-      carries an invariant: a blocker must be an earlier queued id, and `add`
-      appends to the tail, so any existing queued id qualifies. Placement is
-      the other half: queue order is priority, so anything urgent means a hand
-      edit or an immediate `start`, which forces it to the head and makes it
-      active — usually wrong. Confirmed here while filing this very row: seven
-      rows added, seven notes hand-edited in afterwards.
+      they edited the file anyway. Their reasoning for why blocked_by is safe
+      to accept — a blocker must be earlier, and `add` appends to the tail, so
+      any queued id qualifies — holds only while the tail is the only landing
+      place. Placement is the other half of the ask: queue order is priority,
+      so anything urgent means a hand edit or an immediate `start`, which
+      forces it to the head and makes it active, usually wrong. Take both and
+      the two halves collide: `add --before X --blocked-by X` would write a row
+      ahead of its own blocker, and `graph_errors` (src/ledger.rs:196-200)
+      rejects it as "is not earlier" — the verb writing a ledger its own check
+      refuses. So the blocker is validated against the resolved insertion
+      index, not against mere membership. Confirmed while filing this very row:
+      seven rows added, seven notes hand-edited in afterwards.
 
   - id: QCTL-026
     title: A check that cannot run says so instead of passing
@@ -294,9 +299,9 @@ queue:
       pi-stuff adoption report, ask 10. They read status and check with agents
       far more often than with humans. This is qctl-only: verctl already has a
       global --format json, measured at HEAD on status, check, ci and assets —
-      and `git show v0.1.1:src/cli.rs` carries `FormatArgs` too, so it was
-      already there in the release they read and they missed it rather than
-      reading an old tool. Which is itself the argument for QCTL-023: a feature
+      and `git -C ../verctl show v0.1.1:src/cli.rs` carries `FormatArgs` too,
+      so it was already there in the verctl release they read and they missed
+      it rather than reading an old tool. Which is itself the argument for QCTL-023: a feature
       nobody can find is a feature nobody has. Spell it the way verctl does, so
       one convention covers the family.
 
