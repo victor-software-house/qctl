@@ -105,6 +105,31 @@ queue:
       - 'qctl instructions states the rule: a foreign prefix is recorded, never resolved, until QCTL-019 decides how resolution works.'
       - "Which prefixes a ledger may name is declared in tasks.yaml, beside the rows — it is data about the work, so this phase adds no second file."
 
+  - id: QCTL-021
+    title: One ledger writes one stamp shape
+    scope: qctl
+    outcome: Every completed stamp in a ledger is written the same way, whoever wrote the row.
+    blocked_by: []
+    acceptance:
+      - archive writes the stamp in one decided shape, and fmt rewrites a row that carries the other one.
+      - fmt --check fails a ledger that mixes both, so the mix cannot survive a hook.
+      - A test asserts the shape on a written row rather than on a hand-built string.
+    notes: >-
+      2026-08-19, found on verctl#46. `qctl archive` writes
+      `completed: 2026-08-19T23:57:38` unquoted — all ten stamps in this
+      ledger are — while the eighty-eight stamps QCTL-011 recovered from git
+      were written quoted by the recovery script. So verctl's ledger now
+      carries both shapes and neither `check` nor `fmt --check` minds.
+      Nothing is broken today: yaml_serde reads an unquoted ISO-8601 scalar as
+      a string, and every reader we ship agrees. The risk is a reader that
+      does not — a YAML 1.1 resolver takes it as a timestamp node, and the
+      `$schema` line says string — plus the plain fact that one file writes
+      one fact two ways. Decide the shape rather than patch a file:
+      hand-quoting a row loses to the next `archive`, which is why this is a row
+      about the writer and not a fix in verctl. Quoted is the likely answer,
+      because it is what the schema says and what a stamp already looks like
+      after recovery, but that is the decision, not the assumption.
+
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
