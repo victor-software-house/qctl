@@ -374,24 +374,23 @@ archive:
     title: Point consumers at qctl check instead of copied Ajv tests
     scope: cross-repo
     outcome: >-
-      OMX seed, then kodus and pi-stuff, call qctl check. Copied
+      Every owned consumer calls qctl check. Copied
       test/tasks-ledger.test.ts files can die once the pin is real.
     notes: >-
-      2026-08-19: three of four lines are met. kodus-ai#1 deleted the vendored
-      tasks.schema.json and the Ajv spec, pi-stuff#94 deleted the copied schema
-      and the check-jsonschema tool that only existed to run it, and both now
-      gate on `q check` from `?ref=v0.1.2`; ctl-core#9 and verctl#41 moved their
-      $schema URLs to the same release. What is left is
-      claude-code-source-recovery, whose change is open as #18 and deliberately
-      not merged by us — that ledger churns, so the PR carries the recipe to
-      regenerate rather than a rebase.
-      The ompex/oh-my-pi line needs a decision rather than work: QCTL-011
-      settled that the two ledgers under ~/workspace/omp are not ours, which
+      2026-08-19: three of four lines are met. Two private consumers deleted
+      their vendored tasks.schema.json — one with its Ajv spec, one with the
+      check-jsonschema tool that only existed to run it — and both now gate on
+      `q check` from `?ref=v0.1.2`; ctl-core#9 and verctl#41 moved their
+      $schema URLs to the same release. What is left is a third private ledger,
+      whose change is open and deliberately not merged by us — that ledger
+      churns, so the PR carries the recipe to regenerate rather than a rebase.
+      The fourth line names an upstream engagement and needs a decision rather
+      than work: QCTL-011 settled that those ledgers are not ours, which
       contradicts this line. Either that seed is a different thing than those
       ledgers, or the line should go.
     completed: 2026-08-19T22:24:32
     evidence:
-      - 'kodus-ai#1 deleted the vendored tasks.schema.json and its Ajv spec; pi-stuff#94 deleted the copied schema and the check-jsonschema tool that only ran it, keeping Conftest for its own graph policy and plan-path rule. Both now gate on q check from ?ref=v0.1.2. ctl-core#9, verctl#41 and claude-code-source-recovery#18 moved their $schema URLs to that release. No owned consumer vendors a schema or an Ajv test. The ompex line was dropped rather than met: that repo is not ours.'
+      - 'Two private consumers deleted their vendored tasks.schema.json, one with its Ajv spec and one with the check-jsonschema tool that only ran it, the latter keeping Conftest for its own graph policy and plan-path rule. Both now gate on q check from ?ref=v0.1.2. ctl-core#9, verctl#41 and a third private ledger moved their $schema URLs to that release. No owned consumer vendors a schema or an Ajv test. The upstream line was dropped rather than met: that repo is not ours.'
     disposition: completed
 
   - id: QCTL-011
@@ -399,22 +398,22 @@ archive:
     scope: workspace
     outcome: Every ledger under this operator's own repositories declares schema_version 3, stamps completion with a moment, and declares the zone that moment is in.
     notes: >-
-      2026-08-19: four of five migrated — ctl-core#9, verctl#41, kodus-ai#1 and
-      pi-stuff#94, each with a style block naming -03:00 and every archived row
-      carrying an instant recovered from git. claude-code-source-recovery is
-      open as #18 and is ours to leave alone; its stamps were placeholders
-      reading 12:00:00, now real instants in that PR.
+      2026-08-19: four of five migrated — ctl-core#9, verctl#41 and two private
+      ledgers, each with a style block naming -03:00 and every archived row
+      carrying an instant recovered from git. The third private one is open and
+      ours to leave alone; its stamps were placeholders reading 12:00:00, now
+      real instants in that PR.
       Two corrections to this row's own wording, both learned by doing it. The
       moment is the commit in which a row **last** entered the archive, not the
-      first: pi-stuff had three rows archived, re-queued, and archived again,
+      first: one ledger had three rows archived, re-queued, and archived again,
       and the first commit dates a stay that ended. And the day gate cannot be
-      absolute — PST-051, PST-052 and PST-056 entered the archive at 00:21 on
-      2026-08-18 while the row said 2026-08-17, the day the work finished. The
-      commit instant is what `completed` means, so those three were accepted by
-      name rather than by loosening the rule for everything.
+      absolute — three rows entered the archive at 00:21 on 2026-08-18 while
+      saying 2026-08-17, the day the work finished. The commit instant is what
+      `completed` means, so those three were accepted by name rather than by
+      loosening the rule for everything.
     completed: 2026-08-19T22:24:20
     evidence:
-      - 'All six owned ledgers speak schema 3: ctl-core#9, verctl#41, kodus-ai#1, pi-stuff#94 and claude-code-source-recovery#18, each with a style block naming -03:00 and every archived row carrying the instant it last entered the archive, recovered from git. 88 rows across five repos; the day gate held everywhere except PST-051, PST-052 and PST-056, which entered the archive at 00:21 and were accepted by name. The two ompex ledgers under ~/workspace/omp were left alone.'
+      - 'All six owned ledgers speak schema 3 — three public (ctl-core#9, verctl#41, this one) and three private — each with a style block naming -03:00 and every archived row carrying the instant it last entered the archive, recovered from git. 88 rows across five repos; the day gate held everywhere except three rows that entered the archive at 00:21 and were accepted by name. Two upstream ledgers that are not ours were left alone.'
     disposition: completed
 
   - id: QCTL-003
