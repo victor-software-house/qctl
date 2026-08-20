@@ -158,16 +158,17 @@ queue:
 
 horizon:
   - id: QCTL-019
-    title: Let a row name a blocker in another ledger
+    title: Resolve a foreign blocker instead of only recording it
     scope: qctl
     kind: evaluation
     open: >-
-      Five repositories speak schema 3 with a sixth in review, and an order that
-      runs between them — a qctl row waiting on VER-025 — is recorded nowhere.
-      What is the smallest thing that lets one ledger name a row in another?
+      QCTL-020 lets a row say it waits on VER-025 and stops there, on purpose.
+      Reading that row — is it archived yet — means fetching another repository
+      at a pinned ref. Is that worth building, and is a stale answer from a pin
+      better than no answer?
     outcome: >-
       A decision, written down, on what a source is, where it is declared, and
-      what a foreign blocked_by means.
+      what reading one costs.
     notes: >-
       2026-08-19, from migrating ctl-core, verctl, kodus-ai and pi-stuff by
       hand in one pass. What the pass actually taught:
