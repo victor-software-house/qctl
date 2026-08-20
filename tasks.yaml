@@ -211,6 +211,11 @@ horizon:
       being chosen — one `.ctl/` directory, one file per tool, named after the
       task an operator runs rather than the crate that reads it, with served-file
       templates shared at `.ctl/templates/`.
+      What anything local does earn, and it is not a registry: caching. A
+      user-level SQLite store keyed by the exact commit SHA a ref resolved to —
+      pinned to the SHA, not the ref, so it can never answer for a tag that
+      moved, and so two repos naming the same commit read it once. That is the
+      cache side of the line below, and the only local state this design wants.
       One red line, so it does not get relitigated: a database may be a derived
       cache and never the authority. The record reviews as a diff and orders by
       file position, and both are gone the moment rows live in SQLite. An index
