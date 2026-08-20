@@ -19,9 +19,12 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
 - `qctl fmt` applies the declared style; `qctl fmt --check` is the hook form.
   New style options are additive: a field with a default equal to today's
   behaviour is a minor change, not a migration.
+- This repo's release declarations live in `.ctl/ver.yaml`; `.ctl/` is the
+  directory every ctl CLI shares, and qctl's own project config will land
+  beside it as `.ctl/q.yaml`. There is no `verctl.toml`.
 - Served files — `tasks/q/q` and `examples/mise.toml` — are rendered from
-  `.verctl/templates/`, and README's `?ref=` and install line are declared as
-  `[patterns]` in `verctl.toml` (QCTL-009). Edit the template or the pattern,
+  `.ctl/templates/`, and README's `?ref=` and install line are declared under
+  `patterns` in `.ctl/ver.yaml` (QCTL-009). Edit the template or the pattern,
   never the rendered file; the Version PR rewrites all five sites onto the
   commit the tag names. A template git does not track renders nowhere.
 - A consumer wires one pin, not two: the `?ref=` tag on the task include. The
