@@ -161,6 +161,150 @@ queue:
       skill is prose. Confirm no other `version: ` line exists in the document
       first, since the match is literal and the arity would fail the release.
 
+  - id: QCTL-023
+    title: check says which rules it enforces
+    scope: qctl
+    outcome: A consumer deleting a hand-rolled validator can prove qctl covers it by reading a published inventory, instead of building defect fixtures for an hour.
+    blocked_by: []
+    acceptance:
+      - check --explain prints every rule, its exact message, and which lists it reads, then exits 0.
+      - The inventory is machine-readable, so a consumer can diff it against their own rule set.
+      - It is generated from the checks themselves, so it cannot drift from them.
+    notes: >-
+      pi-stuff adoption report, ask 9 — they call it the cheapest item on their
+      whole list and the most valuable for adoption, because it is a document
+      rather than code. They proved `check` subsumes their 209 lines of Rego
+      and Bun policy by writing ten defect ledgers by hand, one per rule, and
+      running each through `qctl check --no-git`. All seven of their Rego deny
+      rules and both halves of their script matched, and qctl was strictly
+      wider: their script read queue and archive only, so a horizon row's
+      `plan:` went unchecked. Their point is that the hour they spent is the
+      hour every migrating consumer faces, and most will skip it and either
+      keep both validators forever or delete on faith. `qctl check --help` at
+      HEAD offers only --file and --no-git.
+
+  - id: QCTL-024
+    title: Horizon has verbs, so a row is not hand-edited into place
+    scope: qctl
+    outcome: Moving a row between horizon and queue is one command that respects the invariants, not four hand edits.
+    blocked_by: []
+    acceptance:
+      - park writes a horizon row from title, scope, outcome, kind and open.
+      - promote moves a horizon row to the queue, dropping kind and open and taking acceptance and any blockers.
+      - promote respects the active invariant and refuses rather than corrupting it.
+      - instructions.md no longer tells a reader that horizon is edited in the yaml.
+    notes: >-
+      pi-stuff adoption report, ask 7. instructions.md is already upfront that
+      horizon is edited by hand until these verbs exist; they hit it on day
+      one, and the hand edit is the thing the same document tells agents not to
+      do. Worth keeping from their write-up: they call the HorizonTask schema
+      shape *good* and ask us not to change it. Having no acceptance and no
+      blocked_by mechanically forced them to split one vague request into a
+      queue row with provable acceptance and a horizon row with a named
+      blocker, which they say they would not have split as cleanly on
+      judgement alone. promote is the verb that matters more than park:
+      horizon to queue is four hand edits with the active invariant to respect.
+
+  - id: QCTL-025
+    title: add writes the row you meant, where you meant it
+    scope: qctl
+    outcome: A row added by the verb needs no hand edit afterwards, and lands where its priority says.
+    blocked_by: []
+    acceptance:
+      - add takes notes, blocked_by (repeatable), plan and link (repeatable).
+      - add --after ID and --before ID place the row; the tail stays the default.
+      - A blocker that does not sit earlier than the resolved insertion index is refused, including when --before or --after places the row ahead of it.
+      - add --horizon writes a horizon row through the same verb.
+    notes: >-
+      pi-stuff adoption report, asks 8 and 2.6, filed together because both are
+      the same verb falling short of the schema. `AddArgs` (src/cli.rs:85) is
+      title, scope, outcome, acceptance and patch; QueuedTask also has notes,
+      blocked_by, plan and links. Every row they added needed a hand edit
+      straight after `add`, always for notes, which is where their conventions
+      put the evidence — so the verb bought them the id and the placement and
+      they edited the file anyway. Their reasoning for why blocked_by is safe
+      to accept — a blocker must be earlier, and `add` appends to the tail, so
+      any queued id qualifies — holds only while the tail is the only landing
+      place. Placement is the other half of the ask: queue order is priority,
+      so anything urgent means a hand edit or an immediate `start`, which
+      forces it to the head and makes it active, usually wrong. Take both and
+      the two halves collide: `add --before X --blocked-by X` would write a row
+      ahead of its own blocker, and `graph_errors` (src/ledger.rs:196-200)
+      rejects it as "is not earlier" — the verb writing a ledger its own check
+      refuses. So the blocker is validated against the resolved insertion
+      index, not against mere membership. Confirmed while filing this very row:
+      seven rows added, seven notes hand-edited in afterwards.
+
+  - id: QCTL-026
+    title: A check that cannot run says so instead of passing
+    scope: qctl
+    outcome: No qctl gate reports success by having skipped itself.
+    blocked_by: []
+    acceptance:
+      - trailer_errors says so when closed_ids fails, instead of returning no errors.
+      - The scan is skipped, and says it was, when the ledger resolves outside the repository that surrounds the cwd.
+      - A test proves the silence is gone.
+    notes: >-
+      pi-stuff adoption report, §2.8. `trailer_errors` (src/check.rs:50) does
+      `let Ok(closed) = trailers::closed_ids(root) else { return Vec::new() }`
+      — an environment where the git call fails drops a whole check class and
+      the run passes quietly. The discoverability half is the same shape from
+      the operator's side: validating a ledger that lives outside the current
+      repository — a fixture, a scratch copy, a migration staging file — runs
+      the trailer scan against whatever repo surrounds it, and nothing points
+      at --no-git until the odd complaints start. verctl carries the same law
+      as VER-036, for `expand` and `prove_default_history`.
+
+  - id: QCTL-027
+    title: One problem is reported once
+    scope: qctl
+    outcome: A ledger with ten problems prints ten lines, each readable in a terminal.
+    blocked_by: []
+    acceptance:
+      - check prints one line per problem and a bail that counts them, not both.
+      - The --no-git help text names the scratch-file case that makes it necessary.
+    notes: >-
+      pi-stuff adoption report, §2.7. src/check.rs:40 prints each problem on
+      its own line, then line 42 bails with all of them joined — twenty lines
+      for ten facts, and the joined form is the one that wraps badly. Keep the
+      per-line output and reduce the bail to the count and the path.
+
+  - id: QCTL-028
+    title: The example catalog shows a whole row of each kind
+    scope: qctl
+    outcome: Somebody writing a row by hand copies a populated example instead of learning the schema from error messages.
+    blocked_by: []
+    acceptance:
+      - examples/tasks.yaml carries one maximal QueuedTask, one ArchivedTask and one HorizonTask.
+      - A test parses it, so it cannot drift from the types.
+    notes: >-
+      pi-stuff adoption report, §2.9. Writing their first horizon row by hand,
+      their first attempt used `evidence: Shipped.` on an archive fixture. The
+      error was good and specific — `/archive/0/evidence: "Shipped." is not of
+      type "array"` — but they found it by trial. `qctl init` writes an empty
+      ledger, and examples/ at HEAD holds only mise.toml. They name verctl's
+      examples/ver.yaml plus tests/examples.rs as the pattern to copy and call
+      it the best thing in verctl's documentation. Distinct from QCTL-018,
+      which is about the catalog declaring a second qctl pin.
+
+  - id: QCTL-029
+    title: status and check speak JSON
+    scope: qctl
+    outcome: An agent reads the ledger state without parsing a table that is free to change shape.
+    blocked_by: []
+    acceptance:
+      - A --format json option on status and check, matching how verctl spells it.
+      - check exits non-zero with a JSON array of problems.
+    notes: >-
+      pi-stuff adoption report, ask 10. They read status and check with agents
+      far more often than with humans. This is qctl-only: verctl already has a
+      global --format json, measured at HEAD on status, check, ci and assets —
+      and `git -C ../verctl show v0.1.1:src/cli.rs` carries `FormatArgs` too,
+      so it was already there in the verctl release they read and they missed
+      it rather than reading an old tool. Which is itself the argument for QCTL-023: a feature
+      nobody can find is a feature nobody has. Spell it the way verctl does, so
+      one convention covers the family.
+
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
