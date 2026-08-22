@@ -22,7 +22,7 @@ pub fn install(args: &HookInstallArgs) -> Result<()> {
         .with_context(|| root.display().to_string())?;
     let rel = ledger_rel(&ledger, &root)?;
     if let Some(lefthook) = lefthook_path(&root) {
-        return install_lefthook(&lefthook, &rel);
+        return install_lefthook(&lefthook, &rel, args.force);
     }
     install_git_hook(&root, &rel, args.force)
 }
@@ -102,7 +102,7 @@ fn git_hook_body(rel: &str) -> String {
     "}
 }
 
-fn install_lefthook(path: &Path, rel: &str) -> Result<()> {
+fn install_lefthook(path: &Path, rel: &str, force: bool) -> Result<()> {
     let source = fs::read_to_string(path).with_context(|| path.display().to_string())?;
     if source.contains("close-from-git") {
         println!("lefthook already runs close-from-git ({})", path.display());
@@ -113,7 +113,11 @@ fn install_lefthook(path: &Path, rel: &str) -> Result<()> {
         "qctl: add that under pre-push.commands in {} (qctl does not edit Lefthook config)",
         path.display()
     );
-    Ok(())
+    ensure!(
+        !force,
+        "--force does not apply when lefthook.yml exists; qctl does not edit Lefthook config"
+    );
+    anyhow::bail!("{} present; hook not installed", path.display())
 }
 
 fn install_git_hook(root: &Path, rel: &str, force: bool) -> Result<()> {

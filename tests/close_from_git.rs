@@ -253,7 +253,12 @@ fn hook_install_prefers_lefthook_and_mise_q() {
     let path = root.path().join("tasks.yaml");
     let before = fs::read_to_string(root.path().join("lefthook.yml")).expect("before");
     let output = qctl(&["hook", "install", "-f", path.to_str().expect("utf-8")]);
-    assert!(output.status.success(), "{}", stderr(&output));
+    assert!(!output.status.success(), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("hook not installed"),
+        "{}",
+        stderr(&output)
+    );
     assert_eq!(
         stdout(&output),
         indoc! {"
@@ -321,15 +326,37 @@ fn hook_install_sees_lefthook_yaml() {
     let path = root.path().join("tasks.yaml");
     let before = fs::read_to_string(root.path().join("lefthook.yaml")).expect("before");
     let output = qctl(&["hook", "install", "-f", path.to_str().expect("utf-8")]);
-    assert!(output.status.success(), "{}", stderr(&output));
+    assert!(!output.status.success(), "{}", stderr(&output));
     assert!(
-        stdout(&output).contains("qctl-close:"),
+        stderr(&output).contains("hook not installed"),
         "{}",
-        stdout(&output)
+        stderr(&output)
+    );
+    assert_eq!(
+        stdout(&output),
+        indoc! {"
+            # add under pre-push.commands in lefthook.yml
+                qctl-close:
+                  run: mise run q close-from-git -f 'tasks.yaml'
+        "}
     );
     assert_eq!(
         fs::read_to_string(root.path().join("lefthook.yaml")).expect("after"),
         before
+    );
+    assert!(!git_hook(root.path()).exists());
+    let forced = qctl(&[
+        "hook",
+        "install",
+        "--force",
+        "-f",
+        path.to_str().expect("utf-8"),
+    ]);
+    assert!(!forced.status.success(), "{}", stderr(&forced));
+    assert!(
+        stderr(&forced).contains("--force does not apply"),
+        "{}",
+        stderr(&forced)
     );
     assert!(!git_hook(root.path()).exists());
 }
