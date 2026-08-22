@@ -1,6 +1,7 @@
-use anyhow::{Context, Result, ensure};
+use anyhow::{Context, Result, bail, ensure};
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Output};
 
 /// IDs closed by commit trailers (`Closes CTC-001` / `Completes: PREFIX-NNN`).
 ///
@@ -23,61 +24,71 @@ pub enum GitRoot {
     Failed(anyhow::Error),
 }
 
-/// `git rev-parse --show-toplevel` from `start`, classified.
+/// `git rev-parse --show-toplevel` from `start`, classified by exit code.
+///
+/// git uses 128 for "not a repository". That is independent of locale.
 #[must_use]
 pub fn git_root_status(start: &Path) -> GitRoot {
-    match git_root(start) {
-        Ok(root) => GitRoot::Root(root),
-        Err(error) => {
-            let text = format!("{error:#}");
-            if text.contains("not a git repository") {
-                GitRoot::Absent
-            } else {
-                GitRoot::Failed(error)
-            }
-        }
+    match git_in(start, ["rev-parse", "--show-toplevel"]) {
+        Err(error) => GitRoot::Failed(error),
+        Ok(output) if output.status.success() => match String::from_utf8(output.stdout) {
+            Ok(path) => GitRoot::Root(PathBuf::from(path.trim())),
+            Err(error) => GitRoot::Failed(error.into()),
+        },
+        Ok(output) if output.status.code() == Some(128) => GitRoot::Absent,
+        Ok(output) => GitRoot::Failed(anyhow::anyhow!(
+            "git rev-parse --show-toplevel failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        )),
     }
 }
 
 /// `git rev-parse --show-toplevel` from `start`.
 pub fn git_root(start: &Path) -> Result<PathBuf> {
-    let output = Command::new("git")
-        .args([
-            "-C",
-            &start.display().to_string(),
-            "rev-parse",
-            "--show-toplevel",
-        ])
-        .output()
-        .context("git rev-parse --show-toplevel")?;
-    ensure!(
-        output.status.success(),
-        "git rev-parse --show-toplevel failed: {}",
-        String::from_utf8_lossy(&output.stderr).trim()
-    );
-    let path = String::from_utf8(output.stdout).context("toplevel is not utf-8")?;
-    Ok(PathBuf::from(path.trim()))
+    match git_root_status(start) {
+        GitRoot::Root(root) => Ok(root),
+        GitRoot::Absent => bail!("not a git repository"),
+        GitRoot::Failed(error) => Err(error),
+    }
 }
 
 fn head_exists(root: &Path) -> Result<bool> {
-    let output = Command::new("git")
-        .args([
-            "-C",
-            &root.display().to_string(),
-            "rev-parse",
-            "--verify",
-            "HEAD",
-        ])
+    let output = git_in(root, ["rev-parse", "--verify", "--quiet", "HEAD"])?;
+    match output.status.code() {
+        Some(0) => Ok(true),
+        Some(1) => Ok(false),
+        _ => bail!(
+            "git rev-parse --verify HEAD failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ),
+    }
+}
+
+fn git_in(root: &Path, args: impl IntoIterator<Item = impl AsRef<OsStr>>) -> Result<Output> {
+    Command::new("git")
+        .env("LC_ALL", "C")
+        .env("LANG", "C")
+        .arg("-C")
+        .arg(root)
+        .args(args)
         .output()
-        .context("git rev-parse --verify HEAD")?;
-    if output.status.success() {
-        return Ok(true);
-    }
-    let err = String::from_utf8_lossy(&output.stderr);
-    if err.contains("Needed a single revision") || err.contains("unknown revision") {
-        return Ok(false);
-    }
-    anyhow::bail!("git rev-parse --verify HEAD failed: {}", err.trim())
+        .context("git")
+}
+
+fn git_log(root: &Path, rev: &[&str]) -> Result<String> {
+    ensure!(
+        rev.iter().all(|part| !part.starts_with('-')),
+        "range is a revision, not a git option"
+    );
+    let mut args: Vec<&str> = vec!["log", "--format=%H%x00%B%x1e"];
+    args.extend(rev);
+    let output = git_in(root, args)?;
+    ensure!(
+        output.status.success(),
+        "git log failed: {}",
+        String::from_utf8_lossy(&output.stderr).trim()
+    );
+    Ok(String::from_utf8_lossy(&output.stdout).into_owned())
 }
 
 /// Same scan, but a git failure is an error. `rev` is passed to `git log`
@@ -119,28 +130,6 @@ pub fn closed_ids_pre_push(root: &Path, stdin: &str) -> Result<Vec<(String, Stri
 
 fn is_zero_sha(sha: &str) -> bool {
     !sha.is_empty() && sha.chars().all(|ch| ch == '0')
-}
-
-fn git_log(root: &Path, rev: &[&str]) -> Result<String> {
-    ensure!(
-        rev.iter().all(|part| !part.starts_with('-')),
-        "range is a revision, not a git option"
-    );
-    let mut command = Command::new("git");
-    command.args([
-        "-C",
-        &root.display().to_string(),
-        "log",
-        "--format=%H%x00%B%x1e",
-    ]);
-    command.args(rev);
-    let output = command.output().context("git log")?;
-    ensure!(
-        output.status.success(),
-        "git log failed: {}",
-        String::from_utf8_lossy(&output.stderr).trim()
-    );
-    Ok(String::from_utf8_lossy(&output.stdout).into_owned())
 }
 
 #[must_use]
