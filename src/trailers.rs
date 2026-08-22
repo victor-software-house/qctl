@@ -36,10 +36,7 @@ pub fn git_root_status(start: &Path) -> GitRoot {
             Ok(path) => GitRoot::Root(PathBuf::from(path.trim())),
             Err(error) => GitRoot::Failed(error.into()),
         },
-        Ok(output)
-            if output.status.code() == Some(128)
-                && String::from_utf8_lossy(&output.stderr).contains("not a git repository") =>
-        {
+        Ok(output) if output.status.code() == Some(128) && not_a_work_tree(&output.stderr) => {
             GitRoot::Absent
         }
         Ok(output) => GitRoot::Failed(anyhow::anyhow!(
@@ -176,6 +173,11 @@ fn push_id(ids: &mut Vec<String>, raw: &str) {
     }
 }
 
+fn not_a_work_tree(stderr: &[u8]) -> bool {
+    let stderr = String::from_utf8_lossy(stderr).to_ascii_lowercase();
+    stderr.contains("not a git repository") || stderr.contains("must be run in a work tree")
+}
+
 #[cfg(test)]
 mod tests {
     use super::parse_log;
@@ -239,5 +241,16 @@ mod tests {
             super::git_root_status(&missing),
             super::GitRoot::Failed(_)
         ));
+    }
+
+    #[test]
+    fn not_a_work_tree_is_case_insensitive() {
+        assert!(super::not_a_work_tree(
+            b"fatal: Not a git repository (or any of the parent directories): .git"
+        ));
+        assert!(super::not_a_work_tree(
+            b"fatal: this operation must be run in a work tree"
+        ));
+        assert!(!super::not_a_work_tree(b"fatal: cannot change to '/nope'"));
     }
 }
