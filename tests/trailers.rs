@@ -194,3 +194,22 @@ fn check_reports_when_git_cannot_run() {
     assert!(err.contains("git trailer scan failed"), "{err}");
     assert!(!err.contains("pass --no-git"), "{err}");
 }
+
+#[test]
+fn check_default_path_scans_the_cwd_repo() {
+    let root = TempDir::new().expect("tmp");
+    git(root.path(), &["init"]);
+    fs::write(
+        root.path().join("tasks.yaml"),
+        indoc! {"
+            schema_version: 3
+            prefix: CTC
+            active: null
+            queue: []
+            archive: []
+        "},
+    )
+    .expect("ledger");
+    let output = qctl_in(root.path(), &["check"]);
+    assert!(output.status.success(), "{}", stderr(&output));
+}

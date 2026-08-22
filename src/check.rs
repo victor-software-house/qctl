@@ -52,7 +52,10 @@ fn trailer_errors(ledger: &crate::ledger::Ledger, path: &std::path::Path) -> Vec
         Ok(cwd) => cwd,
         Err(error) => return vec![format!("git trailer scan failed: {error}")],
     };
-    let ledger_dir = path.parent().unwrap_or(path);
+    let ledger_dir = match path.parent() {
+        Some(parent) if !parent.as_os_str().is_empty() => parent,
+        _ => cwd.as_path(),
+    };
     let skip = "git trailer scan skipped: ledger is not in the current repository; pass --no-git";
     let ledger_root = match trailers::git_root_status(ledger_dir) {
         trailers::GitRoot::Failed(error) => {
