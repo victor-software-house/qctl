@@ -703,6 +703,35 @@ fn add_refuses_a_plan_that_is_not_markdown() {
 }
 
 #[test]
+fn add_refuses_a_plan_whose_name_contains_dotdot() {
+    let dir = LedgerDir::empty();
+    dir.write(MINIMAL);
+    dir.plant("docs/foo..bar.md", "# Plan\n");
+    let output = qctl(&[
+        "add",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-t",
+        "t",
+        "-s",
+        "s",
+        "-o",
+        "o",
+        "-a",
+        "a",
+        "--plan",
+        "docs/foo..bar.md",
+    ]);
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("must stay inside the repository"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(dir.read(), MINIMAL);
+}
+
+#[test]
 fn add_to_an_empty_queue_does_not_invent_before() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
