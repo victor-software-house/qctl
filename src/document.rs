@@ -17,6 +17,7 @@
 //! on its own has no neighbour to rob.
 
 use anyhow::{Context, Result, bail};
+use std::fmt::Write;
 use std::ops::Range;
 use yaml_serde::Value;
 use yamlpatch::{Op, Patch, apply_yaml_patches};
@@ -336,6 +337,7 @@ impl Document {
 
     /// Put a row at the head of a section, separated from what follows.
     fn paste_front(&mut self, section: &str, row: &str) -> Result<()> {
+        self.ensure_section(section)?;
         self.open(section)?;
         let crowded = !self.ids(section)?.is_empty();
         let indent = self.indent_of(section)?;
@@ -351,6 +353,7 @@ impl Document {
 
     /// Put a row after a section's last one.
     fn paste_back(&mut self, section: &str, row: &str) -> Result<()> {
+        self.ensure_section(section)?;
         self.open(section)?;
         let indent = self.indent_of(section)?;
         let rows = self.rows(section)?;
@@ -469,6 +472,20 @@ impl Document {
         }
         self.source
             .replace_range(from..line_end, &format!("{section}:"));
+        Ok(())
+    }
+
+    /// Insert `section: []` when the file has no such list. `horizon` is
+    /// optional on load; a verb that writes the first row has to create the
+    /// key. `fmt` still never adds one.
+    fn ensure_section(&mut self, section: &str) -> Result<()> {
+        if self.parsed()?.query_key_only(&route!(section)).is_ok() {
+            return Ok(());
+        }
+        if !self.source.ends_with('\n') {
+            self.source.push('\n');
+        }
+        writeln!(self.source, "{section}: []").context("write the missing list key")?;
         Ok(())
     }
 

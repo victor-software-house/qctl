@@ -83,14 +83,18 @@ which zone an old stamp was taken in. Change it deliberately.
    used to. `--after ID` / `--before ID` place it; the tail is the
    default. A blocker that would not sit earlier than the new row is
    refused. `--horizon --kind KIND --open OPEN` writes a horizon row
-   instead.
+   instead. `--plan` must name a file next to the ledger, the same
+   rule `check` uses. A tail add to an empty queue is allowed even
+   when `active` is set; it does not invent a `--before`.
 3. `qctl start ID` requires the id to be queued and unblocked; it becomes
    `queue[0]` and `active`.
 4. `qctl archive ID -e EVIDENCE` moves a queued row to archive.
 5. `qctl park` writes a horizon row (`--kind` and `--open` required).
    `qctl promote ID -a ACCEPTANCE` moves it onto the queue tail, dropping
    kind and open. It does not become active. `--blocked-by` must name a
-   queued id.
+   queued id. `add --horizon` and `park` write a `horizon:` key if the
+   ledger omitted it (an empty list is the serde default). `fmt` still
+   never inserts a key.
 
 YAML: quote list items that start with `#` or contain `: `.
 
