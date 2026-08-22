@@ -1,5 +1,9 @@
 # Changelog
 
+## qctl 0.2.2
+
+- `add --horizon` and `park` write a `horizon:` key when the ledger omitted it. `--plan` is checked the same way `check` is. A tail add to an empty queue no longer pretends the caller passed `--before`.
+
 ## qctl 0.2.1
 
 - Pin Version PR, publish, and asset at verctl 0.2.1 so a release tags the published commit.
