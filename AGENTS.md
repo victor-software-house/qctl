@@ -33,7 +33,8 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   entry to survive `mise install --locked` (ctl-core#9 hit exactly that).
 - `qctl hook install` never edits `lefthook.yml`. Lefthook has no API to add
   a command. If that file exists, install prints the `mise run q close-from-git`
-  snippet. Otherwise it writes `.git/hooks/pre-push`.
+  snippet and exits non-zero until Lefthook already runs it. Otherwise it
+  writes `.git/hooks/pre-push`. `--force` overwrites the git hook only.
 
 ## Strings
 

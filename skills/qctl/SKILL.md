@@ -61,8 +61,9 @@ write `horizon:` if the ledger omitted it. `close-from-git` archives
 queued ids closed by `Closes PREFIX-NNN` / `Completes: PREFIX-NNN` in
 the commit **body**. `hook install` prints the `mise run q close-from-git`
 snippet to add under Lefthook `pre-push.commands` when `lefthook.yml`
-exists; it does not edit that file. Otherwise it writes a git pre-push.
-Neither amends.
+exists; it does not edit that file, and exits non-zero until Lefthook
+already runs it. Otherwise it writes a git pre-push. `--force` overwrites
+the git hook only. Neither amends.
 
 Optional `patch:` is a forkctl patch name. When `active` has one, select
 that patch before editing.

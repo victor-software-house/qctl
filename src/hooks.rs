@@ -115,9 +115,10 @@ fn install_lefthook(path: &Path, rel: &str, force: bool) -> Result<()> {
     );
     ensure!(
         !force,
-        "--force does not apply when lefthook.yml exists; qctl does not edit Lefthook config"
+        "--force does not apply when {path} exists; qctl does not edit Lefthook config",
+        path = path.display()
     );
-    anyhow::bail!("{} present; hook not installed", path.display())
+    anyhow::bail!("{path} present; hook not installed", path = path.display())
 }
 
 fn install_git_hook(root: &Path, rel: &str, force: bool) -> Result<()> {

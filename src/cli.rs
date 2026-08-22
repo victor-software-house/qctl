@@ -99,7 +99,7 @@ pub enum HookCommand {
 pub struct HookInstallArgs {
     #[command(flatten)]
     pub ledger: LedgerArgs,
-    /// Overwrite an existing pre-push hook.
+    /// Overwrite an existing git pre-push. Does nothing when lefthook.yml exists.
     #[arg(long)]
     pub force: bool,
 }
