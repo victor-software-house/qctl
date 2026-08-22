@@ -2,7 +2,7 @@
 
 mod common;
 
-use common::{qctl, stderr, stdout};
+use common::{qctl, qctl_in, stderr, stdout};
 use indoc::indoc;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
@@ -117,7 +117,7 @@ fn close_from_git_archives_a_queued_id() {
     )
     .expect("utf-8");
     assert!(body.contains(sha.trim()), "{body}");
-    let check = qctl(&["check", "-f", path]);
+    let check = qctl_in(root.path(), &["check", "-f", path]);
     assert!(check.status.success(), "{}", stderr(&check));
 }
 

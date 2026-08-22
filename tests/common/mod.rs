@@ -48,6 +48,15 @@ pub fn qctl(args: &[&str]) -> Output {
         .expect("spawn qctl")
 }
 
+pub fn qctl_in(dir: &Path, args: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_qctl"))
+        .current_dir(dir)
+        .args(args)
+        .env_remove("TASKS_LEDGER")
+        .output()
+        .expect("spawn qctl")
+}
+
 pub fn stdout(output: &Output) -> String {
     String::from_utf8_lossy(&output.stdout).into_owned()
 }
