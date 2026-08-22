@@ -87,15 +87,18 @@ which zone an old stamp was taken in. Change it deliberately.
 3. `qctl start ID` requires the id to be queued and unblocked; it becomes
    `queue[0]` and `active`.
 4. `qctl archive ID -e EVIDENCE` moves a queued row to archive.
-5. Horizon is edited in the yaml until `qctl` grows promote/park verbs.
-   `add --horizon` is the one verb that already writes a horizon row.
+5. `qctl park` writes a horizon row (`--kind` and `--open` required).
+   `qctl promote ID -a ACCEPTANCE` moves it onto the queue tail, dropping
+   kind and open. It does not become active. `--blocked-by` must name a
+   queued id.
 
 YAML: quote list items that start with `#` or contain `: `.
 
-`add` / `start` / `archive` change only the lines they must, so a comment, a
-blank line, a folded scalar and an inline list all survive a verb. Prefer the
-verb over a hand edit: `archive` also takes the archived id out of every
-`blocked_by` that named it, which a hand edit forgets.
+`add` / `start` / `archive` / `park` / `promote` change only the lines they
+must, so a comment, a blank line, a folded scalar and an inline list all
+survive a verb. Prefer the verb over a hand edit: `archive` also takes the
+archived id out of every `blocked_by` that named it, which a hand edit
+forgets.
 
 ## Stop conditions
 

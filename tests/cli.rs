@@ -1,4 +1,4 @@
-//! Binary contract: init, check, add, start, archive.
+//! Binary contract: init, check, add, start, archive, park, promote.
 
 mod common;
 
@@ -406,6 +406,78 @@ fn add_refuses_to_become_queue_head_while_active_is_set() {
     ]);
     assert!(!output.status.success());
     assert!(stderr(&output).contains("queue[0]"), "{}", stderr(&output));
+}
+
+#[test]
+fn promote_refuses_a_queued_id() {
+    let dir = LedgerDir::empty();
+    dir.write(indoc! {"
+        schema_version: 3
+        prefix: QCTL
+        active: QCTL-001
+        queue:
+          - id: QCTL-001
+            title: First
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [It holds.]
+        archive: []
+        horizon: []
+    "});
+    let output = qctl(&[
+        "promote",
+        "QCTL-001",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-a",
+        "a",
+    ]);
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("not on the horizon"),
+        "{}",
+        stderr(&output)
+    );
+}
+
+#[test]
+fn promote_keeps_active_on_the_queue_head() {
+    let dir = LedgerDir::empty();
+    dir.write(indoc! {"
+        schema_version: 3
+        prefix: QCTL
+        active: QCTL-001
+        queue:
+          - id: QCTL-001
+            title: First
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [It holds.]
+        archive: []
+        horizon:
+          - id: QCTL-002
+            title: Parked
+            scope: s
+            outcome: o
+            kind: research
+            open: missing
+    "});
+    let output = qctl(&[
+        "promote",
+        "QCTL-002",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-a",
+        "It holds.",
+    ]);
+    assert!(output.status.success(), "{}", stderr(&output));
+    let body = dir.read();
+    assert!(body.contains("active: QCTL-001"), "{body}");
+    assert!(!body.contains("kind: research"), "{body}");
+    let check = qctl(&["check", "-f", dir.path.to_str().unwrap(), "--no-git"]);
+    assert!(check.status.success(), "{}", stderr(&check));
 }
 
 #[test]

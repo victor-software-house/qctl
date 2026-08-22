@@ -1,0 +1,1 @@
+promote DEMO-002 --acceptance "It holds." --blocked-by DEMO-001

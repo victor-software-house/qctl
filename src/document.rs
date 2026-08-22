@@ -85,6 +85,21 @@ impl Document {
         self.paste_front(to, &row)
     }
 
+    /// Take a row out of one section and put it at the end of another.
+    pub fn move_to_end(
+        &mut self,
+        from: &str,
+        to: &str,
+        id: &str,
+        drop: &[&str],
+        add: &[(&str, Value)],
+    ) -> Result<()> {
+        let row = self.cut(from, id)?;
+        let row = revise(&row, drop, add)?;
+        self.close_if_empty(from)?;
+        self.paste_back(to, &row)
+    }
+
     /// Add a row to the end of a section, written from a value so the serializer
     /// decides the quoting rather than this file.
     pub fn append(&mut self, section: &str, value: &Value) -> Result<()> {

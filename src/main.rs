@@ -27,6 +27,8 @@ fn run() -> Result<()> {
         Command::Add(args) => mutate::add(&args)?,
         Command::Start(args) => mutate::start(&args)?,
         Command::Archive(args) => mutate::archive(&args)?,
+        Command::Park(args) => mutate::park(&args)?,
+        Command::Promote(args) => mutate::promote(&args)?,
         Command::Show(args) => ledger::print_show(&args)?,
         Command::Fmt(args) => qctl::format::run(&args)?,
         Command::Schema(args) => qctl::schema::write(&args)?,
