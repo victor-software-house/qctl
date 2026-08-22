@@ -30,7 +30,7 @@ fn init_refuses_overwrite_without_force() {
 fn check_accepts_own_repo_shape() {
     let dir = LedgerDir::empty();
     dir.write(MINIMAL);
-    let output = qctl(&["check", "-f", dir.path.to_str().unwrap()]);
+    let output = qctl(&["check", "-f", dir.path.to_str().unwrap(), "--no-git"]);
     assert!(output.status.success(), "{}", stderr(&output));
     assert!(stdout(&output).contains("ok"));
 }
@@ -53,7 +53,7 @@ fn check_accepts_archive_notes() {
             notes: >-
               Keep the context that would not fit in evidence.
     "});
-    let output = qctl(&["check", "-f", dir.path.to_str().unwrap()]);
+    let output = qctl(&["check", "-f", dir.path.to_str().unwrap(), "--no-git"]);
     assert!(output.status.success(), "{}", stderr(&output));
 }
 
@@ -213,7 +213,7 @@ fn check_rejects_unknown_field() {
         archive: []
         nope: true
     "});
-    let output = qctl(&["check", "-f", dir.path.to_str().unwrap()]);
+    let output = qctl(&["check", "-f", dir.path.to_str().unwrap(), "--no-git"]);
     assert!(!output.status.success());
 }
 
@@ -245,7 +245,7 @@ fn add_start_archive_round_trip() {
     let start = qctl(&["start", "QCTL-001", "-f", dir.path.to_str().unwrap()]);
     assert!(start.status.success(), "{}", stderr(&start));
 
-    let check = qctl(&["check", "-f", dir.path.to_str().unwrap()]);
+    let check = qctl(&["check", "-f", dir.path.to_str().unwrap(), "--no-git"]);
     assert!(check.status.success(), "{}", stderr(&check));
 
     let archive = qctl(&[
@@ -258,7 +258,7 @@ fn add_start_archive_round_trip() {
     ]);
     assert!(archive.status.success(), "{}", stderr(&archive));
 
-    let after = qctl(&["check", "-f", dir.path.to_str().unwrap()]);
+    let after = qctl(&["check", "-f", dir.path.to_str().unwrap(), "--no-git"]);
     assert!(after.status.success(), "{}", stderr(&after));
     let body = dir.read();
     assert!(body.contains("disposition: completed"));

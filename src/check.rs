@@ -48,9 +48,30 @@ pub fn run(args: &CheckArgs) -> Result<()> {
 }
 
 fn trailer_errors(ledger: &crate::ledger::Ledger, path: &std::path::Path) -> Vec<String> {
-    let root = path.parent().unwrap_or(path);
-    let Ok(closed) = trailers::closed_ids(root) else {
-        return Vec::new();
+    let cwd = match std::env::current_dir() {
+        Ok(cwd) => cwd,
+        Err(error) => return vec![format!("git trailer scan failed: {error}")],
+    };
+    let ledger_dir = path.parent().unwrap_or(path);
+    let (Ok(ledger_root), Ok(cwd_root)) =
+        (trailers::git_root(ledger_dir), trailers::git_root(&cwd))
+    else {
+        return vec![
+            "git trailer scan skipped: ledger is not in the current repository; pass --no-git"
+                .into(),
+        ];
+    };
+    let ledger_root = ledger_root.canonicalize().unwrap_or(ledger_root);
+    let cwd_root = cwd_root.canonicalize().unwrap_or(cwd_root);
+    if ledger_root != cwd_root {
+        return vec![
+            "git trailer scan skipped: ledger is not in the current repository; pass --no-git"
+                .into(),
+        ];
+    }
+    let closed = match trailers::closed_ids(&ledger_root) {
+        Ok(closed) => closed,
+        Err(error) => return vec![format!("git trailer scan failed: {error:#}")],
     };
     let queued: HashSet<_> = ledger.queue.iter().map(|task| task.id.as_str()).collect();
     let mut errors = Vec::new();

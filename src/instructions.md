@@ -26,7 +26,9 @@ binary. Use a local or `cargo install --git` build, then `qctl`.
 - `qctl check` validates from the schema embedded in the binary, plus graph
   rules JSON Schema cannot express, plus git trailers. A body line
   `Closes PREFIX-NNN` or `Completes: PREFIX-NNN` that names a still-queued
-  id is a check failure. `--no-git` skips the scan. `qctl close-from-git`
+  id is a check failure. A git scan that cannot run is a check failure, not
+  a skip. `--no-git` is for a scratch ledger that is not in the current
+  repository. `qctl close-from-git`
   archives those ids (evidence is the commit SHA). `qctl hook install`
   prints the Lefthook `pre-push` command (`mise run q close-from-git`) when
   `lefthook.yml` exists; it does not edit that file, and exits non-zero until

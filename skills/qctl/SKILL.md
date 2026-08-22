@@ -29,6 +29,7 @@ skill is the operator workflow; it does not duplicate the flag grammar.
 ```sh
 mise run q status
 mise run q check
+mise run q check --no-git
 mise run q instructions
 ```
 

@@ -1,16 +1,32 @@
 use anyhow::{Context, Result, ensure};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
-/// IDs closed by commit trailers (`Closes CTC-001` / `Completes: CTC-001`).
+/// IDs closed by commit trailers (`Closes CTC-001` / `Completes: PREFIX-NNN`).
 ///
-/// A missing git repo, or a `git log` that cannot run, is an empty list —
-/// `check` skips rather than failing the whole run (QCTL-026).
+/// A git failure is an error. `check` reports it; it does not skip.
 pub fn closed_ids(root: &Path) -> Result<Vec<(String, String)>> {
-    match git_log(root, &[]) {
-        Ok(text) => Ok(parse_log(&text)),
-        Err(_) => Ok(Vec::new()),
-    }
+    Ok(parse_log(&git_log(root, &[])?))
+}
+
+/// `git rev-parse --show-toplevel` from `start`.
+pub fn git_root(start: &Path) -> Result<PathBuf> {
+    let output = Command::new("git")
+        .args([
+            "-C",
+            &start.display().to_string(),
+            "rev-parse",
+            "--show-toplevel",
+        ])
+        .output()
+        .context("git rev-parse --show-toplevel")?;
+    ensure!(
+        output.status.success(),
+        "git rev-parse --show-toplevel failed: {}",
+        String::from_utf8_lossy(&output.stderr).trim()
+    );
+    let path = String::from_utf8(output.stdout).context("toplevel is not utf-8")?;
+    Ok(PathBuf::from(path.trim()))
 }
 
 /// Same scan, but a git failure is an error. `rev` is passed to `git log`

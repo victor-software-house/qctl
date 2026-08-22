@@ -66,7 +66,8 @@ pub struct SchemaArgs {
 pub struct CheckArgs {
     #[command(flatten)]
     pub ledger: LedgerArgs,
-    /// Skip the git trailer scan.
+    /// Skip the git trailer scan. Needed for a scratch ledger that is not in
+    /// the current repository.
     #[arg(long)]
     pub no_git: bool,
 }
