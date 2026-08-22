@@ -174,8 +174,14 @@ fn push_id(ids: &mut Vec<String>, raw: &str) {
 }
 
 fn not_a_work_tree(stderr: &[u8]) -> bool {
-    let stderr = String::from_utf8_lossy(stderr).to_ascii_lowercase();
-    stderr.contains("not a git repository") || stderr.contains("must be run in a work tree")
+    String::from_utf8_lossy(stderr)
+        .to_ascii_lowercase()
+        .lines()
+        .any(|line| {
+            let message = line.trim().strip_prefix("fatal: ").unwrap_or(line.trim());
+            message.starts_with("not a git repository")
+                || message.starts_with("this operation must be run in a work tree")
+        })
 }
 
 #[cfg(test)]
@@ -252,5 +258,8 @@ mod tests {
             b"fatal: this operation must be run in a work tree"
         ));
         assert!(!super::not_a_work_tree(b"fatal: cannot change to '/nope'"));
+        assert!(!super::not_a_work_tree(
+            b"fatal: cannot change to '/tmp/not a git repository': No such file or directory"
+        ));
     }
 }
