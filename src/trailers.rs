@@ -179,8 +179,12 @@ fn not_a_work_tree(stderr: &[u8]) -> bool {
         .lines()
         .any(|line| {
             let message = line.trim().strip_prefix("fatal: ").unwrap_or(line.trim());
-            message.starts_with("not a git repository")
-                || message.contains("must be run in a work tree")
+            if message.starts_with("not a git repository") {
+                return true;
+            }
+            let message = message.split_once(": ").map_or(message, |(_, rest)| rest);
+            message.starts_with("this operation must be run in a work tree")
+                || message.starts_with("must be run in a work tree")
         })
 }
 
@@ -263,6 +267,9 @@ mod tests {
         assert!(!super::not_a_work_tree(b"fatal: cannot change to '/nope'"));
         assert!(!super::not_a_work_tree(
             b"fatal: cannot change to '/tmp/not a git repository': No such file or directory"
+        ));
+        assert!(!super::not_a_work_tree(
+            b"fatal: cannot change to '/tmp/must be run in a work tree': No such file or directory"
         ));
     }
 }
