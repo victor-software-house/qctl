@@ -205,36 +205,6 @@ queue:
       judgement alone. promote is the verb that matters more than park:
       horizon to queue is four hand edits with the active invariant to respect.
 
-  - id: QCTL-025
-    title: add writes the row you meant, where you meant it
-    scope: qctl
-    outcome: A row added by the verb needs no hand edit afterwards, and lands where its priority says.
-    blocked_by: []
-    acceptance:
-      - add takes notes, blocked_by (repeatable), plan and link (repeatable).
-      - add --after ID and --before ID place the row; the tail stays the default.
-      - A blocker that does not sit earlier than the resolved insertion index is refused, including when --before or --after places the row ahead of it.
-      - add --horizon writes a horizon row through the same verb.
-    notes: >-
-      docs/adoption-report.md §3, filed together because both halves are
-      the same verb falling short of the schema. `AddArgs` (src/cli.rs:85) is
-      title, scope, outcome, acceptance and patch; QueuedTask also has notes,
-      blocked_by, plan and links. Every row they added needed a hand edit
-      straight after `add`, always for notes, which is where their conventions
-      put the evidence — so the verb bought them the id and the placement and
-      they edited the file anyway. Their reasoning for why blocked_by is safe
-      to accept — a blocker must be earlier, and `add` appends to the tail, so
-      any queued id qualifies — holds only while the tail is the only landing
-      place. Placement is the other half of the ask: queue order is priority,
-      so anything urgent means a hand edit or an immediate `start`, which
-      forces it to the head and makes it active, usually wrong. Take both and
-      the two halves collide: `add --before X --blocked-by X` would write a row
-      ahead of its own blocker, and `graph_errors` (src/ledger.rs:196-200)
-      rejects it as "is not earlier" — the verb writing a ledger its own check
-      refuses. So the blocker is validated against the resolved insertion
-      index, not against mere membership. Confirmed while filing this very row:
-      seven rows added, seven notes hand-edited in afterwards.
-
   - id: QCTL-026
     title: A check that cannot run says so instead of passing
     scope: qctl
@@ -370,6 +340,36 @@ horizon:
       answer.
 
 archive:
+  - id: QCTL-025
+    title: add writes the row you meant, where you meant it
+    scope: qctl
+    outcome: A row added by the verb needs no hand edit afterwards, and lands where its priority says.
+    notes: >-
+      docs/adoption-report.md §3, filed together because both halves are
+      the same verb falling short of the schema. `AddArgs` (src/cli.rs:85) is
+      title, scope, outcome, acceptance and patch; QueuedTask also has notes,
+      blocked_by, plan and links. Every row they added needed a hand edit
+      straight after `add`, always for notes, which is where their conventions
+      put the evidence — so the verb bought them the id and the placement and
+      they edited the file anyway. Their reasoning for why blocked_by is safe
+      to accept — a blocker must be earlier, and `add` appends to the tail, so
+      any queued id qualifies — holds only while the tail is the only landing
+      place. Placement is the other half of the ask: queue order is priority,
+      so anything urgent means a hand edit or an immediate `start`, which
+      forces it to the head and makes it active, usually wrong. Take both and
+      the two halves collide: `add --before X --blocked-by X` would write a row
+      ahead of its own blocker, and `graph_errors` (src/ledger.rs:196-200)
+      rejects it as "is not earlier" — the verb writing a ledger its own check
+      refuses. So the blocker is validated against the resolved insertion
+      index, not against mere membership. Confirmed while filing this very row:
+      seven rows added, seven notes hand-edited in afterwards.
+    completed: 2026-08-22T14:08:34
+    evidence:
+      - add writes notes, blocked_by, plan, and links.
+      - before and after place the row; a blocker that would not sit earlier is refused.
+      - horizon writes a horizon row.
+    disposition: completed
+
   - id: QCTL-004
     title: Point consumers at qctl check instead of copied Ajv tests
     scope: cross-repo

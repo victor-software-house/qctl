@@ -266,6 +266,149 @@ fn add_start_archive_round_trip() {
 }
 
 #[test]
+fn add_writes_notes_blockers_plan_and_links() {
+    let dir = LedgerDir::empty();
+    assert!(
+        qctl(&["init", "-p", "QCTL", "-f", dir.path.to_str().unwrap()])
+            .status
+            .success()
+    );
+    let first = qctl(&[
+        "add",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-t",
+        "First",
+        "-s",
+        "qctl",
+        "-o",
+        "done",
+        "-a",
+        "shipped",
+    ]);
+    assert!(first.status.success(), "{}", stderr(&first));
+    dir.plant("docs/plan.md", "# Plan\n");
+    let second = qctl(&[
+        "add",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-t",
+        "Second",
+        "-s",
+        "qctl",
+        "-o",
+        "done",
+        "-a",
+        "shipped",
+        "--notes",
+        "Why this exists.",
+        "--blocked-by",
+        "QCTL-001",
+        "--plan",
+        "docs/plan.md",
+        "--link",
+        "https://example.com/x",
+        "--after",
+        "QCTL-001",
+    ]);
+    assert!(second.status.success(), "{}", stderr(&second));
+    let body = dir.read();
+    assert!(body.contains("notes: Why this exists."), "{body}");
+    assert!(
+        body.contains("blocked_by:\n      - QCTL-001") || body.contains("blocked_by: [QCTL-001]"),
+        "{body}"
+    );
+    assert!(body.contains("plan: docs/plan.md"), "{body}");
+    assert!(body.contains("https://example.com/x"), "{body}");
+    let check = qctl(&["check", "-f", dir.path.to_str().unwrap(), "--no-git"]);
+    assert!(check.status.success(), "{}", stderr(&check));
+}
+
+#[test]
+fn add_refuses_a_blocker_that_would_not_sit_earlier() {
+    let dir = LedgerDir::empty();
+    dir.write(indoc! {"
+        schema_version: 3
+        prefix: QCTL
+        active: QCTL-001
+        queue:
+          - id: QCTL-001
+            title: First
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [It holds.]
+          - id: QCTL-002
+            title: Second
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [It holds.]
+        archive: []
+        horizon: []
+    "});
+    let output = qctl(&[
+        "add",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-t",
+        "Third",
+        "-s",
+        "s",
+        "-o",
+        "o",
+        "-a",
+        "a",
+        "--before",
+        "QCTL-002",
+        "--blocked-by",
+        "QCTL-002",
+    ]);
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("is not earlier"),
+        "{}",
+        stderr(&output)
+    );
+}
+
+#[test]
+fn add_refuses_to_become_queue_head_while_active_is_set() {
+    let dir = LedgerDir::empty();
+    dir.write(indoc! {"
+        schema_version: 3
+        prefix: QCTL
+        active: QCTL-001
+        queue:
+          - id: QCTL-001
+            title: First
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [It holds.]
+        archive: []
+        horizon: []
+    "});
+    let output = qctl(&[
+        "add",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-t",
+        "Ahead",
+        "-s",
+        "s",
+        "-o",
+        "o",
+        "-a",
+        "a",
+        "--before",
+        "QCTL-001",
+    ]);
+    assert!(!output.status.success());
+    assert!(stderr(&output).contains("queue[0]"), "{}", stderr(&output));
+}
+
+#[test]
 fn start_refuses_blocked_or_horizon() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"

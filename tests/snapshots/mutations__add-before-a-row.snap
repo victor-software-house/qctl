@@ -1,0 +1,36 @@
+---
+source: tests/mutations.rs
+description: "qctl add --title Middle --scope demo --outcome \"It sits between them.\" --acceptance \"It holds.\" --before DEMO-002"
+---
+# -0 +8
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 3
+ prefix: DEMO
+ active: DEMO-001
+ 
+ queue:
+   - id: DEMO-001
+     title: First
+     scope: demo
+     outcome: First outcome.
+     blocked_by: []
+     acceptance:
+       - It holds.
+ 
++  - id: DEMO-003
++    title: Middle
++    scope: demo
++    outcome: It sits between them.
++    blocked_by: []
++    acceptance:
++      - It holds.
++
+   # This comment belongs to DEMO-002 and travels with it.
+   - id: DEMO-002
+     title: Second
+     scope: demo
+     outcome: Second outcome.
+     blocked_by: [DEMO-001]
+     acceptance: [It also holds.]
+ archive: []
+ horizon: []

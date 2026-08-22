@@ -78,11 +78,17 @@ which zone an old stamp was taken in. Change it deliberately.
 ## Workflow
 
 1. `qctl status` then `qctl check` before mutation.
-2. `qctl add` appends an unblocked queue row and prints the new id.
+2. `qctl add` writes a queue row and prints the new id. `--notes`,
+   `--blocked-by`, `--plan` and `--link` fill the fields a hand edit
+   used to. `--after ID` / `--before ID` place it; the tail is the
+   default. A blocker that would not sit earlier than the new row is
+   refused. `--horizon --kind KIND --open OPEN` writes a horizon row
+   instead.
 3. `qctl start ID` requires the id to be queued and unblocked; it becomes
    `queue[0]` and `active`.
 4. `qctl archive ID -e EVIDENCE` moves a queued row to archive.
 5. Horizon is edited in the yaml until `qctl` grows promote/park verbs.
+   `add --horizon` is the one verb that already writes a horizon row.
 
 YAML: quote list items that start with `#` or contain `: `.
 
