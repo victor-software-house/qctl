@@ -190,3 +190,43 @@ fn hook_install_writes_pre_push() {
         stderr(&again)
     );
 }
+
+#[test]
+fn hook_install_prefers_lefthook_and_mise_q() {
+    let root = repo();
+    git(root.path(), &["add", "tasks.yaml"]);
+    git(root.path(), &["commit", "-m", "init"]);
+    fs::write(
+        root.path().join("lefthook.yml"),
+        "pre-push:\n  commands:\n    verify:\n      run: mise run verify\n",
+    )
+    .expect("lefthook");
+    let path = root.path().join("tasks.yaml");
+    let output = qctl(&["hook", "install", "-f", path.to_str().expect("utf-8")]);
+    assert!(output.status.success(), "{}", stderr(&output));
+    let body = fs::read_to_string(root.path().join("lefthook.yml")).expect("read");
+    assert!(body.contains("mise run q close-from-git"), "{body}");
+    assert!(body.contains("verify:"), "{body}");
+    let hook = String::from_utf8(
+        Command::new("git")
+            .args([
+                "-C",
+                &root.path().display().to_string(),
+                "rev-parse",
+                "--git-path",
+                "hooks/pre-push",
+            ])
+            .output()
+            .expect("path")
+            .stdout,
+    )
+    .expect("utf-8");
+    let hook = root.path().join(hook.trim());
+    assert!(
+        !hook.exists()
+            || !fs::read_to_string(&hook)
+                .unwrap_or_default()
+                .contains("close-from-git"),
+        "must not clobber lefthook with a git hook"
+    );
+}
