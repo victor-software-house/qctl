@@ -48,9 +48,37 @@ pub fn run(args: &CheckArgs) -> Result<()> {
 }
 
 fn trailer_errors(ledger: &crate::ledger::Ledger, path: &std::path::Path) -> Vec<String> {
-    let root = path.parent().unwrap_or(path);
-    let Ok(closed) = trailers::closed_ids(root) else {
-        return Vec::new();
+    let cwd = match std::env::current_dir() {
+        Ok(cwd) => cwd,
+        Err(error) => return vec![format!("git trailer scan failed: {error}")],
+    };
+    let ledger_dir = match path.parent() {
+        Some(parent) if !parent.as_os_str().is_empty() => parent,
+        _ => cwd.as_path(),
+    };
+    let skip = "git trailer scan skipped: ledger is not in the current repository; pass --no-git";
+    let ledger_root = match trailers::git_root_status(ledger_dir) {
+        trailers::GitRoot::Failed(error) => {
+            return vec![format!("git trailer scan failed: {error:#}")];
+        }
+        trailers::GitRoot::Absent => return vec![skip.into()],
+        trailers::GitRoot::Root(root) => root,
+    };
+    let cwd_root = match trailers::git_root_status(&cwd) {
+        trailers::GitRoot::Failed(error) => {
+            return vec![format!("git trailer scan failed: {error:#}")];
+        }
+        trailers::GitRoot::Absent => return vec![skip.into()],
+        trailers::GitRoot::Root(root) => root,
+    };
+    let ledger_root = ledger_root.canonicalize().unwrap_or(ledger_root);
+    let cwd_root = cwd_root.canonicalize().unwrap_or(cwd_root);
+    if ledger_root != cwd_root {
+        return vec![skip.into()];
+    }
+    let closed = match trailers::closed_ids(&ledger_root) {
+        Ok(closed) => closed,
+        Err(error) => return vec![format!("git trailer scan failed: {error:#}")],
     };
     let queued: HashSet<_> = ledger.queue.iter().map(|task| task.id.as_str()).collect();
     let mut errors = Vec::new();

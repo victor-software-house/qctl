@@ -1,16 +1,97 @@
-use anyhow::{Context, Result, ensure};
-use std::path::Path;
-use std::process::Command;
+use anyhow::{Context, Result, bail, ensure};
+use std::ffi::OsStr;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Output};
 
-/// IDs closed by commit trailers (`Closes CTC-001` / `Completes: CTC-001`).
+/// IDs closed by commit trailers (`Closes CTC-001` / `Completes: PREFIX-NNN`).
 ///
-/// A missing git repo, or a `git log` that cannot run, is an empty list —
-/// `check` skips rather than failing the whole run (QCTL-026).
+/// A git failure is an error. `check` reports it; it does not skip. An
+/// unborn HEAD is an empty scan: there are no commits, so no trailers.
 pub fn closed_ids(root: &Path) -> Result<Vec<(String, String)>> {
-    match git_log(root, &[]) {
-        Ok(text) => Ok(parse_log(&text)),
-        Err(_) => Ok(Vec::new()),
+    if !head_exists(root)? {
+        return Ok(Vec::new());
     }
+    Ok(parse_log(&git_log(root, &[])?))
+}
+
+/// Outcome of `git rev-parse --show-toplevel`.
+pub enum GitRoot {
+    /// `start` is inside this repository.
+    Root(PathBuf),
+    /// `start` is not inside a git repository.
+    Absent,
+    /// git could not be run, or failed for a reason other than "not a repo".
+    Failed(anyhow::Error),
+}
+
+/// `git rev-parse --show-toplevel` from `start`, classified by exit code.
+///
+/// git uses 128 for every fatal error. Absent is 128 plus the C-locale
+/// "not a git repository" text (`git_in` sets `LC_ALL=C`).
+#[must_use]
+pub fn git_root_status(start: &Path) -> GitRoot {
+    match git_in(start, ["rev-parse", "--show-toplevel"]) {
+        Err(error) => GitRoot::Failed(error),
+        Ok(output) if output.status.success() => match String::from_utf8(output.stdout) {
+            Ok(path) => GitRoot::Root(PathBuf::from(path.trim())),
+            Err(error) => GitRoot::Failed(error.into()),
+        },
+        Ok(output) if output.status.code() == Some(128) && not_a_work_tree(&output.stderr) => {
+            GitRoot::Absent
+        }
+        Ok(output) => GitRoot::Failed(anyhow::anyhow!(
+            "git rev-parse --show-toplevel failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        )),
+    }
+}
+
+/// `git rev-parse --show-toplevel` from `start`.
+pub fn git_root(start: &Path) -> Result<PathBuf> {
+    match git_root_status(start) {
+        GitRoot::Root(root) => Ok(root),
+        GitRoot::Absent => bail!("not a git repository"),
+        GitRoot::Failed(error) => Err(error),
+    }
+}
+
+fn head_exists(root: &Path) -> Result<bool> {
+    let output = git_in(root, ["rev-parse", "--verify", "--quiet", "HEAD"])?;
+    match output.status.code() {
+        Some(0) => Ok(true),
+        Some(1) => Ok(false),
+        _ => bail!(
+            "git rev-parse --verify HEAD failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ),
+    }
+}
+
+fn git_in(root: &Path, args: impl IntoIterator<Item = impl AsRef<OsStr>>) -> Result<Output> {
+    Command::new("git")
+        .env("LC_ALL", "C")
+        .env("LANG", "C")
+        .arg("-C")
+        .arg(root)
+        .args(args)
+        .output()
+        .context("git")
+}
+
+fn git_log(root: &Path, rev: &[&str]) -> Result<String> {
+    ensure!(
+        rev.iter().all(|part| !part.starts_with('-')),
+        "range is a revision, not a git option"
+    );
+    let mut args: Vec<&str> = vec!["log", "--format=%H%x00%B%x1e"];
+    args.extend(rev);
+    let output = git_in(root, args)?;
+    ensure!(
+        output.status.success(),
+        "git log failed: {}",
+        String::from_utf8_lossy(&output.stderr).trim()
+    );
+    Ok(String::from_utf8_lossy(&output.stdout).into_owned())
 }
 
 /// Same scan, but a git failure is an error. `rev` is passed to `git log`
@@ -54,28 +135,6 @@ fn is_zero_sha(sha: &str) -> bool {
     !sha.is_empty() && sha.chars().all(|ch| ch == '0')
 }
 
-fn git_log(root: &Path, rev: &[&str]) -> Result<String> {
-    ensure!(
-        rev.iter().all(|part| !part.starts_with('-')),
-        "range is a revision, not a git option"
-    );
-    let mut command = Command::new("git");
-    command.args([
-        "-C",
-        &root.display().to_string(),
-        "log",
-        "--format=%H%x00%B%x1e",
-    ]);
-    command.args(rev);
-    let output = command.output().context("git log")?;
-    ensure!(
-        output.status.success(),
-        "git log failed: {}",
-        String::from_utf8_lossy(&output.stderr).trim()
-    );
-    Ok(String::from_utf8_lossy(&output.stdout).into_owned())
-}
-
 #[must_use]
 pub fn parse_log(log: &str) -> Vec<(String, String)> {
     let mut found = Vec::new();
@@ -112,6 +171,26 @@ fn push_id(ids: &mut Vec<String>, raw: &str) {
     if id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-') && id.contains('-') {
         ids.push(id.to_owned());
     }
+}
+
+fn not_a_work_tree(stderr: &[u8]) -> bool {
+    String::from_utf8_lossy(stderr)
+        .to_ascii_lowercase()
+        .lines()
+        .any(|line| {
+            let message = line.trim().strip_prefix("fatal: ").unwrap_or(line.trim());
+            let message = match message.split_once(": ") {
+                Some((prefix, rest))
+                    if prefix.starts_with("git ") && !prefix.contains(['\'', '"', '/']) =>
+                {
+                    rest
+                }
+                _ => message,
+            };
+            message.starts_with("not a git repository")
+                || message.starts_with("this operation must be run in a work tree")
+                || message.starts_with("must be run in a work tree")
+        })
 }
 
 #[cfg(test)]
@@ -163,5 +242,42 @@ mod tests {
         let dir = tempfile::TempDir::new().unwrap();
         let err = super::closed_ids_rev(dir.path(), &["--output=/tmp/qctl-git"]).unwrap_err();
         assert!(format!("{err:#}").contains("revision"), "{err:#}");
+    }
+
+    #[test]
+    fn git_root_status_absent_vs_missing_dir() {
+        let dir = tempfile::TempDir::new().unwrap();
+        assert!(matches!(
+            super::git_root_status(dir.path()),
+            super::GitRoot::Absent
+        ));
+        let missing = dir.path().join("nope");
+        assert!(matches!(
+            super::git_root_status(&missing),
+            super::GitRoot::Failed(_)
+        ));
+    }
+
+    #[test]
+    fn not_a_work_tree_is_case_insensitive() {
+        assert!(super::not_a_work_tree(
+            b"fatal: Not a git repository (or any of the parent directories): .git"
+        ));
+        assert!(super::not_a_work_tree(
+            b"fatal: this operation must be run in a work tree"
+        ));
+        assert!(super::not_a_work_tree(
+            b"fatal: git rev-parse: this operation must be run in a work tree"
+        ));
+        assert!(super::not_a_work_tree(
+            b"fatal: git rev-parse: not a git repository (or any of the parent directories): .git"
+        ));
+        assert!(!super::not_a_work_tree(b"fatal: cannot change to '/nope'"));
+        assert!(!super::not_a_work_tree(
+            b"fatal: cannot change to '/tmp/not a git repository': No such file or directory"
+        ));
+        assert!(!super::not_a_work_tree(
+            b"fatal: cannot change to '/tmp/x: must be run in a work tree': No such file or directory"
+        ));
     }
 }

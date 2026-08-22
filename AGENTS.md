@@ -43,3 +43,8 @@ Multiline Rust is `indoc!` / `formatdoc!` / `writedoc!` / `printdoc!` /
 document.** Leave a raw `\n` only when that *is* the test (a single `'\n'`
 char, a one-line protocol payload, CRLF). This covers production code and
 test fixtures and assertions.
+
+## Check Behavior
+
+- `qctl check` does not skip a git trailer scan that failed. A scratch
+  ledger that is not in the current repository needs `--no-git`.
