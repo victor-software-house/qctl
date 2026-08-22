@@ -1,7 +1,7 @@
 use crate::cli::{AddArgs, ArchiveArgs, InitArgs};
 use crate::document::Document;
 use crate::ledger::{load, next_id, resolve_path};
-use crate::schema::QueuedTask;
+use crate::schema::{HorizonTask, QueuedTask};
 use anyhow::{Context, Result, bail, ensure};
 use std::fs;
 use std::path::Path;
@@ -33,6 +33,30 @@ pub fn init(args: &InitArgs) -> Result<()> {
 }
 
 pub fn add(args: &AddArgs) -> Result<()> {
+    if args.horizon {
+        ensure!(
+            args.blocked_by.is_empty(),
+            "horizon rows have no blocked_by"
+        );
+        ensure!(
+            args.acceptance.is_empty(),
+            "horizon rows have no acceptance"
+        );
+        add_horizon(args)
+    } else {
+        ensure!(
+            args.kind.is_none() && args.open.is_none(),
+            "--kind and --open belong to --horizon"
+        );
+        add_queue(args)
+    }
+}
+
+fn add_queue(args: &AddArgs) -> Result<()> {
+    ensure!(
+        !args.acceptance.is_empty(),
+        "add to the queue needs --acceptance"
+    );
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
     let id = next_id(&ledger)?;
@@ -41,19 +65,84 @@ pub fn add(args: &AddArgs) -> Result<()> {
         title: args.title.clone(),
         scope: args.scope.clone(),
         outcome: args.outcome.clone(),
-        blocked_by: Vec::new(),
+        blocked_by: args.blocked_by.clone(),
         acceptance: args.acceptance.clone(),
         patch: args.patch.clone(),
-        plan: None,
-        links: Vec::new(),
-        notes: None,
+        plan: args.plan.clone(),
+        links: args.links.clone(),
+        notes: args.notes.clone(),
     };
+
+    let mut ids: Vec<String> = ledger.queue.iter().map(|task| task.id.clone()).collect();
+    let insertion = insertion_index(&ids, args.before.as_deref(), args.after.as_deref())?;
+    if insertion == 0
+        && let Some(active) = ledger.active.as_deref()
+    {
+        bail!(
+            "add --before {before} would make {id} queue[0] while active is {active}",
+            before = args.before.as_deref().unwrap_or(active)
+        );
+    }
+    for blocker in &args.blocked_by {
+        match ids.iter().position(|queued| queued == blocker) {
+            Some(index) if index < insertion => {}
+            Some(_) => bail!("{id} <- {blocker} is not earlier"),
+            None => bail!("{id} <- {blocker} is not queued"),
+        }
+    }
 
     let mut document = read(&path)?;
     document.append("queue", &yaml_serde::to_value(&row)?)?;
+    if insertion < ids.len() {
+        ids.insert(insertion, id.clone());
+        document.reorder_rows("queue", &ids)?;
+    }
     write(&path, document)?;
     println!("{id}");
     Ok(())
+}
+
+fn add_horizon(args: &AddArgs) -> Result<()> {
+    let kind = args.kind.context("--horizon needs --kind")?;
+    let open = args.open.as_deref().context("--horizon needs --open")?;
+    let path = resolve_path(&args.ledger);
+    let ledger = load(&path)?;
+    let id = next_id(&ledger)?;
+    let row = HorizonTask {
+        id: id.clone(),
+        title: args.title.clone(),
+        scope: args.scope.clone(),
+        outcome: args.outcome.clone(),
+        kind,
+        open: open.to_owned(),
+        patch: args.patch.clone(),
+        plan: args.plan.clone(),
+        links: args.links.clone(),
+        notes: args.notes.clone(),
+    };
+    let mut document = read(&path)?;
+    document.append("horizon", &yaml_serde::to_value(&row)?)?;
+    write(&path, document)?;
+    println!("{id}");
+    Ok(())
+}
+
+fn insertion_index(ids: &[String], before: Option<&str>, after: Option<&str>) -> Result<usize> {
+    match (before, after) {
+        (None, None) => Ok(ids.len()),
+        (Some(_), Some(_)) => bail!("use --before or --after, not both"),
+        (Some(before), None) => ids
+            .iter()
+            .position(|id| id == before)
+            .with_context(|| format!("{before} is not queued")),
+        (None, Some(after)) => {
+            let index = ids
+                .iter()
+                .position(|id| id == after)
+                .with_context(|| format!("{after} is not queued"))?;
+            Ok(index + 1)
+        }
+    }
 }
 
 pub fn start(args: &crate::cli::IdArgs) -> Result<()> {

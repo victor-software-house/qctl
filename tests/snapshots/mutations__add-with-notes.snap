@@ -1,0 +1,21 @@
+---
+source: tests/mutations.rs
+description: "qctl add --title \"Teach it to write\" --scope demo --outcome \"The file comes back as it went in.\" --acceptance \"It holds.\" --notes \"The evidence lives here.\""
+---
+# -1 +9
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 3
+ prefix: DEMO
+ active: null
+-queue: []
++queue:
++  - id: DEMO-001
++    title: Teach it to write
++    scope: demo
++    outcome: The file comes back as it went in.
++    blocked_by: []
++    acceptance:
++      - It holds.
++    notes: The evidence lives here.
+ archive: []
+ horizon: []

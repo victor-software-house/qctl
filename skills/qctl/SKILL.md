@@ -46,6 +46,8 @@ Promote horizon → queue only after `open` is resolved and the row has
 
 ```sh
 qctl add -t 'Title' -s repo -o 'Done when…' -a 'Acceptance'
+qctl add -t 'Title' -s repo -o 'Done when…' -a 'Acceptance' --notes 'Why' --blocked-by QCTL-001 --after QCTL-001
+qctl add -t 'Title' -s repo -o 'Done when…' --horizon --kind research --open 'The missing fact'
 qctl start QCTL-001
 qctl archive QCTL-001 -e 'Shipped.'
 ```

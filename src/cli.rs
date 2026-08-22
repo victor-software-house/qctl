@@ -1,3 +1,4 @@
+use crate::schema::Kind;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
@@ -20,8 +21,8 @@ pub enum Command {
     Status(LedgerArgs),
     /// Validate schema, graph, and git trailers that closed still-queued ids.
     Check(CheckArgs),
-    /// Append a new unblocked task and print its id.
-    Add(AddArgs),
+    /// Add a task to the queue, or to the horizon.
+    Add(Box<AddArgs>),
     /// Make one unblocked queued task active (moves it to queue head).
     Start(IdArgs),
     /// Move a queued task to the archive.
@@ -91,11 +92,47 @@ pub struct AddArgs {
     pub scope: String,
     #[arg(short = 'o', long)]
     pub outcome: String,
-    /// Repeatable acceptance line.
-    #[arg(short = 'a', long = "acceptance", required = true)]
+    /// Repeatable acceptance line. Required on the queue; not used on the horizon.
+    #[arg(short = 'a', long = "acceptance", required_unless_present = "horizon")]
     pub acceptance: Vec<String>,
     #[arg(long)]
     pub patch: Option<String>,
+    #[arg(long)]
+    pub notes: Option<String>,
+    /// Repeatable blocker id. Each must sit earlier than the new row.
+    #[arg(long = "blocked-by")]
+    pub blocked_by: Vec<String>,
+    #[arg(long)]
+    pub plan: Option<String>,
+    /// Repeatable URI.
+    #[arg(long = "link")]
+    pub links: Vec<String>,
+    /// Place the new row immediately after this queued id.
+    #[arg(long, conflicts_with_all = ["before", "horizon"])]
+    pub after: Option<String>,
+    /// Place the new row immediately before this queued id.
+    #[arg(long, conflicts_with_all = ["after", "horizon"])]
+    pub before: Option<String>,
+    /// Write a horizon row instead of a queue row.
+    #[arg(long, requires_all = ["kind", "open"])]
+    pub horizon: bool,
+    /// Why it is on the horizon. Required with --horizon.
+    #[arg(long, value_parser = parse_kind)]
+    pub kind: Option<Kind>,
+    /// The missing start condition. Required with --horizon.
+    #[arg(long)]
+    pub open: Option<String>,
+}
+
+fn parse_kind(raw: &str) -> Result<Kind, String> {
+    match raw {
+        "research" => Ok(Kind::Research),
+        "evaluation" => Ok(Kind::Evaluation),
+        "deferred" => Ok(Kind::Deferred),
+        other => Err(format!(
+            "kind must be research, evaluation, or deferred (got {other})"
+        )),
+    }
 }
 
 #[derive(Args)]
