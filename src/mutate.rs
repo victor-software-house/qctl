@@ -322,9 +322,12 @@ fn write(path: &Path, document: Document) -> Result<()> {
 }
 
 fn require_plan(ledger: &Path, plan: Option<&str>) -> Result<()> {
-    let Some(plan) = plan.filter(|value| !value.is_empty()) else {
+    let Some(plan) = plan else {
         return Ok(());
     };
+    ensure!(!plan.is_empty(), "--plan needs a path");
+    crate::schema::inside_the_repo(plan, &())
+        .map_err(|error| anyhow::anyhow!("plan {plan} {error}"))?;
     let parent = ledger.parent().unwrap_or(Path::new("."));
     ensure!(parent.join(plan).is_file(), "missing plan {plan}");
     Ok(())

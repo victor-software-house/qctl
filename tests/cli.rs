@@ -618,6 +618,91 @@ fn add_refuses_a_plan_that_is_not_a_file() {
 }
 
 #[test]
+fn add_refuses_an_empty_plan() {
+    let dir = LedgerDir::empty();
+    dir.write(MINIMAL);
+    let output = qctl(&[
+        "add",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-t",
+        "t",
+        "-s",
+        "s",
+        "-o",
+        "o",
+        "-a",
+        "a",
+        "--plan",
+        "",
+    ]);
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("--plan needs a path"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(dir.read(), MINIMAL);
+}
+
+#[test]
+fn add_refuses_a_plan_outside_the_repository() {
+    let dir = LedgerDir::empty();
+    dir.write(MINIMAL);
+    let output = qctl(&[
+        "add",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-t",
+        "t",
+        "-s",
+        "s",
+        "-o",
+        "o",
+        "-a",
+        "a",
+        "--plan",
+        "../elsewhere.md",
+    ]);
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("must stay inside the repository"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(dir.read(), MINIMAL);
+}
+
+#[test]
+fn add_refuses_a_plan_that_is_not_markdown() {
+    let dir = LedgerDir::empty();
+    dir.write(MINIMAL);
+    dir.plant("docs/plan.txt", "not markdown\n");
+    let output = qctl(&[
+        "add",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-t",
+        "t",
+        "-s",
+        "s",
+        "-o",
+        "o",
+        "-a",
+        "a",
+        "--plan",
+        "docs/plan.txt",
+    ]);
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("must be a markdown document"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(dir.read(), MINIMAL);
+}
+
+#[test]
 fn add_to_an_empty_queue_does_not_invent_before() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"

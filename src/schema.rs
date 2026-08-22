@@ -437,7 +437,7 @@ impl std::fmt::Display for Kind {
 /// Somewhere this repository may point: relative, and never upward out of the
 /// tree. The schema says the same thing with a lookahead pattern the `regex`
 /// crate cannot compile.
-fn inside_the_repo<C>(path: &str, _: &C) -> garde::Result {
+pub(crate) fn inside_the_repo<C>(path: &str, _: &C) -> garde::Result {
     let candidate = Path::new(path);
     if candidate.is_absolute()
         || candidate
