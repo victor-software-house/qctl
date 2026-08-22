@@ -9,11 +9,11 @@ Control in-repo YAML work queues. One file, one active task, file order is
 priority. Replaces copied Ajv `test:ledger` scripts.
 
 ```sh
-mise run q -- check
-mise run q -- status
-mise run q -- add -t 'Title' -s repo -o 'Done when…' -a 'Acceptance'
-mise run q -- start OMX-001
-mise run q -- archive OMX-001 -e 'Shipped.'
+mise run q check
+mise run q status
+mise run q add -t 'Title' -s repo -o 'Done when…' -a 'Acceptance'
+mise run q start OMX-001
+mise run q archive OMX-001 -e 'Shipped.'
 ```
 
 Consumer mise catalog — copy [`examples/mise.toml`](examples/mise.toml), which

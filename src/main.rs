@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use qctl::cli::{Cli, Command};
+use qctl::cli::{Cli, Command, HookCommand};
 use qctl::ledger;
 use qctl::mutate;
 use std::io::{self, Write};
@@ -31,6 +31,10 @@ fn run() -> Result<()> {
         Command::Promote(args) => mutate::promote(&args)?,
         Command::Show(args) => ledger::print_show(&args)?,
         Command::Fmt(args) => qctl::format::run(&args)?,
+        Command::CloseFromGit(args) => mutate::close_from_git(&args)?,
+        Command::Hook(args) => match args.command {
+            HookCommand::Install(args) => qctl::hooks::install(&args)?,
+        },
         Command::Schema(args) => qctl::schema::write(&args)?,
         Command::Instructions => {
             io::stdout().write_all(INSTRUCTIONS.as_bytes())?;

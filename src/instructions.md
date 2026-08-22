@@ -9,9 +9,9 @@ Prefer the consumer's mise-provisioned task when it exists. Do not invent
 aliases for rejected commands.
 
 ```
-mise run q -- status
-mise run q -- check
-mise run q -- instructions
+mise run q status
+mise run q check
+mise run q instructions
 ```
 
 Until a tagged GitHub Release exists, `mise github:` cannot install a
@@ -26,7 +26,14 @@ binary. Use a local or `cargo install --git` build, then `qctl`.
 - `qctl check` validates from the schema embedded in the binary, plus graph
   rules JSON Schema cannot express, plus git trailers. A body line
   `Closes PREFIX-NNN` or `Completes: PREFIX-NNN` that names a still-queued
-  id is a check failure. `--no-git` skips the scan. Auto-archive is later.
+  id is a check failure. `--no-git` skips the scan. `qctl close-from-git`
+  archives those ids (evidence is the commit SHA). `qctl hook install`
+  prints the Lefthook `pre-push` command (`mise run q close-from-git`) when
+  `lefthook.yml` exists; it does not edit that file, and exits non-zero until
+  Lefthook already runs `close-from-git`. Otherwise it writes a
+  git `pre-push` that runs
+  `qctl close-from-git --pre-push`. Neither amends. `Closes #12` is
+  GitHub's, not ours.
 - `qctl instructions` and `--help` are the installed-version contract.
 
 ## Three lists
@@ -89,7 +96,16 @@ which zone an old stamp was taken in. Change it deliberately.
 3. `qctl start ID` requires the id to be queued and unblocked; it becomes
    `queue[0]` and `active`.
 4. `qctl archive ID -e EVIDENCE` moves a queued row to archive.
-5. `qctl park` writes a horizon row (`--kind` and `--open` required).
+   `qctl close-from-git` archives every queued id a commit-body trailer
+   closed. Default scan is the same history `check` uses. `--range
+   main..HEAD` narrows it. `--pre-push` reads the hook stdin. If it
+   wrote the ledger, it exits non-zero so the file can be committed;
+   it does not amend.
+5. `qctl hook install` prefers Lefthook: it prints `mise run q close-from-git`
+   for `pre-push.commands` and does not edit `lefthook.yml`. Until that command
+   is in Lefthook, install exits non-zero. Without Lefthook it writes
+   `.git/hooks/pre-push`. `--force` overwrites the git hook only.
+6. `qctl park` writes a horizon row (`--kind` and `--open` required).
    `qctl promote ID -a ACCEPTANCE` moves it onto the queue tail, dropping
    kind and open. It does not become active. `--blocked-by` must name a
    queued id. `add --horizon` and `park` write a `horizon:` key if the

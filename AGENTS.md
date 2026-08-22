@@ -31,3 +31,15 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   served task carries its own `#MISE tools` version and wins on PATH, so a
   consumer `[tools]` entry can only disagree with it — and needs a lockfile
   entry to survive `mise install --locked` (ctl-core#9 hit exactly that).
+- `qctl hook install` never edits `lefthook.yml`. Lefthook has no API to add
+  a command. If that file exists, install prints the `mise run q close-from-git`
+  snippet and exits non-zero until Lefthook already runs it. Otherwise it
+  writes `.git/hooks/pre-push`. `--force` overwrites the git hook only.
+
+## Strings
+
+Multiline Rust is `indoc!` / `formatdoc!` / `writedoc!` / `printdoc!` /
+`eprintdoc!` / `concatdoc!`. **No `concat!`.** **No escaped `\n` in a
+document.** Leave a raw `\n` only when that *is* the test (a single `'\n'`
+char, a one-line protocol payload, CRLF). This covers production code and
+test fixtures and assertions.

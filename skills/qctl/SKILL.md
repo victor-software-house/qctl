@@ -22,14 +22,14 @@ skill is the operator workflow; it does not duplicate the flag grammar.
 
 1. Find `tasks.yaml`. Read `active`, then `queue`, then `horizon` if the
    ask is research, evaluation, or "not now".
-2. Invoke `mise run q -- <args>` when the repo mounts the catalog.
-   Otherwise `qctl`. Never invent commands.
+2. Invoke `mise run q <args>` when the repo mounts the catalog.
+   Otherwise `qctl`. Never invent commands. Never `mise run q --`.
 3. Run `status`, then `check`, before mutation.
 
 ```sh
-mise run q -- status
-mise run q -- check
-mise run q -- instructions
+mise run q status
+mise run q check
+mise run q instructions
 ```
 
 ## Three lists
@@ -52,10 +52,18 @@ qctl park -t 'Title' -s repo -o 'Done when…' --kind research --open 'The missi
 qctl promote QCTL-001 -a 'Acceptance'
 qctl start QCTL-001
 qctl archive QCTL-001 -e 'Shipped.'
+qctl close-from-git
+qctl hook install
 ```
 
 `--plan` must be a file next to the ledger. `add --horizon` and `park`
-write `horizon:` if the ledger omitted it.
+write `horizon:` if the ledger omitted it. `close-from-git` archives
+queued ids closed by `Closes PREFIX-NNN` / `Completes: PREFIX-NNN` in
+the commit **body**. `hook install` prints the `mise run q close-from-git`
+snippet to add under Lefthook `pre-push.commands` when `lefthook.yml`
+exists; it does not edit that file, and exits non-zero until Lefthook
+already runs it. Otherwise it writes a git pre-push. `--force` overwrites
+the git hook only. Neither amends.
 
 Optional `patch:` is a forkctl patch name. When `active` has one, select
 that patch before editing.

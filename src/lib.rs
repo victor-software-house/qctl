@@ -6,6 +6,7 @@ pub mod check;
 pub mod cli;
 pub mod document;
 pub mod format;
+pub mod hooks;
 pub mod ledger;
 pub mod mutate;
 pub mod schema;
