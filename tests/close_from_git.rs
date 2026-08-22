@@ -179,7 +179,10 @@ fn hook_install_writes_pre_push() {
     .expect("utf-8");
     let hook = root.path().join(hook.trim());
     let body = fs::read_to_string(&hook).expect("hook");
-    assert!(body.contains("close-from-git --pre-push"), "{body}");
+    assert!(
+        body.contains("close-from-git --pre-push -f 'tasks.yaml'"),
+        "{body}"
+    );
     let mode = fs::metadata(&hook).expect("meta").permissions().mode();
     assert_eq!(mode & 0o111, 0o111, "hook is not executable: {mode:o}");
     let again = qctl(&["hook", "install", "-f", path.to_str().expect("utf-8")]);

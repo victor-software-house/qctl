@@ -36,7 +36,10 @@ pub fn closed_ids_pre_push(root: &Path, stdin: &str) -> Result<Vec<(String, Stri
         );
         let local_sha = parts[1];
         let remote_sha = parts[3];
-        let batch = if remote_sha.chars().all(|ch| ch == '0') {
+        if is_zero_sha(local_sha) {
+            continue;
+        }
+        let batch = if is_zero_sha(remote_sha) {
             closed_ids_rev(root, &[local_sha])?
         } else {
             let range = format!("{remote_sha}..{local_sha}");
@@ -47,7 +50,15 @@ pub fn closed_ids_pre_push(root: &Path, stdin: &str) -> Result<Vec<(String, Stri
     Ok(found)
 }
 
+fn is_zero_sha(sha: &str) -> bool {
+    !sha.is_empty() && sha.chars().all(|ch| ch == '0')
+}
+
 fn git_log(root: &Path, rev: &[&str]) -> Result<String> {
+    ensure!(
+        rev.iter().all(|part| !part.starts_with('-')),
+        "range is a revision, not a git option"
+    );
     let mut command = Command::new("git");
     command.args([
         "-C",
@@ -132,5 +143,21 @@ mod tests {
     fn ignores_subject_slogans() {
         let log = "abc\0Closes CTC-001 in the subject only\n\nNo trailer.\n";
         assert_eq!(parse_log(log), Vec::new());
+    }
+
+    #[test]
+    fn pre_push_skips_a_deleted_ref() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let zeros = "0".repeat(40);
+        let stdin = format!("refs/heads/gone {zeros} refs/heads/gone abcdef\n");
+        let found = super::closed_ids_pre_push(dir.path(), &stdin).unwrap();
+        assert_eq!(found, Vec::new());
+    }
+
+    #[test]
+    fn range_cannot_be_a_git_option() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let err = super::closed_ids_rev(dir.path(), &["--output=/tmp/qctl-git"]).unwrap_err();
+        assert!(format!("{err:#}").contains("revision"), "{err:#}");
     }
 }

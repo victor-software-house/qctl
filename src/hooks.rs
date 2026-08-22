@@ -7,17 +7,20 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-const PRE_PUSH: &str = "#!/bin/sh\nexec qctl close-from-git --pre-push\n";
-
-const LEFTHOOK_COMMAND: &str = "    qctl-close:\n      run: mise run q close-from-git\n";
-
 pub fn install(args: &HookInstallArgs) -> Result<()> {
     let ledger = resolve_path(&args.ledger);
+    let ledger = ledger
+        .canonicalize()
+        .with_context(|| ledger.display().to_string())?;
     let root = git_toplevel(ledger.parent().unwrap_or(&ledger))?;
+    let root = root
+        .canonicalize()
+        .with_context(|| root.display().to_string())?;
+    let rel = ledger_rel(&ledger, &root)?;
     if let Some(lefthook) = lefthook_path(&root) {
-        return install_lefthook(&lefthook, args.force);
+        return install_lefthook(&lefthook, &rel, args.force);
     }
-    install_git_hook(&root, args.force)
+    install_git_hook(&root, &rel, args.force)
 }
 
 fn git_toplevel(start: &Path) -> Result<PathBuf> {
@@ -49,7 +52,27 @@ fn lefthook_path(root: &Path) -> Option<PathBuf> {
     None
 }
 
-fn install_lefthook(path: &Path, force: bool) -> Result<()> {
+fn ledger_rel(ledger: &Path, root: &Path) -> Result<String> {
+    let rel = ledger
+        .strip_prefix(root)
+        .with_context(|| format!("{} is not inside {}", ledger.display(), root.display()))?;
+    let rel = rel.to_string_lossy();
+    ensure!(
+        !rel.contains('\''),
+        "ledger path must not contain a single quote"
+    );
+    Ok(rel.replace('\\', "/"))
+}
+
+fn lefthook_command(rel: &str) -> String {
+    format!("    qctl-close:\n      run: mise run q close-from-git -f {rel}\n")
+}
+
+fn git_hook_body(rel: &str) -> String {
+    format!("#!/bin/sh\nexec qctl close-from-git --pre-push -f '{rel}'\n")
+}
+
+fn install_lefthook(path: &Path, rel: &str, force: bool) -> Result<()> {
     let mut source = fs::read_to_string(path).with_context(|| path.display().to_string())?;
     if source.contains("close-from-git") {
         println!("lefthook already runs close-from-git ({})", path.display());
@@ -58,20 +81,24 @@ fn install_lefthook(path: &Path, force: bool) -> Result<()> {
     if !force && source.contains("qctl-close:") {
         anyhow::bail!("{} already has qctl-close (pass --force)", path.display());
     }
-    source = insert_lefthook_command(&source);
+    source = insert_lefthook_command(&source, rel);
     fs::write(path, source).with_context(|| path.display().to_string())?;
-    println!("wrote {} (mise run q close-from-git)", path.display());
+    println!(
+        "wrote {} (mise run q close-from-git -f {rel})",
+        path.display()
+    );
     Ok(())
 }
 
-fn insert_lefthook_command(source: &str) -> String {
+fn insert_lefthook_command(source: &str, rel: &str) -> String {
+    let command = lefthook_command(rel);
     if let Some(at) = source.find("\npre-push:\n") {
         let rest = &source[at + "\npre-push:\n".len()..];
         if let Some(commands) = rest.find("\n  commands:\n") {
             let insert_at = at + "\npre-push:\n".len() + commands + "\n  commands:\n".len();
             let mut out = String::new();
             out.push_str(&source[..insert_at]);
-            out.push_str(LEFTHOOK_COMMAND);
+            out.push_str(&command);
             out.push_str(&source[insert_at..]);
             return out;
         }
@@ -81,11 +108,11 @@ fn insert_lefthook_command(source: &str) -> String {
         out.push('\n');
     }
     out.push_str("pre-push:\n  commands:\n");
-    out.push_str(LEFTHOOK_COMMAND);
+    out.push_str(&command);
     out
 }
 
-fn install_git_hook(root: &Path, force: bool) -> Result<()> {
+fn install_git_hook(root: &Path, rel: &str, force: bool) -> Result<()> {
     let output = Command::new("git")
         .args([
             "-C",
@@ -117,7 +144,7 @@ fn install_git_hook(root: &Path, force: bool) -> Result<()> {
     if let Some(parent) = hook.parent() {
         fs::create_dir_all(parent).with_context(|| parent.display().to_string())?;
     }
-    fs::write(&hook, PRE_PUSH).with_context(|| hook.display().to_string())?;
+    fs::write(&hook, git_hook_body(rel)).with_context(|| hook.display().to_string())?;
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -138,16 +165,19 @@ mod tests {
     #[test]
     fn inserts_under_existing_pre_push_commands() {
         let source = "pre-push:\n  skip:\n    - run: test -n \"$CI\"\n  commands:\n    verify:\n      run: mise run verify\n";
-        let out = insert_lefthook_command(source);
+        let out = insert_lefthook_command(source, "tasks.yaml");
         assert!(out.contains("qctl-close:"));
-        assert!(out.contains("mise run q close-from-git"));
+        assert!(out.contains("mise run q close-from-git -f tasks.yaml"));
         assert!(out.contains("verify:"));
     }
 
     #[test]
     fn appends_pre_push_when_missing() {
-        let out = insert_lefthook_command("pre-commit:\n  commands:\n    lint:\n      run: true\n");
+        let out = insert_lefthook_command(
+            "pre-commit:\n  commands:\n    lint:\n      run: true\n",
+            "queue/tasks.yaml",
+        );
         assert!(out.contains("pre-push:"));
-        assert!(out.contains("mise run q close-from-git"));
+        assert!(out.contains("mise run q close-from-git -f queue/tasks.yaml"));
     }
 }
