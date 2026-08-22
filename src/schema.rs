@@ -439,9 +439,10 @@ impl std::fmt::Display for Kind {
 /// tree. The schema says the same thing with a lookahead pattern the `regex`
 /// crate cannot compile.
 pub(crate) fn inside_the_repo<C>(path: &str, _: &C) -> garde::Result {
-    let candidate = Path::new(path);
+    let normalized = path.replace('\\', "/");
+    let candidate = Path::new(&normalized);
     if candidate.is_absolute()
-        || path.contains('\\')
+        || normalized.starts_with('/')
         || candidate
             .components()
             .any(|part| matches!(part, Component::ParentDir))
