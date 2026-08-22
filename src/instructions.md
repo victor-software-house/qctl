@@ -28,8 +28,9 @@ binary. Use a local or `cargo install --git` build, then `qctl`.
   `Closes PREFIX-NNN` or `Completes: PREFIX-NNN` that names a still-queued
   id is a check failure. `--no-git` skips the scan. `qctl close-from-git`
   archives those ids (evidence is the commit SHA). `qctl hook install`
-  writes a Lefthook `pre-push` command (`mise run q close-from-git`) when
-  `lefthook.yml` exists; otherwise a git `pre-push` that runs
+  prints the Lefthook `pre-push` command (`mise run q close-from-git`) when
+  `lefthook.yml` exists; it does not edit that file. Otherwise it writes a
+  git `pre-push` that runs
   `qctl close-from-git --pre-push`. Neither amends. `Closes #12` is
   GitHub's, not ours.
 - `qctl instructions` and `--help` are the installed-version contract.
@@ -99,9 +100,10 @@ which zone an old stamp was taken in. Change it deliberately.
    main..HEAD` narrows it. `--pre-push` reads the hook stdin. If it
    wrote the ledger, it exits non-zero so the file can be committed;
    it does not amend.
-5. `qctl hook install` prefers Lefthook: it inserts `mise run q close-from-git`
-   under `pre-push.commands`. Without Lefthook it writes `.git/hooks/pre-push`.
-   `--force` overwrites. The hook does not amend.
+5. `qctl hook install` prefers Lefthook: it prints `mise run q close-from-git`
+   for `pre-push.commands` and does not edit `lefthook.yml`. Without Lefthook
+   it writes `.git/hooks/pre-push`.
+   `--force` overwrites the git hook. The hook does not amend.
 6. `qctl park` writes a horizon row (`--kind` and `--open` required).
    `qctl promote ID -a ACCEPTANCE` moves it onto the queue tail, dropping
    kind and open. It does not become active. `--blocked-by` must name a

@@ -6,6 +6,7 @@ use crate::ledger::{load, next_id, resolve_path};
 use crate::schema::{HorizonTask, QueuedTask};
 use crate::trailers;
 use anyhow::{Context, Result, bail, ensure};
+use indoc::formatdoc;
 use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
@@ -28,9 +29,15 @@ pub fn init(args: &InitArgs) -> Result<()> {
         fs::create_dir_all(parent)?;
     }
     let version = crate::schema::VERSION;
-    let body = format!(
-        "# yaml-language-server: $schema=https://raw.githubusercontent.com/victor-software-house/qctl/main/schema/tasks.schema.json\nschema_version: {version}\nprefix: {prefix}\nactive: null\nqueue: []\narchive: []\nhorizon: []\n"
-    );
+    let body = formatdoc! {"
+        # yaml-language-server: $schema=https://raw.githubusercontent.com/victor-software-house/qctl/main/schema/tasks.schema.json
+        schema_version: {version}
+        prefix: {prefix}
+        active: null
+        queue: []
+        archive: []
+        horizon: []
+    "};
     fs::write(&path, body).with_context(|| path.display().to_string())?;
     println!("wrote {}", path.display());
     Ok(())

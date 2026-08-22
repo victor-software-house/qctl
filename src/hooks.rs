@@ -1,4 +1,9 @@
 //! Git / Lefthook install for `close-from-git`.
+//!
+//! Lefthook has no API to add a command, no `extends`, and no merge of
+//! foreign config. This crate does not edit `lefthook.yml`. When that file
+//! exists, install prints the `mise run q` snippet to add. Otherwise it
+//! writes a git `pre-push`.
 
 use crate::cli::HookInstallArgs;
 use crate::ledger::resolve_path;
@@ -17,7 +22,7 @@ pub fn install(args: &HookInstallArgs) -> Result<()> {
         .with_context(|| root.display().to_string())?;
     let rel = ledger_rel(&ledger, &root)?;
     if let Some(lefthook) = lefthook_path(&root) {
-        return install_lefthook(&lefthook, &rel, args.force);
+        return install_lefthook(&lefthook, &rel);
     }
     install_git_hook(&root, &rel, args.force)
 }
@@ -82,8 +87,9 @@ fn ledger_rel(ledger: &Path, root: &Path) -> Result<String> {
     Ok(rel.replace('\\', "/"))
 }
 
-fn lefthook_command(rel: &str) -> String {
+fn lefthook_snippet(rel: &str) -> String {
     formatdoc! {"
+        # add under pre-push.commands in lefthook.yml
         {pad}qctl-close:
         {pad}  run: mise run q close-from-git -f '{rel}'
     ", pad = "    "}
@@ -96,73 +102,18 @@ fn git_hook_body(rel: &str) -> String {
     "}
 }
 
-fn install_lefthook(path: &Path, rel: &str, force: bool) -> Result<()> {
-    let mut source = fs::read_to_string(path).with_context(|| path.display().to_string())?;
+fn install_lefthook(path: &Path, rel: &str) -> Result<()> {
+    let source = fs::read_to_string(path).with_context(|| path.display().to_string())?;
     if source.contains("close-from-git") {
         println!("lefthook already runs close-from-git ({})", path.display());
         return Ok(());
     }
-    if !force && source.contains("qctl-close:") {
-        anyhow::bail!("{} already has qctl-close (pass --force)", path.display());
-    }
-    source = insert_lefthook_command(&source, rel);
-    fs::write(path, source).with_context(|| path.display().to_string())?;
-    println!(
-        "wrote {} (mise run q close-from-git -f {rel})",
+    print!("{}", lefthook_snippet(rel));
+    eprintln!(
+        "qctl: add that under pre-push.commands in {} (qctl does not edit Lefthook config)",
         path.display()
     );
     Ok(())
-}
-
-fn insert_lefthook_command(source: &str, rel: &str) -> String {
-    let command = lefthook_command(rel);
-    if let Some((from, to)) = pre_push_span(source) {
-        let block = &source[from..to];
-        if let Some(commands) = block.find("\n  commands:\n") {
-            let insert_at = from + commands + "\n  commands:\n".len();
-            let mut out = String::new();
-            out.push_str(&source[..insert_at]);
-            out.push_str(&command);
-            out.push_str(&source[insert_at..]);
-            return out;
-        }
-        let mut out = String::new();
-        out.push_str(&source[..to]);
-        if !block.ends_with('\n') {
-            out.push('\n');
-        }
-        out.push_str("  commands:\n");
-        out.push_str(&command);
-        out.push_str(&source[to..]);
-        return out;
-    }
-    let mut out = source.to_owned();
-    if !out.ends_with('\n') {
-        out.push('\n');
-    }
-    out.push_str("pre-push:\n  commands:\n");
-    out.push_str(&command);
-    out
-}
-
-/// Byte range of the `pre-push:` mapping, up to the next top-level key.
-fn pre_push_span(source: &str) -> Option<(usize, usize)> {
-    let body = if source.starts_with("pre-push:\n") {
-        "pre-push:\n".len()
-    } else {
-        let at = source.find("\npre-push:\n")?;
-        at + 1 + "pre-push:\n".len()
-    };
-    let rest = &source[body..];
-    let mut offset = 0;
-    for line in rest.split_inclusive('\n') {
-        if offset > 0 && line.starts_with(|ch: char| ch.is_ascii_alphabetic()) {
-            return Some((body.saturating_sub("pre-push:\n".len()), body + offset));
-        }
-        offset += line.len();
-    }
-    let from = body.saturating_sub("pre-push:\n".len());
-    Some((from, source.len()))
 }
 
 fn install_git_hook(root: &Path, rel: &str, force: bool) -> Result<()> {
@@ -213,37 +164,68 @@ fn install_git_hook(root: &Path, rel: &str, force: bool) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::insert_lefthook_command;
+    use super::{canonicalize_ledger, git_hook_body, ledger_rel, lefthook_snippet};
+    use indoc::indoc;
+    use std::path::Path;
 
     #[test]
-    fn inserts_under_existing_pre_push_commands() {
-        let source = "pre-push:\n  skip:\n    - run: test -n \"$CI\"\n  commands:\n    verify:\n      run: mise run verify\n";
-        let out = insert_lefthook_command(source, "tasks.yaml");
-        assert!(out.contains("qctl-close:"));
-        assert!(out.contains("mise run q close-from-git -f 'tasks.yaml'"));
-        assert!(out.contains("verify:"));
-    }
-
-    #[test]
-    fn appends_pre_push_when_missing() {
-        let out = insert_lefthook_command(
-            "pre-commit:\n  commands:\n    lint:\n      run: true\n",
-            "queue/tasks.yaml",
+    fn lefthook_snippet_is_the_command_to_paste() {
+        assert_eq!(
+            lefthook_snippet("tasks.yaml"),
+            indoc! {"
+                # add under pre-push.commands in lefthook.yml
+                    qctl-close:
+                      run: mise run q close-from-git -f 'tasks.yaml'
+            "}
         );
-        assert!(out.contains("pre-push:"));
-        assert!(out.contains("mise run q close-from-git -f 'queue/tasks.yaml'"));
-        let lint_at = out.find("lint:").expect("lint");
-        let qctl_at = out.find("qctl-close:").expect("qctl");
-        assert!(qctl_at > lint_at, "{out}");
     }
 
     #[test]
-    fn does_not_insert_under_pre_commit_commands() {
-        let source = "pre-push:\n  skip:\n    - run: test -n \"$CI\"\npre-commit:\n  commands:\n    lint:\n      run: true\n";
-        let out = insert_lefthook_command(source, "tasks.yaml");
-        let pre_commit = out.find("pre-commit:").expect("pre-commit");
-        let qctl = out.find("qctl-close:").expect("qctl");
-        assert!(qctl < pre_commit, "{out}");
-        assert!(out.contains("lint:"));
+    fn lefthook_snippet_quotes_a_nested_path() {
+        assert_eq!(
+            lefthook_snippet("queue/tasks.yaml"),
+            indoc! {"
+                # add under pre-push.commands in lefthook.yml
+                    qctl-close:
+                      run: mise run q close-from-git -f 'queue/tasks.yaml'
+            "}
+        );
+    }
+
+    #[test]
+    fn git_hook_body_is_the_script() {
+        assert_eq!(
+            git_hook_body("tasks.yaml"),
+            indoc! {"
+                #!/bin/sh
+                exec qctl close-from-git --pre-push -f 'tasks.yaml'
+            "}
+        );
+    }
+
+    #[test]
+    fn git_hook_body_quotes_a_nested_path() {
+        assert_eq!(
+            git_hook_body("queue/tasks.yaml"),
+            indoc! {"
+                #!/bin/sh
+                exec qctl close-from-git --pre-push -f 'queue/tasks.yaml'
+            "}
+        );
+    }
+
+    #[test]
+    fn canonicalize_ledger_joins_a_missing_file() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let missing = dir.path().join("tasks.yaml");
+        assert!(!missing.exists());
+        let got = canonicalize_ledger(&missing).unwrap();
+        assert_eq!(got, dir.path().canonicalize().unwrap().join("tasks.yaml"));
+    }
+
+    #[test]
+    fn ledger_rel_refuses_a_single_quote() {
+        let err = ledger_rel(Path::new("/repo/it's.yaml"), Path::new("/repo")).unwrap_err();
+        assert!(format!("{err:#}").contains("single quote"), "{err:#}");
     }
 }

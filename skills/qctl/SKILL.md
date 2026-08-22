@@ -59,9 +59,10 @@ qctl hook install
 `--plan` must be a file next to the ledger. `add --horizon` and `park`
 write `horizon:` if the ledger omitted it. `close-from-git` archives
 queued ids closed by `Closes PREFIX-NNN` / `Completes: PREFIX-NNN` in
-the commit **body**. `hook install` adds `mise run q close-from-git` to
-Lefthook when `lefthook.yml` exists; otherwise a git pre-push. Neither
-amends.
+the commit **body**. `hook install` prints the `mise run q close-from-git`
+snippet to add under Lefthook `pre-push.commands` when `lefthook.yml`
+exists; it does not edit that file. Otherwise it writes a git pre-push.
+Neither amends.
 
 Optional `patch:` is a forkctl patch name. When `active` has one, select
 that patch before editing.
