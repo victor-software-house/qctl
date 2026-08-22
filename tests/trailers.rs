@@ -89,28 +89,6 @@ fn check_ok_with_no_git() {
 }
 
 #[test]
-fn check_reports_when_the_git_scan_fails() {
-    let root = TempDir::new().expect("tmp");
-    git(root.path(), &["init"]);
-    fs::write(
-        root.path().join("tasks.yaml"),
-        indoc! {"
-            schema_version: 3
-            prefix: CTC
-            active: null
-            queue: []
-            archive: []
-        "},
-    )
-    .expect("ledger");
-    let path = root.path().join("tasks.yaml");
-    let output = qctl_in(root.path(), &["check", "-f", path.to_str().expect("utf-8")]);
-    assert!(!output.status.success(), "empty git history must not pass");
-    let err = stderr(&output);
-    assert!(err.contains("git trailer scan failed"), "{err}");
-}
-
-#[test]
 fn check_reports_when_the_ledger_is_outside_the_cwd_repo() {
     let ledger_repo = TempDir::new().expect("tmp");
     git(ledger_repo.path(), &["init"]);
@@ -165,4 +143,54 @@ fn check_without_no_git_does_not_pass_a_scratch_ledger() {
     assert!(!output.status.success(), "silence is the bug");
     let err = stderr(&output);
     assert!(err.contains("git trailer scan skipped"), "{err}");
+}
+
+#[test]
+fn check_accepts_an_unborn_head() {
+    let root = TempDir::new().expect("tmp");
+    git(root.path(), &["init"]);
+    fs::write(
+        root.path().join("tasks.yaml"),
+        indoc! {"
+            schema_version: 3
+            prefix: CTC
+            active: null
+            queue: []
+            archive: []
+        "},
+    )
+    .expect("ledger");
+    let path = root.path().join("tasks.yaml");
+    let output = qctl_in(root.path(), &["check", "-f", path.to_str().expect("utf-8")]);
+    assert!(output.status.success(), "{}", stderr(&output));
+}
+
+#[test]
+fn check_reports_when_git_cannot_run() {
+    let root = TempDir::new().expect("tmp");
+    git(root.path(), &["init"]);
+    fs::write(
+        root.path().join("tasks.yaml"),
+        indoc! {"
+            schema_version: 3
+            prefix: CTC
+            active: null
+            queue: []
+            archive: []
+        "},
+    )
+    .expect("ledger");
+    let path = root.path().join("tasks.yaml");
+    let empty = TempDir::new().expect("empty path");
+    let output = Command::new(env!("CARGO_BIN_EXE_qctl"))
+        .current_dir(root.path())
+        .args(["check", "-f", path.to_str().expect("utf-8")])
+        .env("PATH", empty.path())
+        .env_remove("TASKS_LEDGER")
+        .output()
+        .expect("spawn qctl");
+    assert!(!output.status.success(), "missing git must not pass");
+    let err = String::from_utf8_lossy(&output.stderr);
+    assert!(err.contains("git trailer scan failed"), "{err}");
+    assert!(!err.contains("pass --no-git"), "{err}");
 }

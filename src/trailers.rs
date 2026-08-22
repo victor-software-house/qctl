@@ -4,9 +4,39 @@ use std::process::Command;
 
 /// IDs closed by commit trailers (`Closes CTC-001` / `Completes: PREFIX-NNN`).
 ///
-/// A git failure is an error. `check` reports it; it does not skip.
+/// A git failure is an error. `check` reports it; it does not skip. An
+/// unborn HEAD is an empty scan: there are no commits, so no trailers.
 pub fn closed_ids(root: &Path) -> Result<Vec<(String, String)>> {
+    if !head_exists(root)? {
+        return Ok(Vec::new());
+    }
     Ok(parse_log(&git_log(root, &[])?))
+}
+
+/// Outcome of `git rev-parse --show-toplevel`.
+pub enum GitRoot {
+    /// `start` is inside this repository.
+    Root(PathBuf),
+    /// `start` is not inside a git repository.
+    Absent,
+    /// git could not be run, or failed for a reason other than "not a repo".
+    Failed(anyhow::Error),
+}
+
+/// `git rev-parse --show-toplevel` from `start`, classified.
+#[must_use]
+pub fn git_root_status(start: &Path) -> GitRoot {
+    match git_root(start) {
+        Ok(root) => GitRoot::Root(root),
+        Err(error) => {
+            let text = format!("{error:#}");
+            if text.contains("not a git repository") {
+                GitRoot::Absent
+            } else {
+                GitRoot::Failed(error)
+            }
+        }
+    }
 }
 
 /// `git rev-parse --show-toplevel` from `start`.
@@ -27,6 +57,27 @@ pub fn git_root(start: &Path) -> Result<PathBuf> {
     );
     let path = String::from_utf8(output.stdout).context("toplevel is not utf-8")?;
     Ok(PathBuf::from(path.trim()))
+}
+
+fn head_exists(root: &Path) -> Result<bool> {
+    let output = Command::new("git")
+        .args([
+            "-C",
+            &root.display().to_string(),
+            "rev-parse",
+            "--verify",
+            "HEAD",
+        ])
+        .output()
+        .context("git rev-parse --verify HEAD")?;
+    if output.status.success() {
+        return Ok(true);
+    }
+    let err = String::from_utf8_lossy(&output.stderr);
+    if err.contains("Needed a single revision") || err.contains("unknown revision") {
+        return Ok(false);
+    }
+    anyhow::bail!("git rev-parse --verify HEAD failed: {}", err.trim())
 }
 
 /// Same scan, but a git failure is an error. `rev` is passed to `git log`
