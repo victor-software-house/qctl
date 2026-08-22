@@ -1,8 +1,12 @@
-use crate::cli::{AddArgs, ArchiveArgs, InitArgs, ParkArgs, PromoteArgs};
+use crate::cli::{
+    AddArgs, ArchiveArgs, CloseFromGitArgs, Disposition, InitArgs, ParkArgs, PromoteArgs,
+};
 use crate::document::Document;
 use crate::ledger::{load, next_id, resolve_path};
 use crate::schema::{HorizonTask, QueuedTask};
+use crate::trailers;
 use anyhow::{Context, Result, bail, ensure};
+use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 use time::macros::format_description;
@@ -278,6 +282,52 @@ pub fn archive(args: &ArchiveArgs) -> Result<()> {
     )?;
     write(&path, document)?;
     println!("archived  {}", args.id);
+    Ok(())
+}
+
+pub fn close_from_git(args: &CloseFromGitArgs) -> Result<()> {
+    let path = resolve_path(&args.ledger);
+    let root = path.parent().unwrap_or(&path);
+    let closed = if args.pre_push {
+        let stdin = std::io::read_to_string(std::io::stdin()).context("read pre-push stdin")?;
+        trailers::closed_ids_pre_push(root, &stdin)?
+    } else if let Some(range) = &args.range {
+        trailers::closed_ids_rev(root, &[range.as_str()])?
+    } else {
+        trailers::closed_ids_rev(root, &[])?
+    };
+    let ledger = load(&path)?;
+    let queued: HashSet<String> = ledger.queue.iter().map(|task| task.id.clone()).collect();
+    let mut seen = HashSet::new();
+    let mut archived = Vec::new();
+    for (id, sha) in closed {
+        if !queued.contains(&id) || !seen.insert(id.clone()) {
+            continue;
+        }
+        archive(&ArchiveArgs {
+            id: id.clone(),
+            ledger: args.ledger.clone(),
+            evidence: vec![sha],
+            disposition: Disposition::Completed,
+        })?;
+        archived.push(id);
+    }
+    let ledger = load(&path)?;
+    if let Some(active) = &ledger.active
+        && seen.contains(active)
+    {
+        bail!("active {active} still names a closed id");
+    }
+    if args.pre_push && !archived.is_empty() {
+        let name = path
+            .file_name()
+            .unwrap_or_else(|| std::ffi::OsStr::new("tasks.yaml"))
+            .to_string_lossy();
+        bail!(
+            "archived {}; commit {name} and push again (the hook does not amend)",
+            archived.join(", ")
+        );
+    }
     Ok(())
 }
 

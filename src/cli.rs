@@ -35,6 +35,10 @@ pub enum Command {
     Show(IdArgs),
     /// Rewrite a ledger into the style it declares.
     Fmt(FmtArgs),
+    /// Archive queued ids that commit-body trailers closed.
+    CloseFromGit(CloseFromGitArgs),
+    /// Install git hooks for this ledger.
+    Hook(HookArgs),
     /// Write schema/tasks.schema.json from the ledger types.
     Schema(SchemaArgs),
     /// Print the installed-version operator contract.
@@ -65,6 +69,39 @@ pub struct CheckArgs {
     /// Skip the git trailer scan.
     #[arg(long)]
     pub no_git: bool,
+}
+
+#[derive(Args, Clone)]
+pub struct CloseFromGitArgs {
+    #[command(flatten)]
+    pub ledger: LedgerArgs,
+    /// Read pre-push stdin (`<local-ref> <local-sha> <remote-ref> <remote-sha>`).
+    #[arg(long)]
+    pub pre_push: bool,
+    /// `git log` revision range, such as `main..HEAD`. Default: the whole history, same as `check`.
+    #[arg(long, conflicts_with = "pre_push")]
+    pub range: Option<String>,
+}
+
+#[derive(Args)]
+pub struct HookArgs {
+    #[command(subcommand)]
+    pub command: HookCommand,
+}
+
+#[derive(Subcommand)]
+pub enum HookCommand {
+    /// Write `.git/hooks/pre-push` so a push archives closed ids.
+    Install(HookInstallArgs),
+}
+
+#[derive(Args)]
+pub struct HookInstallArgs {
+    #[command(flatten)]
+    pub ledger: LedgerArgs,
+    /// Overwrite an existing pre-push hook.
+    #[arg(long)]
+    pub force: bool,
 }
 
 #[derive(Args, Clone)]

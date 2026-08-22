@@ -52,10 +52,14 @@ qctl park -t 'Title' -s repo -o 'Done when…' --kind research --open 'The missi
 qctl promote QCTL-001 -a 'Acceptance'
 qctl start QCTL-001
 qctl archive QCTL-001 -e 'Shipped.'
+qctl close-from-git
+qctl hook install
 ```
 
 `--plan` must be a file next to the ledger. `add --horizon` and `park`
-write `horizon:` if the ledger omitted it.
+write `horizon:` if the ledger omitted it. `close-from-git` archives
+queued ids closed by `Closes PREFIX-NNN` / `Completes: PREFIX-NNN` in
+the commit **body**. The pre-push hook does not amend.
 
 Optional `patch:` is a forkctl patch name. When `active` has one, select
 that patch before editing.
