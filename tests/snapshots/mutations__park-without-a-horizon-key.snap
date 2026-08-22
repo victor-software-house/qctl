@@ -1,0 +1,18 @@
+---
+source: tests/mutations.rs
+description: "qctl park --title \"Find the missing fact\" --scope demo --outcome \"The question has an answer.\" --kind research --open \"The fact is missing.\""
+---
+# -0 +7
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 3
+ prefix: DEMO
+ active: null
+ queue: []
+ archive: []
++horizon:
++  - id: DEMO-001
++    title: Find the missing fact
++    scope: demo
++    outcome: The question has an answer.
++    kind: research
++    open: The fact is missing.

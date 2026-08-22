@@ -30,8 +30,9 @@ const SCHEMA_ID: &str =
 /// A plan document: relative, inside the repository, and markdown. The negative
 /// lookaheads are why this one is a pattern the schema carries and garde does
 /// not — the `regex` crate does not implement them, so [`inside_the_repo`]
-/// enforces the same rule at the boundary.
-const PLAN_PATTERN: &str = r"^(?!/)(?!.*\.\.).+\.md$";
+/// enforces the same rule at the boundary. `..` is a path segment, not a
+/// substring, so `docs/v1..2.md` is a document and `../secret.md` is not.
+const PLAN_PATTERN: &str = r"^(?![/\\])(?!.*(?:^|[/\\])\.\.(?:[/\\]|$)).+\.md$";
 
 /// The one description of a link, since neither garde nor schemars takes a
 /// `format` for the items of a list.
@@ -437,9 +438,11 @@ impl std::fmt::Display for Kind {
 /// Somewhere this repository may point: relative, and never upward out of the
 /// tree. The schema says the same thing with a lookahead pattern the `regex`
 /// crate cannot compile.
-fn inside_the_repo<C>(path: &str, _: &C) -> garde::Result {
-    let candidate = Path::new(path);
+pub(crate) fn inside_the_repo<C>(path: &str, _: &C) -> garde::Result {
+    let normalized = path.replace('\\', "/");
+    let candidate = Path::new(&normalized);
     if candidate.is_absolute()
+        || normalized.starts_with('/')
         || candidate
             .components()
             .any(|part| matches!(part, Component::ParentDir))

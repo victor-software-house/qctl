@@ -198,6 +198,23 @@ fn accepts_a_ledger(#[case] ledger: &str) {
     "},
     "archive"
 )]
+#[case::a_plan_with_a_backslash_parent(
+    indoc! {r#"
+        schema_version: 3
+        prefix: QCTL
+        active: null
+        queue:
+          - id: QCTL-001
+            title: t
+            scope: qctl
+            outcome: o
+            blocked_by: []
+            acceptance: [a]
+            plan: "..\\secret.md"
+        archive: []
+    "#},
+    "does not match"
+)]
 #[case::a_file_that_does_not_parse(
     indoc! {"
         queue:

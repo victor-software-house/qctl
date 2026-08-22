@@ -557,3 +557,202 @@ fn status_lists_horizon() {
     assert!(text.contains("QCTL-008"));
     assert!(text.contains("evaluation"));
 }
+
+#[test]
+fn park_writes_a_missing_horizon_key() {
+    let dir = LedgerDir::empty();
+    dir.write(indoc! {"
+        schema_version: 3
+        prefix: QCTL
+        active: null
+        queue: []
+        archive: []
+    "});
+    let output = qctl(&[
+        "park",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-t",
+        "later",
+        "-s",
+        "s",
+        "-o",
+        "o",
+        "--kind",
+        "research",
+        "--open",
+        "wait",
+    ]);
+    assert!(output.status.success(), "{}", stderr(&output));
+    let body = dir.read();
+    assert!(body.contains("horizon:"), "{body}");
+    assert!(body.contains("QCTL-001"), "{body}");
+}
+
+#[test]
+fn add_refuses_a_plan_that_is_not_a_file() {
+    let dir = LedgerDir::empty();
+    dir.write(MINIMAL);
+    let output = qctl(&[
+        "add",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-t",
+        "t",
+        "-s",
+        "s",
+        "-o",
+        "o",
+        "-a",
+        "a",
+        "--plan",
+        "docs/nope.md",
+    ]);
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("missing plan docs/nope.md"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(dir.read(), MINIMAL);
+}
+
+#[test]
+fn add_refuses_an_empty_plan() {
+    let dir = LedgerDir::empty();
+    dir.write(MINIMAL);
+    let output = qctl(&[
+        "add",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-t",
+        "t",
+        "-s",
+        "s",
+        "-o",
+        "o",
+        "-a",
+        "a",
+        "--plan",
+        "",
+    ]);
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("--plan needs a path"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(dir.read(), MINIMAL);
+}
+
+#[test]
+fn add_refuses_a_plan_outside_the_repository() {
+    let dir = LedgerDir::empty();
+    dir.write(MINIMAL);
+    let output = qctl(&[
+        "add",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-t",
+        "t",
+        "-s",
+        "s",
+        "-o",
+        "o",
+        "-a",
+        "a",
+        "--plan",
+        "../elsewhere.md",
+    ]);
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("must stay inside the repository"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(dir.read(), MINIMAL);
+}
+
+#[test]
+fn add_refuses_a_plan_that_is_not_markdown() {
+    let dir = LedgerDir::empty();
+    dir.write(MINIMAL);
+    dir.plant("docs/plan.txt", "not markdown\n");
+    let output = qctl(&[
+        "add",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-t",
+        "t",
+        "-s",
+        "s",
+        "-o",
+        "o",
+        "-a",
+        "a",
+        "--plan",
+        "docs/plan.txt",
+    ]);
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("must be a markdown document"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(dir.read(), MINIMAL);
+}
+
+#[test]
+fn add_accepts_a_plan_whose_name_contains_dotdot() {
+    let dir = LedgerDir::empty();
+    dir.write(MINIMAL);
+    dir.plant("docs/foo..bar.md", "# Plan\n");
+    let output = qctl(&[
+        "add",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-t",
+        "t",
+        "-s",
+        "s",
+        "-o",
+        "o",
+        "-a",
+        "a",
+        "--plan",
+        "docs/foo..bar.md",
+    ]);
+    assert!(output.status.success(), "{}", stderr(&output));
+    let check = qctl(&["check", "-f", dir.path.to_str().unwrap(), "--no-git"]);
+    assert!(check.status.success(), "{}", stderr(&check));
+    assert!(dir.read().contains("plan: docs/foo..bar.md"));
+}
+
+#[test]
+fn add_to_an_empty_queue_does_not_invent_before() {
+    let dir = LedgerDir::empty();
+    dir.write(indoc! {"
+        schema_version: 3
+        prefix: QCTL
+        active: QCTL-099
+        queue: []
+        archive: []
+        horizon: []
+    "});
+    let output = qctl(&[
+        "add",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "-t",
+        "t",
+        "-s",
+        "s",
+        "-o",
+        "o",
+        "-a",
+        "a",
+    ]);
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert!(!stderr(&output).contains("--before"), "{}", stderr(&output));
+    assert!(dir.read().contains("QCTL-001"));
+}

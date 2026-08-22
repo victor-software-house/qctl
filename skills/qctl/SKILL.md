@@ -54,6 +54,9 @@ qctl start QCTL-001
 qctl archive QCTL-001 -e 'Shipped.'
 ```
 
+`--plan` must be a file next to the ledger. `add --horizon` and `park`
+write `horizon:` if the ledger omitted it.
+
 Optional `patch:` is a forkctl patch name. When `active` has one, select
 that patch before editing.
 

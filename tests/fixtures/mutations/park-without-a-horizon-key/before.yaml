@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=./schema/tasks.schema.json
+schema_version: 3
+prefix: DEMO
+active: null
+queue: []
+archive: []

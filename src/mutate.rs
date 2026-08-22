@@ -59,6 +59,7 @@ fn add_queue(args: &AddArgs) -> Result<()> {
     );
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
+    require_plan(&path, args.plan.as_deref())?;
     let id = next_id(&ledger)?;
     let row = QueuedTask {
         id: id.clone(),
@@ -76,6 +77,7 @@ fn add_queue(args: &AddArgs) -> Result<()> {
     let mut ids: Vec<String> = ledger.queue.iter().map(|task| task.id.clone()).collect();
     let insertion = insertion_index(&ids, args.before.as_deref(), args.after.as_deref())?;
     if insertion == 0
+        && !ids.is_empty()
         && let Some(active) = ledger.active.as_deref()
     {
         bail!(
@@ -107,6 +109,7 @@ fn add_horizon(args: &AddArgs) -> Result<()> {
     let open = args.open.as_deref().context("--horizon needs --open")?;
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
+    require_plan(&path, args.plan.as_deref())?;
     let id = next_id(&ledger)?;
     let row = HorizonTask {
         id: id.clone(),
@@ -166,6 +169,7 @@ pub fn start(args: &crate::cli::IdArgs) -> Result<()> {
 pub fn park(args: &ParkArgs) -> Result<()> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
+    require_plan(&path, args.plan.as_deref())?;
     let id = next_id(&ledger)?;
     let row = HorizonTask {
         id: id.clone(),
@@ -315,6 +319,18 @@ fn write(path: &Path, document: Document) -> Result<()> {
         source
     };
     fs::write(path, source).with_context(|| path.display().to_string())
+}
+
+fn require_plan(ledger: &Path, plan: Option<&str>) -> Result<()> {
+    let Some(plan) = plan else {
+        return Ok(());
+    };
+    ensure!(!plan.is_empty(), "--plan needs a path");
+    crate::schema::inside_the_repo(plan, &())
+        .map_err(|error| anyhow::anyhow!("plan {plan} {error}"))?;
+    let parent = ledger.parent().unwrap_or(Path::new("."));
+    ensure!(parent.join(plan).is_file(), "missing plan {plan}");
+    Ok(())
 }
 
 fn valid_prefix(prefix: &str) -> bool {

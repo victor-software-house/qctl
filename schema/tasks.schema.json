@@ -82,7 +82,7 @@
 				},
 				"plan": {
 					"description": "The plan it was worked from, if it had one.",
-					"pattern": "^(?!/)(?!.*\\.\\.).+\\.md$",
+					"pattern": "^(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+\\.md$",
 					"type": [
 						"string",
 						"null"
@@ -174,7 +174,7 @@
 				},
 				"plan": {
 					"description": "A plan document in this repository, when it already has one.",
-					"pattern": "^(?!/)(?!.*\\.\\.).+\\.md$",
+					"pattern": "^(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+\\.md$",
 					"type": [
 						"string",
 						"null"
@@ -281,7 +281,7 @@
 				},
 				"plan": {
 					"description": "A plan document in this repository, when the task needs one.",
-					"pattern": "^(?!/)(?!.*\\.\\.).+\\.md$",
+					"pattern": "^(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+\\.md$",
 					"type": [
 						"string",
 						"null"
