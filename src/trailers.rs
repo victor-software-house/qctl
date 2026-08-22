@@ -26,7 +26,8 @@ pub enum GitRoot {
 
 /// `git rev-parse --show-toplevel` from `start`, classified by exit code.
 ///
-/// git uses 128 for "not a repository". That is independent of locale.
+/// git uses 128 for every fatal error. Absent is 128 plus the C-locale
+/// "not a git repository" text (`git_in` sets `LC_ALL=C`).
 #[must_use]
 pub fn git_root_status(start: &Path) -> GitRoot {
     match git_in(start, ["rev-parse", "--show-toplevel"]) {
@@ -35,7 +36,12 @@ pub fn git_root_status(start: &Path) -> GitRoot {
             Ok(path) => GitRoot::Root(PathBuf::from(path.trim())),
             Err(error) => GitRoot::Failed(error.into()),
         },
-        Ok(output) if output.status.code() == Some(128) => GitRoot::Absent,
+        Ok(output)
+            if output.status.code() == Some(128)
+                && String::from_utf8_lossy(&output.stderr).contains("not a git repository") =>
+        {
+            GitRoot::Absent
+        }
         Ok(output) => GitRoot::Failed(anyhow::anyhow!(
             "git rev-parse --show-toplevel failed: {}",
             String::from_utf8_lossy(&output.stderr).trim()
@@ -219,5 +225,19 @@ mod tests {
         let dir = tempfile::TempDir::new().unwrap();
         let err = super::closed_ids_rev(dir.path(), &["--output=/tmp/qctl-git"]).unwrap_err();
         assert!(format!("{err:#}").contains("revision"), "{err:#}");
+    }
+
+    #[test]
+    fn git_root_status_absent_vs_missing_dir() {
+        let dir = tempfile::TempDir::new().unwrap();
+        assert!(matches!(
+            super::git_root_status(dir.path()),
+            super::GitRoot::Absent
+        ));
+        let missing = dir.path().join("nope");
+        assert!(matches!(
+            super::git_root_status(&missing),
+            super::GitRoot::Failed(_)
+        ));
     }
 }
