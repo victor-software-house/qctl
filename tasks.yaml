@@ -183,28 +183,6 @@ queue:
       keep both validators forever or delete on faith. `qctl check --help` at
       HEAD offers only --file and --no-git.
 
-  - id: QCTL-024
-    title: Horizon has verbs, so a row is not hand-edited into place
-    scope: qctl
-    outcome: Moving a row between horizon and queue is one command that respects the invariants, not four hand edits.
-    blocked_by: []
-    acceptance:
-      - park writes a horizon row from title, scope, outcome, kind and open.
-      - promote moves a horizon row to the queue, dropping kind and open and taking acceptance and any blockers.
-      - promote respects the active invariant and refuses rather than corrupting it.
-      - instructions.md no longer tells a reader that horizon is edited in the yaml.
-    notes: >-
-      docs/adoption-report.md §2. instructions.md is already upfront that
-      horizon is edited by hand until these verbs exist; they hit it on day
-      one, and the hand edit is the thing the same document tells agents not to
-      do. Worth keeping from their write-up: they call the HorizonTask schema
-      shape *good* and ask us not to change it. Having no acceptance and no
-      blocked_by mechanically forced them to split one vague request into a
-      queue row with provable acceptance and a horizon row with a named
-      blocker, which they say they would not have split as cleanly on
-      judgement alone. promote is the verb that matters more than park:
-      horizon to queue is four hand edits with the active invariant to respect.
-
   - id: QCTL-026
     title: A check that cannot run says so instead of passing
     scope: qctl
@@ -340,6 +318,28 @@ horizon:
       answer.
 
 archive:
+  - id: QCTL-024
+    title: Horizon has verbs, so a row is not hand-edited into place
+    scope: qctl
+    outcome: Moving a row between horizon and queue is one command that respects the invariants, not four hand edits.
+    notes: >-
+      docs/adoption-report.md §2. instructions.md is already upfront that
+      horizon is edited by hand until these verbs exist; they hit it on day
+      one, and the hand edit is the thing the same document tells agents not to
+      do. Worth keeping from their write-up: they call the HorizonTask schema
+      shape *good* and ask us not to change it. Having no acceptance and no
+      blocked_by mechanically forced them to split one vague request into a
+      queue row with provable acceptance and a horizon row with a named
+      blocker, which they say they would not have split as cleanly on
+      judgement alone. promote is the verb that matters more than park:
+      horizon to queue is four hand edits with the active invariant to respect.
+    completed: 2026-08-22T14:18:45
+    evidence:
+      - park writes a horizon row from title, scope, outcome, kind and open.
+      - promote moves a horizon row onto the queue tail, dropping kind and open, and leaves active alone.
+      - instructions.md no longer says horizon is edited in the yaml.
+    disposition: completed
+
   - id: QCTL-025
     title: add writes the row you meant, where you meant it
     scope: qctl

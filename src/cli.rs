@@ -27,6 +27,10 @@ pub enum Command {
     Start(IdArgs),
     /// Move a queued task to the archive.
     Archive(ArchiveArgs),
+    /// Write a horizon row.
+    Park(ParkArgs),
+    /// Move a horizon row onto the queue.
+    Promote(PromoteArgs),
     /// Print one queued, archived, or horizon task.
     Show(IdArgs),
     /// Rewrite a ledger into the style it declares.
@@ -152,6 +156,43 @@ pub struct ArchiveArgs {
     pub evidence: Vec<String>,
     #[arg(long, value_enum, default_value = "completed")]
     pub disposition: Disposition,
+}
+
+#[derive(Args)]
+pub struct ParkArgs {
+    #[command(flatten)]
+    pub ledger: LedgerArgs,
+    #[arg(short = 't', long)]
+    pub title: String,
+    #[arg(short = 's', long)]
+    pub scope: String,
+    #[arg(short = 'o', long)]
+    pub outcome: String,
+    #[arg(long, value_parser = parse_kind)]
+    pub kind: Kind,
+    #[arg(long)]
+    pub open: String,
+    #[arg(long)]
+    pub notes: Option<String>,
+    #[arg(long)]
+    pub plan: Option<String>,
+    #[arg(long = "link")]
+    pub links: Vec<String>,
+    #[arg(long)]
+    pub patch: Option<String>,
+}
+
+#[derive(Args)]
+pub struct PromoteArgs {
+    pub id: String,
+    #[command(flatten)]
+    pub ledger: LedgerArgs,
+    /// Repeatable acceptance line the queue row must have.
+    #[arg(short = 'a', long = "acceptance", required = true)]
+    pub acceptance: Vec<String>,
+    /// Repeatable blocker id. Each must already sit on the queue.
+    #[arg(long = "blocked-by")]
+    pub blocked_by: Vec<String>,
 }
 
 #[derive(Clone, Copy, ValueEnum)]

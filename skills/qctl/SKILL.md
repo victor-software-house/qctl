@@ -2,7 +2,7 @@
 name: qctl
 description: >-
   Operate qctl in-repo YAML work queues: status, check, add, start, archive,
-  show, and instructions. Use when a repository has tasks.yaml, prefix QCTL
+  park, promote, show, and instructions. Use when a repository has tasks.yaml, prefix QCTL
   or another qctl prefix, mise run q, horizon research/evaluation rows, or
   the user mentions qctl, the work queue, or replacing Ajv test:ledger.
   Do not use the vault ompex/task-ledger plugin.
@@ -39,8 +39,8 @@ mise run q -- instructions
 - **horizon** — mapped work with no start condition (`research`, `evaluation`,
   `deferred`). `open` names the missing condition. Not priority. Never `active`.
 
-Promote horizon → queue only after `open` is resolved and the row has
-`acceptance` and `blocked_by`. Do not start a horizon id.
+Promote horizon → queue with `qctl promote ID -a …` after `open` is
+resolved. Do not start a horizon id.
 
 ## Mutate
 
@@ -48,6 +48,8 @@ Promote horizon → queue only after `open` is resolved and the row has
 qctl add -t 'Title' -s repo -o 'Done when…' -a 'Acceptance'
 qctl add -t 'Title' -s repo -o 'Done when…' -a 'Acceptance' --notes 'Why' --blocked-by QCTL-001 --after QCTL-001
 qctl add -t 'Title' -s repo -o 'Done when…' --horizon --kind research --open 'The missing fact'
+qctl park -t 'Title' -s repo -o 'Done when…' --kind research --open 'The missing fact'
+qctl promote QCTL-001 -a 'Acceptance'
 qctl start QCTL-001
 qctl archive QCTL-001 -e 'Shipped.'
 ```

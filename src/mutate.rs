@@ -1,4 +1,4 @@
-use crate::cli::{AddArgs, ArchiveArgs, InitArgs};
+use crate::cli::{AddArgs, ArchiveArgs, InitArgs, ParkArgs, PromoteArgs};
 use crate::document::Document;
 use crate::ledger::{load, next_id, resolve_path};
 use crate::schema::{HorizonTask, QueuedTask};
@@ -160,6 +160,65 @@ pub fn start(args: &crate::cli::IdArgs) -> Result<()> {
     document.set("active", yaml_serde::Value::from(args.id.as_str()))?;
     write(&path, document)?;
     println!("active  {}", args.id);
+    Ok(())
+}
+
+pub fn park(args: &ParkArgs) -> Result<()> {
+    let path = resolve_path(&args.ledger);
+    let ledger = load(&path)?;
+    let id = next_id(&ledger)?;
+    let row = HorizonTask {
+        id: id.clone(),
+        title: args.title.clone(),
+        scope: args.scope.clone(),
+        outcome: args.outcome.clone(),
+        kind: args.kind,
+        open: args.open.clone(),
+        patch: args.patch.clone(),
+        plan: args.plan.clone(),
+        links: args.links.clone(),
+        notes: args.notes.clone(),
+    };
+    let mut document = read(&path)?;
+    document.append("horizon", &yaml_serde::to_value(&row)?)?;
+    write(&path, document)?;
+    println!("{id}");
+    Ok(())
+}
+
+pub fn promote(args: &PromoteArgs) -> Result<()> {
+    ensure!(
+        !args.acceptance.is_empty(),
+        "promote onto the queue needs --acceptance"
+    );
+    let path = resolve_path(&args.ledger);
+    let ledger = load(&path)?;
+    ensure!(
+        ledger.horizon.iter().any(|task| task.id == args.id),
+        "{} is not on the horizon",
+        args.id
+    );
+    for blocker in &args.blocked_by {
+        ensure!(
+            ledger.queue.iter().any(|queued| queued.id == *blocker),
+            "{} <- {blocker} is not queued",
+            args.id
+        );
+    }
+
+    let mut document = read(&path)?;
+    document.move_to_end(
+        "horizon",
+        "queue",
+        &args.id,
+        &["kind", "open"],
+        &[
+            ("blocked_by", yaml_serde::to_value(&args.blocked_by)?),
+            ("acceptance", yaml_serde::to_value(&args.acceptance)?),
+        ],
+    )?;
+    write(&path, document)?;
+    println!("queued  {}", args.id);
     Ok(())
 }
 

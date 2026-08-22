@@ -35,6 +35,20 @@ const ONE_WRONG_VALUE: &str = indoc! {"
 #[rstest]
 #[case::start(&["start", "QCTL-002"])]
 #[case::add(&["add", "-t", "t", "-s", "s", "-o", "o", "-a", "a"])]
+#[case::park(&[
+    "park",
+    "-t",
+    "t",
+    "-s",
+    "s",
+    "-o",
+    "o",
+    "--kind",
+    "research",
+    "--open",
+    "missing",
+])]
+#[case::promote(&["promote", "QCTL-002", "-a", "a"])]
 fn a_verb_refuses_a_ledger_it_cannot_vouch_for(#[case] verb: &[&str]) {
     let dir = LedgerDir::empty();
     dir.write(ONE_WRONG_VALUE);
