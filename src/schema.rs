@@ -32,7 +32,7 @@ const SCHEMA_ID: &str =
 /// not — the `regex` crate does not implement them, so [`inside_the_repo`]
 /// enforces the same rule at the boundary. `..` is a path segment, not a
 /// substring, so `docs/v1..2.md` is a document and `../secret.md` is not.
-const PLAN_PATTERN: &str = r"^(?!/)(?!.*(?:^|/)\.\.(?:/|$)).+\.md$";
+const PLAN_PATTERN: &str = r"^(?![/\\])(?!.*(?:^|[/\\])\.\.(?:[/\\]|$)).+\.md$";
 
 /// The one description of a link, since neither garde nor schemars takes a
 /// `format` for the items of a list.
