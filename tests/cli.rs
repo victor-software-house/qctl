@@ -703,7 +703,7 @@ fn add_refuses_a_plan_that_is_not_markdown() {
 }
 
 #[test]
-fn add_refuses_a_plan_whose_name_contains_dotdot() {
+fn add_accepts_a_plan_whose_name_contains_dotdot() {
     let dir = LedgerDir::empty();
     dir.write(MINIMAL);
     dir.plant("docs/foo..bar.md", "# Plan\n");
@@ -722,13 +722,10 @@ fn add_refuses_a_plan_whose_name_contains_dotdot() {
         "--plan",
         "docs/foo..bar.md",
     ]);
-    assert!(!output.status.success());
-    assert!(
-        stderr(&output).contains("must stay inside the repository"),
-        "{}",
-        stderr(&output)
-    );
-    assert_eq!(dir.read(), MINIMAL);
+    assert!(output.status.success(), "{}", stderr(&output));
+    let check = qctl(&["check", "-f", dir.path.to_str().unwrap(), "--no-git"]);
+    assert!(check.status.success(), "{}", stderr(&check));
+    assert!(dir.read().contains("plan: docs/foo..bar.md"));
 }
 
 #[test]
