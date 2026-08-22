@@ -1,5 +1,9 @@
 # Changelog
 
+## qctl 0.2.1
+
+- Pin Version PR, publish, and asset at verctl 0.2.1 so a release tags the published commit.
+
 ## qctl 0.2.0
 
 - `add` writes notes, blockers, plan, and links, and can place the row with `--before` / `--after` or write a horizon row with `--horizon`.
