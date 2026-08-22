@@ -1,5 +1,10 @@
 # Changelog
 
+## qctl 0.2.0
+
+- `add` writes notes, blockers, plan, and links, and can place the row with `--before` / `--after` or write a horizon row with `--horizon`.
+- `park` writes a horizon row. `promote` moves it onto the queue tail with acceptance, dropping kind and open, and leaves `active` alone.
+
 ## qctl 0.1.2
 
 - `mise run q` now runs the qctl its own pin names. The served task called
