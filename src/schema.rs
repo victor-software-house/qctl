@@ -441,6 +441,7 @@ impl std::fmt::Display for Kind {
 pub(crate) fn inside_the_repo<C>(path: &str, _: &C) -> garde::Result {
     let candidate = Path::new(path);
     if candidate.is_absolute()
+        || path.contains('\\')
         || candidate
             .components()
             .any(|part| matches!(part, Component::ParentDir))

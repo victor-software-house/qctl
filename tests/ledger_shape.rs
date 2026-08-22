@@ -213,7 +213,7 @@ fn accepts_a_ledger(#[case] ledger: &str) {
             plan: "..\\secret.md"
         archive: []
     "#},
-    "plan"
+    "does not match"
 )]
 #[case::a_file_that_does_not_parse(
     indoc! {"
