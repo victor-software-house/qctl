@@ -180,7 +180,7 @@ fn not_a_work_tree(stderr: &[u8]) -> bool {
         .any(|line| {
             let message = line.trim().strip_prefix("fatal: ").unwrap_or(line.trim());
             message.starts_with("not a git repository")
-                || message.starts_with("this operation must be run in a work tree")
+                || message.contains("must be run in a work tree")
         })
 }
 
@@ -256,6 +256,9 @@ mod tests {
         ));
         assert!(super::not_a_work_tree(
             b"fatal: this operation must be run in a work tree"
+        ));
+        assert!(super::not_a_work_tree(
+            b"fatal: git rev-parse: this operation must be run in a work tree"
         ));
         assert!(!super::not_a_work_tree(b"fatal: cannot change to '/nope'"));
         assert!(!super::not_a_work_tree(
