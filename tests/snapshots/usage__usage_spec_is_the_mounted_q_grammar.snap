@@ -1,0 +1,191 @@
+---
+source: tests/usage.rs
+---
+name q
+bin q
+version "<version>"
+about "Control in-repo YAML work queues"
+unknown_flags error
+arg_required_else_help #true
+args_override_self #false
+subcommand_required #true
+usage "Usage: q <COMMAND>"
+cmd init display_order=0 args_override_self=#false help="Write a tasks.yaml for a prefix. Does not copy a schema file" unknown_flags=error {
+    flag "-p --prefix" help="Stable id prefix, such as PST, KAI, or OMX" required=#true {
+        arg <PREFIX>
+    }
+    flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
+        arg <FILE>
+    }
+    flag --force help="Overwrite an existing ledger"
+    complete file type=path
+}
+cmd status display_order=1 args_override_self=#false help="Print the active task and the priority-ordered queue" unknown_flags=error {
+    flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
+        arg <FILE>
+    }
+    complete file type=path
+}
+cmd check display_order=2 args_override_self=#false help="Validate schema, graph, and git trailers that closed still-queued ids" unknown_flags=error {
+    flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
+        arg <FILE>
+    }
+    flag --no-git help="Skip the git trailer scan. Needed for a scratch ledger that is not in the current repository"
+    complete file type=path
+}
+cmd add display_order=3 args_override_self=#false help="Add a task to the queue, or to the horizon" unknown_flags=error {
+    flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
+        arg <FILE>
+    }
+    flag "-t --title" required=#true {
+        arg <TITLE>
+    }
+    flag "-s --scope" required=#true {
+        arg <SCOPE>
+    }
+    flag "-o --outcome" required=#true {
+        arg <OUTCOME>
+    }
+    flag "-a --acceptance" help="Repeatable acceptance line. Required on the queue; not used on the horizon" var=#true {
+        arg <ACCEPTANCE>… var=#true
+    }
+    flag --patch {
+        arg <PATCH>
+    }
+    flag --notes {
+        arg <NOTES>
+    }
+    flag --blocked-by help="Repeatable blocker id. Each must sit earlier than the new row" var=#true {
+        arg <BLOCKED_BY>… var=#true
+    }
+    flag --plan {
+        arg <PLAN>
+    }
+    flag --link help="Repeatable URI" var=#true {
+        arg <LINKS>… var=#true
+    }
+    flag --after help="Place the new row immediately after this queued id" {
+        conflicts "--before" "--horizon"
+        arg <AFTER>
+    }
+    flag --before help="Place the new row immediately before this queued id" {
+        conflicts "--after" "--horizon"
+        arg <BEFORE>
+    }
+    flag --horizon help="Write a horizon row instead of a queue row"
+    flag --kind help="Why it is on the horizon. Required with --horizon" {
+        arg <KIND>
+    }
+    flag --open help="The missing start condition. Required with --horizon" {
+        arg <OPEN>
+    }
+    complete file type=path
+}
+cmd start display_order=4 args_override_self=#false help="Make one unblocked queued task active (moves it to queue head)" unknown_flags=error {
+    flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
+        arg <FILE>
+    }
+    arg <ID>
+    complete file type=path
+}
+cmd archive display_order=5 args_override_self=#false help="Move a queued task to the archive" unknown_flags=error {
+    flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
+        arg <FILE>
+    }
+    flag "-e --evidence" help="Repeatable evidence line" required=#true var=#true {
+        arg <EVIDENCE>… var=#true
+    }
+    flag --disposition default=completed {
+        arg <DISPOSITION> {
+            choices completed dropped
+        }
+    }
+    arg <ID>
+    complete file type=path
+}
+cmd park display_order=6 args_override_self=#false help="Write a horizon row" unknown_flags=error {
+    flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
+        arg <FILE>
+    }
+    flag "-t --title" required=#true {
+        arg <TITLE>
+    }
+    flag "-s --scope" required=#true {
+        arg <SCOPE>
+    }
+    flag "-o --outcome" required=#true {
+        arg <OUTCOME>
+    }
+    flag --kind required=#true {
+        arg <KIND>
+    }
+    flag --open required=#true {
+        arg <OPEN>
+    }
+    flag --notes {
+        arg <NOTES>
+    }
+    flag --plan {
+        arg <PLAN>
+    }
+    flag --link var=#true {
+        arg <LINKS>… var=#true
+    }
+    flag --patch {
+        arg <PATCH>
+    }
+    complete file type=path
+}
+cmd promote display_order=7 args_override_self=#false help="Move a horizon row onto the queue" unknown_flags=error {
+    flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
+        arg <FILE>
+    }
+    flag "-a --acceptance" help="Repeatable acceptance line the queue row must have" required=#true var=#true {
+        arg <ACCEPTANCE>… var=#true
+    }
+    flag --blocked-by help="Repeatable blocker id. Each must already sit on the queue" var=#true {
+        arg <BLOCKED_BY>… var=#true
+    }
+    arg <ID>
+    complete file type=path
+}
+cmd show display_order=8 args_override_self=#false help="Print one queued, archived, or horizon task" unknown_flags=error {
+    flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
+        arg <FILE>
+    }
+    arg <ID>
+    complete file type=path
+}
+cmd fmt display_order=9 args_override_self=#false help="Rewrite a ledger into the style it declares" unknown_flags=error {
+    flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
+        arg <FILE>
+    }
+    flag --check help="Say what is not in the declared style and exit non-zero, writing nothing"
+    complete file type=path
+}
+cmd close-from-git display_order=10 args_override_self=#false help="Archive queued ids that commit-body trailers closed" unknown_flags=error {
+    flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
+        arg <FILE>
+    }
+    flag --pre-push help="Read pre-push stdin (`<local-ref> <local-sha> <remote-ref> <remote-sha>`)"
+    flag --range help="`git log` revision range, such as `main..HEAD`. Default: the whole history, same as `check`" conflicts=--pre-push {
+        arg <RANGE>
+    }
+    complete file type=path
+}
+cmd hook display_order=11 subcommand_required=#true arg_required_else_help=#true args_override_self=#false help="Install git hooks for this ledger" unknown_flags=error {
+    cmd install display_order=0 args_override_self=#false help="Write `.git/hooks/pre-push` so a push archives closed ids" unknown_flags=error {
+        flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
+            arg <FILE>
+        }
+        flag --force help="Overwrite an existing git pre-push. Rejected when Lefthook is present and does not already run close-from-git"
+        complete file type=path
+    }
+}
+cmd schema display_order=12 args_override_self=#false help="Write schema/tasks.schema.json from the ledger types" unknown_flags=error {
+    flag "-o --out" help="Where to write it. Defaults to schema/tasks.schema.json" {
+        arg <OUT>
+    }
+    complete out type=path
+}
+cmd instructions display_order=13 args_override_self=#false help="Print the installed-version operator contract" unknown_flags=error

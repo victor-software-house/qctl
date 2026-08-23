@@ -27,6 +27,11 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   `patterns` in `.ctl/ver.yaml` (QCTL-009). Edit the template or the pattern,
   never the rendered file; the Version PR rewrites all five sites onto the
   commit the tag names. A template git does not track renders nowhere.
+  The `q` task's `#USAGE mount` line is `ctl_core::mount_line("q")`.
+  Put it in the template. Do not copy it onto `tasks/q/q` while that
+  file still pins a release that lacks `--usage-spec`. The Version PR
+  writes the mount and the new pin together. Operators run
+  `mise run q status` with no `--`.
 - A consumer wires one pin, not two: the `?ref=` tag on the task include. The
   served task carries its own `#MISE tools` version and wins on PATH, so a
   consumer `[tools]` entry can only disagree with it — and needs a lockfile

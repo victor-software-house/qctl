@@ -8,6 +8,7 @@
 #MISE dir="{% raw %}{{cwd}}{% endraw %}"
 #MISE raw_args=true
 #MISE tools = { "github:victor-software-house/qctl" = "{{ versions["qctl"] }}" }
+#USAGE mount "mise run --quiet q -- --usage-spec=q"
 
 set -euo pipefail
 exec qctl "$@"
