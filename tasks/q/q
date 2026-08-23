@@ -5,7 +5,8 @@
 #MISE description="Run the qctl work-queue CLI"
 #MISE dir="{{cwd}}"
 #MISE raw_args=true
-#MISE tools = { "github:victor-software-house/qctl" = "0.2.2" }
+#MISE tools = { "github:victor-software-house/qctl" = "0.3.0" }
+#USAGE mount "mise run --quiet q -- --usage-spec=q"
 
 set -euo pipefail
 exec qctl "$@"
