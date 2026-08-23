@@ -1,5 +1,11 @@
 # Changelog
 
+## qctl 0.3.0
+
+- `qctl close-from-git` archives queued ids closed by commit-body trailers. `qctl hook install` writes a git pre-push, or prints the Lefthook snippet to add; it never edits `lefthook.yml`. Neither amends.
+- `qctl check` reports a git trailer scan that failed or that skipped because the ledger is not in the current repository. It no longer passes by returning no errors.
+- Served `q` task mounts the ctl-core Usage spec. `mise run q status` needs no `--`.
+
 ## qctl 0.2.2
 
 - `add --horizon` and `park` write a `horizon:` key when the ledger omitted it. `--plan` is checked the same way `check` is. A tail add to an empty queue no longer pretends the caller passed `--before`.
