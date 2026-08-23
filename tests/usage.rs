@@ -19,7 +19,7 @@ fn usage_spec_is_the_mounted_q_grammar() {
     assert!(spec.lines().any(|line| line == "name q"), "{spec}");
     assert!(spec.lines().any(|line| line == "bin q"), "{spec}");
     insta::with_settings!({
-        filters => vec![(r#"version "\d+\.\d+\.\d+""#, r#"version "<version>""#)],
+        filters => vec![(r#"version "[^"]+""#, r#"version "<version>""#)],
         omit_expression => true,
     }, {
         insta::assert_snapshot!(spec);
