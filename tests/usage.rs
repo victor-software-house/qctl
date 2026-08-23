@@ -24,6 +24,9 @@ fn usage_spec_bare_defaults_to_q() {
 
 #[test]
 fn served_task_mount_matches_ctl_core() {
+    let mount = ctl_core::mount_line("q");
     let template = include_str!("../.ctl/templates/q.jinja");
-    assert!(template.contains(&ctl_core::mount_line("q")), "{template}");
+    assert!(template.contains(&mount), "{template}");
+    let served = include_str!("../tasks/q/q");
+    assert!(served.contains(&mount), "{served}");
 }
