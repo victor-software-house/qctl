@@ -14,6 +14,9 @@ mise run q check
 mise run q instructions
 ```
 
+The `--` in `#USAGE mount` is mise's completion bootstrap. Do not put
+it in front of verbs.
+
 Until a tagged GitHub Release exists, `mise github:` cannot install a
 binary. Use a local or `cargo install --git` build, then `qctl`.
 

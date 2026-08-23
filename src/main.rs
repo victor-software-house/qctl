@@ -9,6 +9,9 @@ use std::process::ExitCode;
 const INSTRUCTIONS: &str = include_str!("instructions.md");
 
 fn main() -> ExitCode {
+    if let Some(code) = ctl_core::take::<Cli>("q") {
+        return code;
+    }
     match run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {

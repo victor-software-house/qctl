@@ -5,28 +5,9 @@ prefix: QCTL
 style:
   timezone: "-03:00"
   section_order: [queue, horizon, archive]
-active: QCTL-006
+active: QCTL-008
 
 queue:
-  - id: QCTL-006
-    title: Archive from commit trailers in a pre-push hook
-    scope: qctl
-    outcome: >-
-      A merged or pushed commit that closes a ledger id archives that
-      row. An active id cannot sit on main after its close trailer landed.
-    blocked_by: []
-    acceptance:
-      - "Trailers Closes PREFIX-NNN and Completes: PREFIX-NNN in the commit body are the only syntax. Subject-line slogans do not count."
-      - "qctl hook install writes a pre-push (and optional commit-msg) hook that runs qctl close-from-git."
-      - "qctl close-from-git reads commits being pushed (or main..HEAD), archives matching queued ids with evidence = the commit SHA, and fails if active still names a closed id."
-      - "CI qctl check on default branch fails when a commit already on that branch closed an id that is still queued."
-      - "The hook does not amend. It writes tasks.yaml in the working tree and requires that file to be part of the push (or a follow-up commit). No hook skip flags."
-      - "Does not invent GitHub issue linking. Closes #12 stays GitHub's."
-    notes: >-
-      check now fails if a Closes/Completes trailer names a still-queued
-      id. Auto-archive of tasks.yaml still needs QCTL-002. VER-003 went
-      stale because check did not look at git and no commit had a trailer.
-
   - id: QCTL-008
     title: Adopt ctl-core in qctl and forkctl
     scope: cross-repo
@@ -42,6 +23,8 @@ queue:
     notes: >-
       Blocked in practice on ctl-core CTC-004 (harden). qctl cannot
       name a foreign prefix in blocked_by. Do not wait for QCTL-001.
+      2026-08-23: ctl-core 0.1.0 is on crates.io. take::<Cli>("q") and
+      #USAGE mount ship in this slice. go()/View::show remains.
 
   - id: QCTL-014
     title: Let a ledger declare whether rows are blank-separated
@@ -183,26 +166,6 @@ queue:
       keep both validators forever or delete on faith. `qctl check --help` at
       HEAD offers only --file and --no-git.
 
-  - id: QCTL-026
-    title: A check that cannot run says so instead of passing
-    scope: qctl
-    outcome: No qctl gate reports success by having skipped itself.
-    blocked_by: []
-    acceptance:
-      - trailer_errors says so when closed_ids fails, instead of returning no errors.
-      - The scan is skipped, and says it was, when the ledger resolves outside the repository that surrounds the cwd.
-      - A test proves the silence is gone.
-    notes: >-
-      docs/adoption-report.md §4. `trailer_errors` (src/check.rs:50) does
-      `let Ok(closed) = trailers::closed_ids(root) else { return Vec::new() }`
-      — an environment where the git call fails drops a whole check class and
-      the run passes quietly. The discoverability half is the same shape from
-      the operator's side: validating a ledger that lives outside the current
-      repository — a fixture, a scratch copy, a migration staging file — runs
-      the trailer scan against whatever repo surrounds it, and nothing points
-      at --no-git until the odd complaints start. verctl carries the same law
-      as VER-036, for `expand` and `prove_default_history`.
-
   - id: QCTL-027
     title: One problem is reported once
     scope: qctl
@@ -318,6 +281,40 @@ horizon:
       answer.
 
 archive:
+  - id: QCTL-026
+    title: A check that cannot run says so instead of passing
+    scope: qctl
+    outcome: No qctl gate reports success by having skipped itself.
+    notes: >-
+      docs/adoption-report.md §4. `trailer_errors` (src/check.rs:50) does
+      `let Ok(closed) = trailers::closed_ids(root) else { return Vec::new() }`
+      — an environment where the git call fails drops a whole check class and
+      the run passes quietly. The discoverability half is the same shape from
+      the operator's side: validating a ledger that lives outside the current
+      repository — a fixture, a scratch copy, a migration staging file — runs
+      the trailer scan against whatever repo surrounds it, and nothing points
+      at --no-git until the odd complaints start. verctl carries the same law
+      as VER-036, for `expand` and `prove_default_history`.
+    completed: 2026-08-23T12:36:32
+    evidence:
+      - https://github.com/victor-software-house/qctl/pull/51 squash-merged as d8bcb56
+    disposition: completed
+
+  - id: QCTL-006
+    title: Archive from commit trailers in a pre-push hook
+    scope: qctl
+    outcome: >-
+      A merged or pushed commit that closes a ledger id archives that
+      row. An active id cannot sit on main after its close trailer landed.
+    notes: >-
+      check now fails if a Closes/Completes trailer names a still-queued
+      id. Auto-archive of tasks.yaml still needs QCTL-002. VER-003 went
+      stale because check did not look at git and no commit had a trailer.
+    completed: 2026-08-23T12:36:32
+    evidence:
+      - https://github.com/victor-software-house/qctl/pull/48 squash-merged as 4aee207
+    disposition: completed
+
   - id: QCTL-024
     title: Horizon has verbs, so a row is not hand-edited into place
     scope: qctl
