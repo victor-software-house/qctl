@@ -1,5 +1,9 @@
 # Changelog
 
+## qctl 0.4.0
+
+- Route every command through ctl-core's typed App and semantic Document presentation. Add shared pretty, colorless, JSON, quiet, stream, and error behavior; `status --format json` exposes ledger state and `check --format json` exposes its problem array.
+
 ## qctl 0.3.1
 
 - ctl-core 0.1.1. `features = ["usage"]` compiles without `help`.

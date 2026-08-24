@@ -7,7 +7,7 @@ description: >-
   the user mentions qctl, the work queue, or replacing Ajv test:ledger.
   Do not use the vault ompex/task-ledger plugin.
 license: MIT
-version: 0.3.1
+version: 0.4.0
 compatibility: Requires a qctl binary. A repository-mounted mise `q` task may provision an exact version after a GitHub Release exists.
 ---
 
