@@ -513,12 +513,13 @@ pub fn generated() -> anyhow::Result<String> {
 
 /// Write the schema where it is committed. Whether the file on disk is current
 /// is the test suite's question, not a second flag here.
-pub fn write(args: &crate::cli::SchemaArgs) -> anyhow::Result<()> {
+pub fn write(args: &crate::cli::SchemaArgs) -> anyhow::Result<crate::report::Report> {
     let path = args
         .out
         .clone()
         .unwrap_or_else(|| std::path::PathBuf::from(COMMITTED));
     std::fs::write(&path, generated()?)?;
-    println!("wrote {}", path.display());
-    Ok(())
+    Ok(crate::report::Report::SchemaWritten {
+        path: path.display().to_string(),
+    })
 }

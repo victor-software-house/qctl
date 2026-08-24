@@ -1,10 +1,11 @@
 use crate::cli::CheckArgs;
 use crate::ledger::{graph_errors, load_value, read, resolve_path, schema_value};
+use crate::report::Report;
 use crate::trailers;
-use anyhow::{Result, bail};
+use anyhow::Result;
 use std::collections::HashSet;
 
-pub fn run(args: &CheckArgs) -> Result<()> {
+pub fn run(args: &CheckArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let schema = schema_value()?;
     let instance = load_value(&path)?;
@@ -33,18 +34,15 @@ pub fn run(args: &CheckArgs) -> Result<()> {
     }
 
     if errors.is_empty() {
-        println!("ok  {}", path.display());
-        return Ok(());
+        return Ok(Report::Check {
+            path: path.display().to_string(),
+            problems: Vec::new(),
+        });
     }
-    for error in &errors {
-        eprintln!("qctl: {error}");
-    }
-    bail!(
-        "{} problem(s) in {}: {}",
-        errors.len(),
-        path.display(),
-        errors.join("; ")
-    );
+    Ok(Report::Check {
+        path: path.display().to_string(),
+        problems: errors,
+    })
 }
 
 fn trailer_errors(ledger: &crate::ledger::Ledger, path: &std::path::Path) -> Vec<String> {

@@ -53,3 +53,13 @@ test fixtures and assertions.
 
 - `qctl check` does not skip a git trailer scan that failed. A scratch
   ledger that is not in the current repository needs `--no-git`.
+
+## Ownership and Design
+
+- `src/cli.rs` is the Clap grammar. `src/report.rs` owns serializable command
+  results. Domain modules return those results and never print.
+- `src/presentation.rs` maps reports onto ctl-core semantic documents. ctl-core
+  alone owns help, pretty/colorless/JSON emission, stream selection, quiet
+  behavior, terminal width, styling, and tables.
+- `-f` remains qctl's ledger-file shorthand. The root composes ctl-core
+  `FormatLong` with `ColorLong`, so shared `--format` never takes `-f` back.

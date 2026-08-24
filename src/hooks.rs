@@ -7,13 +7,14 @@
 
 use crate::cli::HookInstallArgs;
 use crate::ledger::resolve_path;
+use crate::report::{HookOutcome, Report};
 use anyhow::{Context, Result, ensure};
 use indoc::formatdoc;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-pub fn install(args: &HookInstallArgs) -> Result<()> {
+pub fn install(args: &HookInstallArgs) -> Result<Report> {
     let ledger = resolve_path(&args.ledger);
     let ledger = canonicalize_ledger(&ledger)?;
     let root = git_toplevel(ledger.parent().unwrap_or(&ledger))?;
@@ -102,26 +103,27 @@ fn git_hook_body(rel: &str) -> String {
     "}
 }
 
-fn install_lefthook(path: &Path, rel: &str, force: bool) -> Result<()> {
+fn install_lefthook(path: &Path, rel: &str, force: bool) -> Result<Report> {
     let source = fs::read_to_string(path).with_context(|| path.display().to_string())?;
     if source.contains("close-from-git") {
-        println!("lefthook already runs close-from-git ({})", path.display());
-        return Ok(());
+        return Ok(Report::HookInstalled {
+            path: path.display().to_string(),
+            outcome: HookOutcome::AlreadyConfigured,
+            snippet: None,
+        });
     }
-    print!("{}", lefthook_snippet(rel));
-    eprintln!(
-        "qctl: add that under pre-push.commands in {} (qctl does not edit Lefthook config)",
-        path.display()
-    );
-    ensure!(
-        !force,
-        "--force does not apply when {path} exists; qctl does not edit Lefthook config",
-        path = path.display()
-    );
-    anyhow::bail!("{path} present; hook not installed", path = path.display())
+    Ok(Report::HookInstalled {
+        path: path.display().to_string(),
+        outcome: if force {
+            HookOutcome::ForceNotApplicable
+        } else {
+            HookOutcome::NeedsConfiguration
+        },
+        snippet: Some(lefthook_snippet(rel)),
+    })
 }
 
-fn install_git_hook(root: &Path, rel: &str, force: bool) -> Result<()> {
+fn install_git_hook(root: &Path, rel: &str, force: bool) -> Result<Report> {
     let output = Command::new("git")
         .args([
             "-C",
@@ -163,8 +165,11 @@ fn install_git_hook(root: &Path, rel: &str, force: bool) -> Result<()> {
         permissions.set_mode(0o755);
         fs::set_permissions(&hook, permissions).with_context(|| hook.display().to_string())?;
     }
-    println!("wrote {}", hook.display());
-    Ok(())
+    Ok(Report::HookInstalled {
+        path: hook.display().to_string(),
+        outcome: HookOutcome::Installed,
+        snippet: None,
+    })
 }
 
 #[cfg(test)]

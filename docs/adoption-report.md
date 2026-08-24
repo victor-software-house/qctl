@@ -138,7 +138,10 @@ Filed as **QCTL-028**.
 `status` and `check` are read by agents far more often than by humans, and
 parsing a table is fine until the format shifts.
 
-Filed as **QCTL-029**.
+Resolved by the unified ctl-core presentation migration: `--format json`
+serializes the same typed report as pretty/colorless output. Status includes the
+ledger state; check includes its complete problems array and keeps failure exit
+semantics.
 
 ## One ask that was declined
 

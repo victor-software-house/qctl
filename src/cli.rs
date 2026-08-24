@@ -1,5 +1,6 @@
 use crate::schema::Kind;
 use clap::{Args, Parser, Subcommand, ValueEnum};
+use ctl_core::{ColorLong, FormatLong};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -11,6 +12,12 @@ use std::path::PathBuf;
 pub struct Cli {
     #[command(subcommand)]
     pub command: Command,
+
+    #[command(flatten)]
+    pub format: FormatLong,
+
+    #[command(flatten)]
+    pub color: ColorLong,
 }
 
 #[derive(Subcommand)]

@@ -254,18 +254,16 @@ fn hook_install_prefers_lefthook_and_mise_q() {
     let before = fs::read_to_string(root.path().join("lefthook.yml")).expect("before");
     let output = qctl(&["hook", "install", "-f", path.to_str().expect("utf-8")]);
     assert!(!output.status.success(), "{}", stderr(&output));
+    assert_eq!(output.stdout, &[] as &[u8]);
     assert!(
         stderr(&output).contains("hook not installed"),
         "{}",
         stderr(&output)
     );
-    assert_eq!(
-        stdout(&output),
-        indoc! {"
-            # add under pre-push.commands in lefthook.yml
-                qctl-close:
-                  run: mise run q close-from-git -f 'tasks.yaml'
-        "}
+    assert!(
+        stderr(&output).contains("run: mise run q close-from-git -f 'tasks.yaml'"),
+        "{}",
+        stderr(&output)
     );
     assert!(
         stderr(&output).contains("does not edit Lefthook config"),
@@ -327,18 +325,16 @@ fn hook_install_sees_lefthook_yaml() {
     let before = fs::read_to_string(root.path().join("lefthook.yaml")).expect("before");
     let output = qctl(&["hook", "install", "-f", path.to_str().expect("utf-8")]);
     assert!(!output.status.success(), "{}", stderr(&output));
+    assert_eq!(output.stdout, &[] as &[u8]);
     assert!(
         stderr(&output).contains("hook not installed"),
         "{}",
         stderr(&output)
     );
-    assert_eq!(
-        stdout(&output),
-        indoc! {"
-            # add under pre-push.commands in lefthook.yml
-                qctl-close:
-                  run: mise run q close-from-git -f 'tasks.yaml'
-        "}
+    assert!(
+        stderr(&output).contains("run: mise run q close-from-git -f 'tasks.yaml'"),
+        "{}",
+        stderr(&output)
     );
     assert_eq!(
         fs::read_to_string(root.path().join("lefthook.yaml")).expect("after"),
