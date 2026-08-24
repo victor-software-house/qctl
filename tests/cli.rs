@@ -530,19 +530,6 @@ fn instructions_prints_the_installed_contract_exactly() {
 }
 
 #[test]
-fn bundled_skill_names_the_package_version() {
-    let skill = std::fs::read_to_string(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("skills/qctl/SKILL.md"),
-    )
-    .unwrap();
-    let version = skill
-        .lines()
-        .find_map(|line| line.strip_prefix("version: "))
-        .unwrap_or_else(|| panic!("skill has no version:\n{skill}"));
-    assert_eq!(version, env!("CARGO_PKG_VERSION"));
-}
-
-#[test]
 fn status_lists_horizon() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"

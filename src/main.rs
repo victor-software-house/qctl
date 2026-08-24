@@ -7,6 +7,9 @@ use qctl::report::Report;
 
 const INSTRUCTIONS: &str = include_str!("instructions.md");
 
+#[cfg(test)]
+mod operator_docs;
+
 fn main() -> ExitCode {
     App::<Cli>::new("qctl")
         .mounted_as("q")
