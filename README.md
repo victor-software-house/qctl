@@ -13,6 +13,11 @@ default; `--color never` or `--no-color` keeps the same layout without ANSI,
 `--format json` emits the report as one JSON line, and `--quiet` suppresses
 successful human output only. `-f` remains the ledger-file shorthand.
 
+Clap remains the command grammar. Templates under `.ctl/operator/` retain skill
+and instruction prose while ctl-core `Surface` renders their shared version,
+mounted invocation/no-`--` rule, and visible command inventory. Tests
+byte-compare both committed documents.
+
 ```sh
 mise run q check
 mise run q status

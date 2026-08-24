@@ -15,7 +15,10 @@ fn domain_modules_return_data_and_ctl_core_owns_presentation() {
             );
         }
         let name = path.file_name().unwrap().to_string_lossy();
-        if matches!(name.as_ref(), "main.rs" | "cli.rs" | "presentation.rs") {
+        if matches!(
+            name.as_ref(),
+            "main.rs" | "cli.rs" | "operator_docs.rs" | "presentation.rs"
+        ) {
             continue;
         }
         assert!(
