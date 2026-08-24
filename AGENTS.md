@@ -23,10 +23,10 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   directory every ctl CLI shares, and qctl's own project config will land
   beside it as `.ctl/q.yaml`. There is no `verctl.toml`.
 - Served files — `tasks/q/q` and `examples/mise.toml` — are rendered from
-  `.ctl/templates/`, and README's `?ref=` and install line are declared under
-  `patterns` in `.ctl/ver.yaml` (QCTL-009). Edit the template or the pattern,
-  never the rendered file; the Version PR rewrites all five sites onto the
-  commit the tag names. A template git does not track renders nowhere.
+  `.ctl/templates/`. README's `?ref=` and install line plus the bundled skill's
+  `version:` are declared under `patterns` in `.ctl/ver.yaml` (QCTL-009,
+  QCTL-022). Edit the template or the pattern, never the rendered file; the
+  Version PR rewrites every site onto the commit the tag names. A template git does not track renders nowhere.
   The `q` task's `#USAGE mount` line is `ctl_core::mount_line("q")`.
   Put it in the template. Do not copy it onto `tasks/q/q` while that
   file still pins a release that lacks `--usage-spec`. The Version PR
