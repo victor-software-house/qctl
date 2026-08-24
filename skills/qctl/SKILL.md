@@ -7,6 +7,7 @@ description: >-
   the user mentions qctl, the work queue, or replacing Ajv test:ledger.
   Do not use the vault ompex/task-ledger plugin.
 license: MIT
+version: 0.3.1
 compatibility: Requires a qctl binary. A repository-mounted mise `q` task may provision an exact version after a GitHub Release exists.
 ---
 
@@ -32,6 +33,14 @@ mise run q check
 mise run q check --no-git
 mise run q instructions
 ```
+
+## Read output
+
+Human output is pretty by default. Use `--color never` or `--no-color` for the
+same layout without ANSI. Use `--format json` for one typed JSON report on
+stdout; `status` includes the ledger state, and `check` carries a `problems`
+array and exits non-zero when it is not empty. `--quiet` suppresses successful
+human output only. `-f` remains `--file`; format has no short `-f`.
 
 ## Three lists
 

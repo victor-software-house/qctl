@@ -1,4 +1,5 @@
 use crate::cli::LedgerArgs;
+use crate::report::{Report, Task};
 use anyhow::{Context, Result, bail, ensure};
 use garde::Validate;
 use serde_json::Value;
@@ -67,74 +68,31 @@ pub fn schema_value() -> Result<Value> {
     serde_json::from_str(CANONICAL_SCHEMA).context("embedded tasks.schema.json")
 }
 
-pub fn print_status(args: &LedgerArgs) -> Result<()> {
+pub fn status(args: &LedgerArgs) -> Result<Report> {
     let path = resolve_path(args);
     let ledger = load(&path)?;
-    match ledger.active.as_deref() {
-        Some(id) => println!("active  {id}"),
-        None => println!("active  (none)"),
-    }
-    if ledger.queue.is_empty() {
-        println!("queue   (empty)");
-    } else {
-        for (index, task) in ledger.queue.iter().enumerate() {
-            let mark = if ledger.active.as_deref() == Some(task.id.as_str()) {
-                "*"
-            } else {
-                " "
-            };
-            println!("queue{mark} {:>2}  {}  {}", index + 1, task.id, task.title);
-        }
-    }
-    if ledger.horizon.is_empty() {
-        return Ok(());
-    }
-    println!("horizon {}", ledger.horizon.len());
-    for task in &ledger.horizon {
-        println!("        {}  [{}]  {}", task.id, task.kind, task.title);
-    }
-    Ok(())
+    Ok(Report::Status {
+        path: path.display().to_string(),
+        ledger,
+    })
 }
 
-/// A stamp as a person reads it. The ledger declares the zone once, so a stamp
-/// carries no offset and needs no conversion here — only the `T` that separates
-/// the day from the time, which a machine wants and a reader does not.
-fn as_a_person_reads_it(stamp: &str) -> String {
-    stamp.replacen('T', " ", 1)
-}
-
-pub fn print_show(args: &crate::cli::IdArgs) -> Result<()> {
+pub fn show(args: &crate::cli::IdArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
-    if let Some(task) = ledger.queue.iter().find(|task| task.id == args.id) {
-        println!("{}  {}", task.id, task.title);
-        println!("scope     {}", task.scope);
-        println!("outcome   {}", task.outcome);
-        if let Some(patch) = &task.patch {
-            println!("patch     {patch}");
-        }
-        return Ok(());
-    }
-    if let Some(task) = ledger.archive.iter().find(|task| task.id == args.id) {
-        println!(
-            "{}  {}  (archived {})",
-            task.id,
-            task.title,
-            as_a_person_reads_it(&task.completed)
-        );
-        if let Some(notes) = &task.notes {
-            println!("notes     {notes}");
-        }
-        return Ok(());
-    }
-    if let Some(task) = ledger.horizon.iter().find(|task| task.id == args.id) {
-        println!("{}  {}  (horizon {})", task.id, task.title, task.kind);
-        println!("scope     {}", task.scope);
-        println!("outcome   {}", task.outcome);
-        println!("open      {}", task.open);
-        return Ok(());
-    }
-    bail!("no task {}", args.id);
+    let task = if let Some(task) = ledger.queue.into_iter().find(|task| task.id == args.id) {
+        Task::Queued { task }
+    } else if let Some(task) = ledger.archive.into_iter().find(|task| task.id == args.id) {
+        Task::Archived { task }
+    } else if let Some(task) = ledger.horizon.into_iter().find(|task| task.id == args.id) {
+        Task::Horizon { task }
+    } else {
+        bail!("no task {}", args.id);
+    };
+    Ok(Report::Show {
+        path: path.display().to_string(),
+        task,
+    })
 }
 
 #[must_use]

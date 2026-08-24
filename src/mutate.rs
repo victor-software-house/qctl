@@ -3,6 +3,7 @@ use crate::cli::{
 };
 use crate::document::Document;
 use crate::ledger::{load, next_id, resolve_path};
+use crate::report::{Destination, Report};
 use crate::schema::{HorizonTask, QueuedTask};
 use crate::trailers;
 use anyhow::{Context, Result, bail, ensure};
@@ -13,7 +14,7 @@ use std::path::Path;
 use time::macros::format_description;
 use time::{OffsetDateTime, UtcOffset};
 
-pub fn init(args: &InitArgs) -> Result<()> {
+pub fn init(args: &InitArgs) -> Result<Report> {
     let prefix = args.prefix.to_ascii_uppercase();
     ensure!(
         valid_prefix(&prefix),
@@ -39,11 +40,13 @@ pub fn init(args: &InitArgs) -> Result<()> {
         horizon: []
     "};
     fs::write(&path, body).with_context(|| path.display().to_string())?;
-    println!("wrote {}", path.display());
-    Ok(())
+    Ok(Report::Initialized {
+        path: path.display().to_string(),
+        prefix,
+    })
 }
 
-pub fn add(args: &AddArgs) -> Result<()> {
+pub fn add(args: &AddArgs) -> Result<Report> {
     if args.horizon {
         ensure!(
             args.blocked_by.is_empty(),
@@ -63,7 +66,7 @@ pub fn add(args: &AddArgs) -> Result<()> {
     }
 }
 
-fn add_queue(args: &AddArgs) -> Result<()> {
+fn add_queue(args: &AddArgs) -> Result<Report> {
     ensure!(
         !args.acceptance.is_empty(),
         "add to the queue needs --acceptance"
@@ -111,11 +114,14 @@ fn add_queue(args: &AddArgs) -> Result<()> {
         document.reorder_rows("queue", &ids)?;
     }
     write(&path, document)?;
-    println!("{id}");
-    Ok(())
+    Ok(Report::Added {
+        path: path.display().to_string(),
+        id,
+        destination: Destination::Queue,
+    })
 }
 
-fn add_horizon(args: &AddArgs) -> Result<()> {
+fn add_horizon(args: &AddArgs) -> Result<Report> {
     let kind = args.kind.context("--horizon needs --kind")?;
     let open = args.open.as_deref().context("--horizon needs --open")?;
     let path = resolve_path(&args.ledger);
@@ -137,8 +143,11 @@ fn add_horizon(args: &AddArgs) -> Result<()> {
     let mut document = read(&path)?;
     document.append("horizon", &yaml_serde::to_value(&row)?)?;
     write(&path, document)?;
-    println!("{id}");
-    Ok(())
+    Ok(Report::Added {
+        path: path.display().to_string(),
+        id,
+        destination: Destination::Horizon,
+    })
 }
 
 fn insertion_index(ids: &[String], before: Option<&str>, after: Option<&str>) -> Result<usize> {
@@ -159,7 +168,7 @@ fn insertion_index(ids: &[String], before: Option<&str>, after: Option<&str>) ->
     }
 }
 
-pub fn start(args: &crate::cli::IdArgs) -> Result<()> {
+pub fn start(args: &crate::cli::IdArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
     let task = ledger
@@ -173,11 +182,13 @@ pub fn start(args: &crate::cli::IdArgs) -> Result<()> {
     document.move_to_front("queue", &args.id)?;
     document.set("active", yaml_serde::Value::from(args.id.as_str()))?;
     write(&path, document)?;
-    println!("active  {}", args.id);
-    Ok(())
+    Ok(Report::Started {
+        path: path.display().to_string(),
+        id: args.id.clone(),
+    })
 }
 
-pub fn park(args: &ParkArgs) -> Result<()> {
+pub fn park(args: &ParkArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
     require_plan(&path, args.plan.as_deref())?;
@@ -197,11 +208,14 @@ pub fn park(args: &ParkArgs) -> Result<()> {
     let mut document = read(&path)?;
     document.append("horizon", &yaml_serde::to_value(&row)?)?;
     write(&path, document)?;
-    println!("{id}");
-    Ok(())
+    Ok(Report::Added {
+        path: path.display().to_string(),
+        id,
+        destination: Destination::Horizon,
+    })
 }
 
-pub fn promote(args: &PromoteArgs) -> Result<()> {
+pub fn promote(args: &PromoteArgs) -> Result<Report> {
     ensure!(
         !args.acceptance.is_empty(),
         "promote onto the queue needs --acceptance"
@@ -233,11 +247,21 @@ pub fn promote(args: &PromoteArgs) -> Result<()> {
         ],
     )?;
     write(&path, document)?;
-    println!("queued  {}", args.id);
-    Ok(())
+    Ok(Report::Promoted {
+        path: path.display().to_string(),
+        id: args.id.clone(),
+    })
 }
 
-pub fn archive(args: &ArchiveArgs) -> Result<()> {
+pub fn archive(args: &ArchiveArgs) -> Result<Report> {
+    let path = archive_row(args)?;
+    Ok(Report::Archived {
+        path,
+        id: args.id.clone(),
+    })
+}
+
+fn archive_row(args: &ArchiveArgs) -> Result<String> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
     ensure!(
@@ -288,11 +312,10 @@ pub fn archive(args: &ArchiveArgs) -> Result<()> {
         }),
     )?;
     write(&path, document)?;
-    println!("archived  {}", args.id);
-    Ok(())
+    Ok(path.display().to_string())
 }
 
-pub fn close_from_git(args: &CloseFromGitArgs) -> Result<()> {
+pub fn close_from_git(args: &CloseFromGitArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let root = path.parent().unwrap_or(&path);
     let closed = if args.pre_push {
@@ -311,7 +334,7 @@ pub fn close_from_git(args: &CloseFromGitArgs) -> Result<()> {
         if !queued.contains(&id) || !seen.insert(id.clone()) {
             continue;
         }
-        archive(&ArchiveArgs {
+        archive_row(&ArchiveArgs {
             id: id.clone(),
             ledger: args.ledger.clone(),
             evidence: vec![sha],
@@ -325,17 +348,11 @@ pub fn close_from_git(args: &CloseFromGitArgs) -> Result<()> {
     {
         bail!("active {active} still names a closed id");
     }
-    if args.pre_push && !archived.is_empty() {
-        let name = path
-            .file_name()
-            .unwrap_or_else(|| std::ffi::OsStr::new("tasks.yaml"))
-            .to_string_lossy();
-        bail!(
-            "archived {}; commit {name} and push again (the hook does not amend)",
-            archived.join(", ")
-        );
-    }
-    Ok(())
+    Ok(Report::ClosedFromGit {
+        path: path.display().to_string(),
+        retry_push: args.pre_push && !archived.is_empty(),
+        archived,
+    })
 }
 
 /// Now, in the zone this ledger declares, written the one way a stamp is

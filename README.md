@@ -8,9 +8,16 @@
 Control in-repo YAML work queues. One file, one active task, file order is
 priority. Replaces copied Ajv `test:ledger` scripts.
 
+Every command returns typed data through ctl-core. Human output is pretty by
+default; `--color never` or `--no-color` keeps the same layout without ANSI,
+`--format json` emits the report as one JSON line, and `--quiet` suppresses
+successful human output only. `-f` remains the ledger-file shorthand.
+
 ```sh
 mise run q check
 mise run q status
+mise run q status --format json
+mise run q check --format json
 mise run q add -t 'Title' -s repo -o 'Done when…' -a 'Acceptance'
 mise run q start OMX-001
 mise run q archive OMX-001 -e 'Shipped.'

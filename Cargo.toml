@@ -27,7 +27,7 @@ pedantic = { level = "deny", priority = -1 }
 [dependencies]
 anyhow = "1.0.100"
 clap = { version = "4.6.6", features = ["derive", "env"] }
-ctl-core = { version = "0.1.1", default-features = false, features = ["usage"] }
+ctl-core = { version = "=0.4.2", default-features = false, features = ["app", "usage"] }
 garde = { version = "0.23.0", features = ["derive", "regex"] }
 indoc = "2.0.7"
 jsonschema = { version = "0.49.9", default-features = false }

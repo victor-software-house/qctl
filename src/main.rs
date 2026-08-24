@@ -1,47 +1,38 @@
 use anyhow::Result;
-use clap::Parser;
+use ctl_core::prelude::{App, ExitCode};
 use qctl::cli::{Cli, Command, HookCommand};
 use qctl::ledger;
 use qctl::mutate;
-use std::io::{self, Write};
-use std::process::ExitCode;
+use qctl::report::Report;
 
 const INSTRUCTIONS: &str = include_str!("instructions.md");
 
 fn main() -> ExitCode {
-    if let Some(code) = ctl_core::take::<Cli>("q") {
-        return code;
-    }
-    match run() {
-        Ok(()) => ExitCode::SUCCESS,
-        Err(error) => {
-            eprintln!("qctl: {error:#}");
-            ExitCode::FAILURE
-        }
-    }
+    App::<Cli>::new("qctl")
+        .mounted_as("q")
+        .view(|cli| cli.format.view(cli.color.color()))
+        .run(execute)
 }
 
-fn run() -> Result<()> {
-    let cli = Cli::parse();
+fn execute(cli: Cli) -> Result<Report> {
     match cli.command {
-        Command::Init(args) => mutate::init(&args)?,
-        Command::Status(args) => ledger::print_status(&args)?,
-        Command::Check(args) => qctl::check::run(&args)?,
-        Command::Add(args) => mutate::add(&args)?,
-        Command::Start(args) => mutate::start(&args)?,
-        Command::Archive(args) => mutate::archive(&args)?,
-        Command::Park(args) => mutate::park(&args)?,
-        Command::Promote(args) => mutate::promote(&args)?,
-        Command::Show(args) => ledger::print_show(&args)?,
-        Command::Fmt(args) => qctl::format::run(&args)?,
-        Command::CloseFromGit(args) => mutate::close_from_git(&args)?,
+        Command::Init(args) => mutate::init(&args),
+        Command::Status(args) => ledger::status(&args),
+        Command::Check(args) => qctl::check::run(&args),
+        Command::Add(args) => mutate::add(&args),
+        Command::Start(args) => mutate::start(&args),
+        Command::Archive(args) => mutate::archive(&args),
+        Command::Park(args) => mutate::park(&args),
+        Command::Promote(args) => mutate::promote(&args),
+        Command::Show(args) => ledger::show(&args),
+        Command::Fmt(args) => qctl::format::run(&args),
+        Command::CloseFromGit(args) => mutate::close_from_git(&args),
         Command::Hook(args) => match args.command {
-            HookCommand::Install(args) => qctl::hooks::install(&args)?,
+            HookCommand::Install(args) => qctl::hooks::install(&args),
         },
-        Command::Schema(args) => qctl::schema::write(&args)?,
-        Command::Instructions => {
-            io::stdout().write_all(INSTRUCTIONS.as_bytes())?;
-        }
+        Command::Schema(args) => qctl::schema::write(&args),
+        Command::Instructions => Ok(Report::Instructions {
+            markdown: INSTRUCTIONS.to_owned(),
+        }),
     }
-    Ok(())
 }

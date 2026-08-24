@@ -41,6 +41,19 @@ binary. Use a local or `cargo install --git` build, then `qctl`.
   GitHub's, not ours.
 - `qctl instructions` and `--help` are the installed-version contract.
 
+## Output
+
+Every command returns one typed report. Human output is pretty by default.
+`--color never` and `--no-color` render the same document without ANSI.
+`--format json` serializes the report directly as one JSON line on stdout;
+failures remain machine-readable on stdout and exit non-zero. `--quiet`
+suppresses successful human output only, never JSON or failures. `-f` remains
+`--file`; format has no `-f` shorthand.
+
+`status --format json` includes the complete ledger state. The JSON from
+`check --format json` carries `problems` as an array and exits non-zero when it
+is not empty.
+
 ## Three lists
 
 | List | Meaning |

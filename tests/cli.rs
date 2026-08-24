@@ -519,12 +519,27 @@ fn start_refuses_blocked_or_horizon() {
 }
 
 #[test]
-fn instructions_prints_contract() {
+fn instructions_prints_the_installed_contract_exactly() {
     let output = qctl(&["instructions"]);
     assert!(output.status.success(), "{}", stderr(&output));
-    let text = stdout(&output);
-    assert!(text.contains("horizon"));
-    assert!(text.contains("tasks.yaml"));
+    assert_eq!(output.stderr, &[] as &[u8]);
+    let expected =
+        std::fs::read(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/instructions.md"))
+            .unwrap();
+    assert_eq!(output.stdout, expected);
+}
+
+#[test]
+fn bundled_skill_names_the_package_version() {
+    let skill = std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("skills/qctl/SKILL.md"),
+    )
+    .unwrap();
+    let version = skill
+        .lines()
+        .find_map(|line| line.strip_prefix("version: "))
+        .unwrap_or_else(|| panic!("skill has no version:\n{skill}"));
+    assert_eq!(version, env!("CARGO_PKG_VERSION"));
 }
 
 #[test]
@@ -755,4 +770,120 @@ fn add_to_an_empty_queue_does_not_invent_before() {
     assert!(output.status.success(), "{}", stderr(&output));
     assert!(!stderr(&output).contains("--before"), "{}", stderr(&output));
     assert!(dir.read().contains("QCTL-001"));
+}
+
+#[test]
+fn status_and_check_share_typed_json_output() {
+    let dir = LedgerDir::empty();
+    dir.write(indoc! {"
+        schema_version: 3
+        prefix: QCTL
+        active: QCTL-001
+        queue:
+          - id: QCTL-001
+            title: now
+            scope: qctl
+            outcome: done
+            blocked_by: []
+            acceptance: [shipped]
+        archive: []
+        horizon:
+          - id: QCTL-002
+            title: later
+            scope: qctl
+            outcome: mapped
+            kind: research
+            open: missing fact
+    "});
+    let path = dir.path.to_str().unwrap();
+
+    let status = qctl(&["status", "-f", path, "--format", "json"]);
+    assert!(status.status.success(), "{}", stderr(&status));
+    assert_eq!(status.stderr, &[] as &[u8]);
+    assert!(!status.stdout.contains(&b'\x1b'));
+    let status_json: serde_json::Value = serde_json::from_slice(&status.stdout).unwrap();
+    assert_eq!(status_json["type"], "status");
+    assert_eq!(status_json["ledger"]["active"], "QCTL-001");
+    assert_eq!(status_json["ledger"]["queue"][0]["title"], "now");
+    assert_eq!(status_json["ledger"]["horizon"][0]["kind"], "research");
+
+    let check = qctl(&["check", "-f", path, "--no-git", "--format", "json"]);
+    assert!(check.status.success(), "{}", stderr(&check));
+    assert_eq!(check.stderr, &[] as &[u8]);
+    let check_json: serde_json::Value = serde_json::from_slice(&check.stdout).unwrap();
+    assert_eq!(check_json["type"], "check");
+    assert_eq!(check_json["problems"], serde_json::json!([]));
+}
+
+#[test]
+fn failed_check_is_a_json_problem_array_on_stdout() {
+    let dir = LedgerDir::empty();
+    dir.write(indoc! {"
+        schema_version: 3
+        prefix: QCTL
+        active: null
+        queue: []
+        archive: []
+        nope: true
+    "});
+    let output = qctl(&[
+        "check",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "--no-git",
+        "--format",
+        "json",
+    ]);
+    assert!(!output.status.success());
+    assert_eq!(output.stderr, &[] as &[u8]);
+    assert!(!output.stdout.contains(&b'\x1b'));
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["type"], "check");
+    let problems = report["problems"].as_array().unwrap();
+    assert!(!problems.is_empty());
+    assert!(
+        problems
+            .iter()
+            .any(|problem| problem.as_str().unwrap().contains("nope"))
+    );
+}
+
+#[test]
+fn quiet_suppresses_only_successful_human_output() {
+    let dir = LedgerDir::empty();
+    dir.write(MINIMAL);
+    let path = dir.path.to_str().unwrap();
+
+    let quiet = qctl(&["status", "-f", path, "--quiet"]);
+    assert!(quiet.status.success(), "{}", stderr(&quiet));
+    assert_eq!(quiet.stdout, &[] as &[u8]);
+    assert_eq!(quiet.stderr, &[] as &[u8]);
+
+    let json = qctl(&["status", "-f", path, "--quiet", "--format", "json"]);
+    assert!(json.status.success(), "{}", stderr(&json));
+    assert_eq!(json.stderr, &[] as &[u8]);
+    assert_eq!(
+        serde_json::from_slice::<serde_json::Value>(&json.stdout).unwrap()["type"],
+        "status"
+    );
+
+    let failed = qctl(&["show", "QCTL-999", "-f", path, "--quiet"]);
+    assert!(!failed.status.success());
+    assert_eq!(failed.stdout, &[] as &[u8]);
+    assert!(stderr(&failed).contains("no task QCTL-999"));
+}
+
+#[test]
+fn colorless_flags_render_the_same_document() {
+    let dir = LedgerDir::empty();
+    dir.write(MINIMAL);
+    let path = dir.path.to_str().unwrap();
+    let color = qctl(&["status", "-f", path, "--color", "never"]);
+    let no_color = qctl(&["status", "-f", path, "--no-color"]);
+    assert!(color.status.success(), "{}", stderr(&color));
+    assert!(no_color.status.success(), "{}", stderr(&no_color));
+    assert_eq!(color.stderr, &[] as &[u8]);
+    assert_eq!(no_color.stderr, &[] as &[u8]);
+    assert_eq!(color.stdout, no_color.stdout);
+    assert!(!color.stdout.contains(&b'\x1b'));
 }

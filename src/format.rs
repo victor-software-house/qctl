@@ -13,8 +13,9 @@
 use crate::cli::FmtArgs;
 use crate::document::{Document, must_still_parse};
 use crate::ledger::{Ledger, load, resolve_path};
+use crate::report::Report;
 use crate::schema::{ArchiveOrder, Section};
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use std::fs;
 
 /// The ledger as its own style says it should be written.
@@ -74,25 +75,30 @@ fn tidied(source: &str) -> String {
 
 /// `qctl fmt`: write the ledger in its declared style, or with `--check` say
 /// what is not in it and leave the file alone.
-pub fn run(args: &FmtArgs) -> Result<()> {
+pub fn run(args: &FmtArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
     let source = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
     let wanted = normalized(&source, &ledger)?;
 
     if source == wanted {
-        println!("ok  {}", path.display());
-        return Ok(());
+        return Ok(Report::Formatted {
+            path: path.display().to_string(),
+            changed: false,
+            check: args.check,
+            differences: Vec::new(),
+        });
     }
-    if args.check {
-        for line in changes(&source, &wanted) {
-            eprintln!("qctl: {line}");
-        }
-        bail!("{} is not in its declared style", path.display());
+    let differences = changes(&source, &wanted);
+    if !args.check {
+        fs::write(&path, wanted).with_context(|| format!("write {}", path.display()))?;
     }
-    fs::write(&path, wanted).with_context(|| format!("write {}", path.display()))?;
-    println!("wrote {}", path.display());
-    Ok(())
+    Ok(Report::Formatted {
+        path: path.display().to_string(),
+        changed: true,
+        check: args.check,
+        differences,
+    })
 }
 
 /// Which lines `fmt` would change, by number, so `--check` says where to look

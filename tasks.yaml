@@ -5,27 +5,9 @@ prefix: QCTL
 style:
   timezone: "-03:00"
   section_order: [queue, horizon, archive]
-active: QCTL-008
+active: QCTL-014
 
 queue:
-  - id: QCTL-008
-    title: Adopt ctl-core in qctl and forkctl
-    scope: cross-repo
-    outcome: >-
-      qctl and forkctl flatten ctl-core flags and go()/View::show.
-      No third copy of styled help, color, or format.
-    blocked_by: []
-    acceptance:
-      - qctl main uses ctl_core::prelude (go, OutputArgs or ColorLong, formatdoc).
-      - forkctl drops its local help/color/format chassis in favor of ctl-core.
-      - state-sync is a follow-up or the same PR if the diff stays small.
-      - Pin is a ctl-core git rev or crates.io version, not a path dep on main.
-    notes: >-
-      Blocked in practice on ctl-core CTC-004 (harden). qctl cannot
-      name a foreign prefix in blocked_by. Do not wait for QCTL-001.
-      2026-08-23: ctl-core 0.1.0 is on crates.io. take::<Cli>("q") and
-      #USAGE mount ship in this slice. go()/View::show remains.
-
   - id: QCTL-014
     title: Let a ledger declare whether rows are blank-separated
     scope: qctl
@@ -121,29 +103,6 @@ queue:
       string. Do this with row key order, since format.rs pairs them, and
       leave the default at today's behaviour so no ledger moves unasked.
 
-  - id: QCTL-022
-    title: The bundled skill says which release it describes
-    scope: qctl
-    outcome: A reader can tell whether skills/qctl/SKILL.md predates the qctl they hold, without leaving the file.
-    blocked_by: []
-    acceptance:
-      - 'skills/qctl/SKILL.md carries version: in its frontmatter, and the Version PR moves it with every other version site.'
-      - 'It is a patterns pin, not a template: the skill is hand-authored prose and a template would own the whole document.'
-      - 'The arity is once, so a second version: line stops the release instead of rewriting the wrong one.'
-      - The vendored copy in the global skill set shows the released version, checked after the release rather than assumed.
-    notes: >-
-      2026-08-20, from the bundle contract written down as the
-      `ctl-bundle-contract` skill (dotfiles b944acf9). A ctl CLI ships a usage
-      skill, an installed instruction sheet and docs beside the binary, and the
-      skill is vendored into the global set at `latest-release` — so the text a
-      consumer loads is a released snapshot they cannot date from the outside.
-      verctl did it first in verctl#50 and that is the shape to copy: a
-      `patterns` entry matching `version: {version}` at arity `once`, plus a
-      `pins` entry naming `skills/qctl/SKILL.md`. Not a template — the served
-      files doc reaches for a template only when a file can be generated, and a
-      skill is prose. Confirm no other `version: ` line exists in the document
-      first, since the match is literal and the arity would fail the release.
-
   - id: QCTL-023
     title: check says which rules it enforces
     scope: qctl
@@ -197,24 +156,6 @@ queue:
       examples/ver.yaml plus tests/examples.rs as the pattern to copy and call
       it the best thing in verctl's documentation. Distinct from QCTL-018,
       which is about the catalog declaring a second qctl pin.
-
-  - id: QCTL-029
-    title: status and check speak JSON
-    scope: qctl
-    outcome: An agent reads the ledger state without parsing a table that is free to change shape.
-    blocked_by: []
-    acceptance:
-      - A --format json option on status and check, matching how verctl spells it.
-      - check exits non-zero with a JSON array of problems.
-    notes: >-
-      docs/adoption-report.md §7. They read status and check with agents
-      far more often than with humans. This is qctl-only: verctl already has a
-      global --format json, measured at HEAD on status, check, ci and assets —
-      and `git -C ../verctl show v0.1.1:src/cli.rs` carries `FormatArgs` too,
-      so it was already there in the verctl release they read and they missed
-      it rather than reading an old tool. Which is itself the argument for QCTL-023: a feature
-      nobody can find is a feature nobody has. Spell it the way verctl does, so
-      one convention covers the family.
 
 horizon:
   - id: QCTL-019
@@ -281,6 +222,60 @@ horizon:
       answer.
 
 archive:
+  - id: QCTL-022
+    title: The bundled skill says which release it describes
+    scope: qctl
+    outcome: A reader can tell whether skills/qctl/SKILL.md predates the qctl they hold, without leaving the file.
+    notes: >-
+      2026-08-20, from the bundle contract written down as the
+      `ctl-bundle-contract` skill (dotfiles b944acf9). A ctl CLI ships a usage
+      skill, an installed instruction sheet and docs beside the binary, and the
+      skill is vendored into the global set at `latest-release` — so the text a
+      consumer loads is a released snapshot they cannot date from the outside.
+      verctl did it first in verctl#50 and that is the shape to copy: a
+      `patterns` entry matching `version: {version}` at arity `once`, plus a
+      `pins` entry naming `skills/qctl/SKILL.md`. Not a template — the served
+      files doc reaches for a template only when a file can be generated, and a
+      skill is prose. Confirm no other `version: ` line exists in the document
+      first, since the match is literal and the arity would fail the release.
+    completed: 2026-08-24T00:49:59
+    evidence:
+      - https://github.com/victor-software-house/qctl/pull/55
+    disposition: completed
+
+  - id: QCTL-029
+    title: status and check speak JSON
+    scope: qctl
+    outcome: An agent reads the ledger state without parsing a table that is free to change shape.
+    notes: >-
+      docs/adoption-report.md §7. They read status and check with agents
+      far more often than with humans. This is qctl-only: verctl already has a
+      global --format json, measured at HEAD on status, check, ci and assets —
+      and `git -C ../verctl show v0.1.1:src/cli.rs` carries `FormatArgs` too,
+      so it was already there in the verctl release they read and they missed
+      it rather than reading an old tool. Which is itself the argument for QCTL-023: a feature
+      nobody can find is a feature nobody has. Spell it the way verctl does, so
+      one convention covers the family.
+    completed: 2026-08-24T00:49:59
+    evidence:
+      - https://github.com/victor-software-house/qctl/pull/55
+    disposition: completed
+
+  - id: QCTL-008
+    title: Adopt ctl-core in qctl and forkctl
+    scope: cross-repo
+    outcome: >-
+      Qctl and forkctl return typed reports through ctl-core App and Present.
+      No consumer owns a second help, stream, color, width, table, or JSON path.
+    notes: >-
+      Forkctl shipped on ctl-core 0.4.1. Qctl's established -f/--file exposed
+      the missing reusable composition, so ctl-core 0.4.2 added FormatLong
+      before qctl pinned it and deleted every domain print path.
+    completed: 2026-08-24T00:49:58
+    evidence:
+      - https://github.com/victor-software-house/qctl/pull/55
+    disposition: completed
+
   - id: QCTL-026
     title: A check that cannot run says so instead of passing
     scope: qctl
