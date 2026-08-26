@@ -134,9 +134,11 @@ YAML: quote list items that start with `#` or contain `: `.
 
 `add` / `start` / `archive` / `park` / `promote` change only the lines they
 must, so a comment, a blank line, a folded scalar and an inline list all
-survive a verb. Prefer the verb over a hand edit: `archive` also takes the
+survive a verb. Do not splice a new `- id:` into the file: `add` and `park`
+create rows. Prefer the verb over a hand edit: `archive` also takes the
 archived id out of every `blocked_by` that named it, which a hand edit
-forgets.
+forgets. There is no verb yet to change notes or acceptance on an existing
+row.
 
 ## Stop conditions
 

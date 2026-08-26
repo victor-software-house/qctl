@@ -157,6 +157,18 @@ queue:
       it the best thing in verctl's documentation. Distinct from QCTL-018,
       which is about the catalog declaring a second qctl pin.
 
+  - id: QCTL-030
+    title: Let a verb update fields on an existing row
+    scope: qctl
+    outcome: Notes, acceptance, title, scope, outcome, plan, and links on a queued or horizon row can be changed without splicing YAML.
+    blocked_by: []
+    acceptance:
+      - qctl set ID rewrites only the named fields on that row and leaves the rest of the file untouched.
+      - Appending notes does not replace the existing scalar.
+      - A missing id fails; archived rows are refused or have an explicit rule.
+      - instructions and the bundled skill name the verb.
+    notes: 'Operator, 2026-08-26: how do we just update metadata on an existing task? add --notes is create-time only. Do not cover this with a second ledger skill or a blessed YAML splice. Document::set already patches a top-level scalar; the verb needs the same surgical rewrite on a row.'
+
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it

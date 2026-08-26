@@ -5,6 +5,7 @@ description: >-
   park, promote, show, and instructions. Use when a repository has tasks.yaml, prefix QCTL
   or another qctl prefix, mise run q, horizon research/evaluation rows, or
   the user mentions qctl, the work queue, or replacing Ajv test:ledger.
+  Use when adding or parking a ledger row instead of editing tasks.yaml by hand.
   Do not use the vault ompex/task-ledger plugin.
 license: MIT
 version: 0.4.0
@@ -53,6 +54,12 @@ Promote horizon → queue with `qctl promote ID -a …` after `open` is
 resolved. Do not start a horizon id.
 
 ## Mutate
+
+Do not splice a new `- id:` into `tasks.yaml`. `add` and `park` create rows;
+`--notes`, `--blocked-by`, `--plan`, and `--link` fill fields a hand edit
+used to. Prefer every other verb over a YAML edit: `archive` also takes the
+archived id out of every `blocked_by` that named it. There is no verb yet to
+change notes or acceptance on an existing row.
 
 ```sh
 qctl add -t 'Title' -s repo -o 'Done when…' -a 'Acceptance'
