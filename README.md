@@ -26,7 +26,9 @@ mise run q archive OMX-001 -e 'Shipped.'
 
 Acceptance states observable, demonstrably true end conditions for closing the
 task. Write the resulting state in the present tense. Put implementation steps
-in `plan` and supporting context in `notes`.
+in `plan` and supporting context in `notes`. Repeat `-n/--note` for distinct
+facts; each argument is one ordered list item, and intentional line and paragraph
+breaks survive YAML readback.
 
 Consumer mise catalog — copy [`examples/mise.toml`](examples/mise.toml), which
 pins the tool and the task include to the same release:

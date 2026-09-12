@@ -149,7 +149,7 @@ pub struct AddArgs {
     pub acceptance: Vec<String>,
     #[arg(short = 'P', long)]
     pub patch: Option<String>,
-    /// Repeatable note. Each becomes one list item.
+    /// Repeatable note item. Intentional line and paragraph breaks are preserved.
     #[arg(short = 'n', long = "note")]
     pub note: Vec<String>,
     /// Repeatable blocker id. Each must sit earlier than the new row.
@@ -256,7 +256,7 @@ pub struct EditArgs {
     /// Repeatable end condition that must be demonstrably true to close the row.
     #[arg(short = 'a', long = "acceptance")]
     pub acceptance: Vec<String>,
-    /// Repeatable note to append.
+    /// Repeatable note item to append. Intentional line and paragraph breaks are preserved.
     #[arg(short = 'n', long = "note")]
     pub note: Vec<String>,
     /// Repeatable URI to append.

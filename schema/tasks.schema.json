@@ -60,7 +60,7 @@
 					"uniqueItems": true
 				},
 				"notes": {
-					"description": "What a later reader will want to know and cannot reconstruct.",
+					"description": "Ordered context items a later reader will want to know and cannot\nreconstruct. Intentional line and paragraph breaks are preserved.",
 					"items": {
 						"minLength": 1,
 						"type": "string"
@@ -148,7 +148,7 @@
 					"uniqueItems": true
 				},
 				"notes": {
-					"description": "Context a reader needs and the row cannot carry in its other fields.",
+					"description": "Ordered context items a reader needs and the row cannot carry in its\nother fields. Intentional line and paragraph breaks are preserved.",
 					"items": {
 						"minLength": 1,
 						"type": "string"
@@ -261,7 +261,7 @@
 					"uniqueItems": true
 				},
 				"notes": {
-					"description": "Context a reader needs and the row cannot carry in its other fields.",
+					"description": "Ordered context items a reader needs and the row cannot carry in its\nother fields. Intentional line and paragraph breaks are preserved.",
 					"items": {
 						"minLength": 1,
 						"type": "string"

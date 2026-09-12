@@ -68,6 +68,12 @@ conditions written as the resulting state. For example, `The schema page names
 every row field.` is acceptance; `Run the schema generator` is an implementation
 step. Put the procedure in `plan` and supporting context in `notes`.
 
+`notes` is an ordered list; each repeated `-n/--note` is one item. Use separate
+items for distinct facts. Intentional line breaks and blank-line paragraph
+separators survive readback as `|-` literal blocks. YAML-sensitive single-line
+prose uses a readable `>-` block instead of quotes or escape sequences. Qctl does
+not mechanically wrap sentences.
+
 ## Mutate
 
 Do not splice a new `- id:` into `tasks.yaml`. `add` creates queue rows;

@@ -84,6 +84,13 @@ demonstrably true end condition and reads as the resulting state, for example:
 implementation instructions, or a sequence of steps in acceptance. A `plan`
 owns the procedure; `notes` carry context a reader cannot reconstruct.
 
+`notes` is an ordered list. Every repeated `-n/--note` is one item, so separate
+facts instead of building one unbounded paragraph. Intentional line breaks stay
+line breaks; blank lines stay paragraph separators. Qctl writes those as `|-`
+literal block items. YAML-sensitive single-line prose, such as text containing
+`: `, uses `>-` so it stays readable without quotes or escape sequences. Short
+safe notes stay plain. Qctl never inserts mechanical line breaks mid-sentence.
+
 ## Style
 
 A ledger declares how it is written, under `style`. Every option is optional

@@ -115,7 +115,7 @@ pub(super) fn sequence_item(mapping: &str, value: &Value) -> Result<String> {
         let mut value = value.clone();
         value
             .as_mapping_mut()
-            .expect("a rendered row is a mapping")
+            .context("a rendered row must be a mapping")?
             .remove(Value::from("notes"));
         yaml_serde::to_string(&value).context("render the row without notes")?
     } else {

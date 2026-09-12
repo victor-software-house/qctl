@@ -12,6 +12,10 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
 - Acceptance states observable, demonstrably true end conditions for closing a
   row. It does not carry implementation instructions or procedural steps;
   `plan` and `notes` own how the work is done.
+- `notes` is an ordered list, and each `-n/--note` is one item. Preserve
+  intentional line breaks and blank-line paragraph separators with literal YAML
+  blocks; use folded blocks for YAML-sensitive single-line prose. Never insert
+  mechanical sentence wraps or encode readable prose as escape sequences.
 - Schema is types + schemars (QCTL-001). Generated JSON lives only here.
   Consumers pin a `$schema` URL and run `qctl check`. `schema_version` is 4:
   `notes` is a list, a ledger declares its `style`, and `completed` is a moment

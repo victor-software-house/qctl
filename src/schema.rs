@@ -169,7 +169,8 @@ pub struct QueuedTask {
     #[schemars(extend("uniqueItems" = true, "items" = *LINK_ITEMS))]
     pub links: Vec<String>,
 
-    /// Context a reader needs and the row cannot carry in its other fields.
+    /// Ordered context items a reader needs and the row cannot carry in its
+    /// other fields. Intentional line and paragraph breaks are preserved.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[garde(inner(length(min = 1)))]
     #[schemars(extend("uniqueItems" = true))]
@@ -229,7 +230,8 @@ pub struct ArchivedTask {
     #[schemars(extend("uniqueItems" = true, "items" = *LINK_ITEMS))]
     pub links: Vec<String>,
 
-    /// What a later reader will want to know and cannot reconstruct.
+    /// Ordered context items a later reader will want to know and cannot
+    /// reconstruct. Intentional line and paragraph breaks are preserved.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[garde(inner(length(min = 1)))]
     #[schemars(extend("uniqueItems" = true))]
@@ -283,7 +285,8 @@ pub struct HorizonTask {
     #[schemars(extend("uniqueItems" = true, "items" = *LINK_ITEMS))]
     pub links: Vec<String>,
 
-    /// Context a reader needs and the row cannot carry in its other fields.
+    /// Ordered context items a reader needs and the row cannot carry in its
+    /// other fields. Intentional line and paragraph breaks are preserved.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[garde(inner(length(min = 1)))]
     #[schemars(extend("uniqueItems" = true))]

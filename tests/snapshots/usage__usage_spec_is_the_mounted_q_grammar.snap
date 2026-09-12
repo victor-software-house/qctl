@@ -71,7 +71,7 @@ cmd add display_order=3 args_override_self=#false help="Add a task to the queue,
     flag "-P --patch" {
         arg <PATCH>
     }
-    flag "-n --note" help="Repeatable note. Each becomes one list item" var=#true {
+    flag "-n --note" help="Repeatable note item. Intentional line and paragraph breaks are preserved" var=#true {
         arg <NOTE>… var=#true
     }
     flag "-b --blocked-by" help="Repeatable blocker id. Each must sit earlier than the new row" var=#true {
@@ -181,7 +181,7 @@ cmd edit display_order=8 args_override_self=#false help="Rewrite fields or queue
     flag "-a --acceptance" help="Repeatable end condition that must be demonstrably true to close the row" var=#true {
         arg <ACCEPTANCE>… var=#true
     }
-    flag "-n --note" help="Repeatable note to append" var=#true {
+    flag "-n --note" help="Repeatable note item to append. Intentional line and paragraph breaks are preserved" var=#true {
         arg <NOTE>… var=#true
     }
     flag "-L --link" help="Repeatable URI to append" var=#true {
