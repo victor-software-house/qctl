@@ -144,7 +144,7 @@ pub struct AddArgs {
     pub scope: String,
     #[arg(short = 'o', long)]
     pub outcome: String,
-    /// Repeatable acceptance line. Required on the queue; not used on the horizon.
+    /// Repeatable observable end condition. Required on the queue; not used on the horizon.
     #[arg(short = 'a', long = "acceptance", required_unless_present = "horizon")]
     pub acceptance: Vec<String>,
     #[arg(short = 'P', long)]
@@ -223,7 +223,7 @@ pub struct PromoteArgs {
     pub id: String,
     #[command(flatten)]
     pub ledger: LedgerArgs,
-    /// Repeatable acceptance line the queue row must have.
+    /// Repeatable observable end condition the queue row must have.
     #[arg(short = 'a', long = "acceptance", required = true)]
     pub acceptance: Vec<String>,
     /// Repeatable blocker id. Each must already sit on the queue.
@@ -253,7 +253,7 @@ pub struct EditArgs {
     /// Drop `patch` or `plan`.
     #[arg(short = 'U', long, value_enum)]
     pub unset: Vec<UnsetField>,
-    /// Repeatable acceptance line to append.
+    /// Repeatable observable end condition to append.
     #[arg(short = 'a', long = "acceptance")]
     pub acceptance: Vec<String>,
     /// Repeatable note to append.

@@ -228,7 +228,7 @@
 			"description": "A task on the queue.",
 			"properties": {
 				"acceptance": {
-					"description": "What has to be demonstrably true to close it.",
+					"description": "Observable end conditions that must be demonstrably true to close it.\nImplementation instructions and procedural steps belong in `plan` or `notes`.",
 					"items": {
 						"minLength": 1,
 						"type": "string"

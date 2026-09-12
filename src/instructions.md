@@ -75,6 +75,12 @@ schema 3 ledger still has scalar notes: run `qctl fmt` once to split those
 on blank-line paragraphs and set version 4. Other verbs refuse version 3
 and name that command. A ledger on an earlier version is not rewritten.
 
+Acceptance is closure truth stated in advance. Each line names an observable,
+demonstrably true end condition and reads as the resulting state, for example:
+`The generated schema names every row field.` Do not put commands to run,
+implementation instructions, or a sequence of steps in acceptance. A `plan`
+owns the procedure; `notes` carry context a reader cannot reconstruct.
+
 ## Style
 
 A ledger declares how it is written, under `style`. Every option is optional

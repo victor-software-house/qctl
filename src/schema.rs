@@ -143,7 +143,8 @@ pub struct QueuedTask {
     #[schemars(extend("uniqueItems" = true))]
     pub blocked_by: Vec<String>,
 
-    /// What has to be demonstrably true to close it.
+    /// Observable end conditions that must be demonstrably true to close it.
+    /// Implementation instructions and procedural steps belong in `plan` or `notes`.
     #[garde(length(min = 1), inner(length(min = 1)))]
     #[schemars(extend("uniqueItems" = true))]
     pub acceptance: Vec<String>,

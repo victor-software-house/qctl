@@ -58,6 +58,11 @@ resolved. Do not start a horizon id.
 `schema_version` is 4. `notes` is a list. A schema 3 file is rewritten by
 `qctl fmt`; other verbs refuse it.
 
+Acceptance is closure truth stated in advance: observable, demonstrably true end
+conditions written as the resulting state. For example, `The schema page names
+every row field.` is acceptance; `Run the schema generator` is an implementation
+step. Put the procedure in `plan` and supporting context in `notes`.
+
 ## Mutate
 
 Do not splice a new `- id:` into `tasks.yaml`. `add` creates queue rows;
@@ -67,11 +72,11 @@ archived id out of every `blocked_by` that named it. `edit ID` updates
 fields and queue position on an existing row.
 
 ```sh
-qctl add -t 'Title' -s repo -o 'Done when…' -a 'Acceptance'
-qctl add -t 'Title' -s repo -o 'Done when…' -a 'Acceptance' -n 'Why' -b QCTL-001 -A QCTL-001
-qctl add -t 'Title' -s repo -o 'Done when…' -H -k research -O 'The missing fact'
-qctl park QCTL-001 -k research -O 'The missing fact'
-qctl promote QCTL-001 -a 'Acceptance'
+qctl add -t 'Document the schema' -s docs -o 'Readers can verify every row field.' -a 'The schema page names the queue, archive, and horizon fields.'
+qctl add -t 'Document the schema' -s docs -o 'Readers can verify every row field.' -a 'The schema page names every row field.' -n 'The type definitions are authoritative.' -b QCTL-001 -A QCTL-001
+qctl add -t 'Choose storage' -s design -o 'One storage decision is recorded.' -H -k research -O 'The benchmark result is missing.'
+qctl park QCTL-001 -k research -O 'The benchmark result is missing.'
+qctl promote QCTL-001 -a 'The decision record names the selected storage.'
 qctl edit QCTL-001 -n 'An addendum' -t 'New title'
 qctl edit QCTL-001 -x note:1 -p before:QCTL-002
 qctl start QCTL-001
