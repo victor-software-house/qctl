@@ -1,3 +1,4 @@
+use super::notes;
 use anyhow::{Context, Result};
 use std::ops::Range;
 use yaml_serde::Value;
@@ -95,6 +96,9 @@ fn block_scalar_sequence(source: &str, span: &Range<usize>, value: &Value) -> Op
 }
 
 pub(super) fn mapping_entry(key: &str, value: &Value) -> Result<String> {
+    if key == "notes" {
+        return notes::mapping_entry(value);
+    }
     let mut mapping = yaml_serde::Mapping::new();
     mapping.insert(Value::from(key), value.clone());
     let rendered =
@@ -102,18 +106,43 @@ pub(super) fn mapping_entry(key: &str, value: &Value) -> Result<String> {
     Ok(indent_nested_lists(&rendered))
 }
 
-pub(super) fn sequence_item(mapping: &str) -> String {
-    let written = indent_nested_lists(mapping);
+pub(super) fn sequence_item(mapping: &str, value: &Value) -> Result<String> {
+    let notes = value
+        .as_mapping()
+        .and_then(|mapping| mapping.get(Value::from("notes")))
+        .filter(|value| matches!(value, Value::Sequence(_)));
+    let without_notes = if notes.is_some() {
+        let mut value = value.clone();
+        value
+            .as_mapping_mut()
+            .expect("a rendered row is a mapping")
+            .remove(Value::from("notes"));
+        yaml_serde::to_string(&value).context("render the row without notes")?
+    } else {
+        mapping.to_owned()
+    };
+    let written = indent_nested_lists(&without_notes);
     let mut lines = written.lines();
     let Some(first) = lines.next() else {
-        return String::new();
+        return Ok(String::new());
     };
     let rest = lines.fold(String::new(), |mut item, line| {
         item.push_str("\n  ");
         item.push_str(line);
         item
     });
-    format!("- {first}{rest}")
+    let mut row = format!("- {first}{rest}");
+    if let Some(notes) = notes {
+        row.push('\n');
+        row.push_str(
+            &notes::mapping_entry(notes)?
+                .lines()
+                .map(|line| format!("  {line}"))
+                .collect::<Vec<_>>()
+                .join("\n"),
+        );
+    }
+    Ok(row)
 }
 
 fn indent_nested_lists(rendered: &str) -> String {

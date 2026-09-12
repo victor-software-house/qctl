@@ -66,7 +66,7 @@ impl Document {
 
     pub fn append(&mut self, section: &str, value: &Value) -> Result<()> {
         let rendered = yaml_serde::to_string(value).context("render the new row")?;
-        self.paste_back(section, &value::sequence_item(&rendered))
+        self.paste_back(section, &value::sequence_item(&rendered, value)?)
     }
 
     pub fn reorder_rows(&mut self, section: &str, ids: &[String]) -> Result<()> {

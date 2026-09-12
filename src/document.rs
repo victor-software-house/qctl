@@ -16,6 +16,7 @@
 //! `acceptance` from a row would take the following row's comment with it. A row
 //! on its own has no neighbour to rob.
 
+mod notes;
 mod rows;
 mod text;
 mod value;
@@ -188,19 +189,28 @@ impl Document {
         key: &str,
         value: &Value,
     ) -> Result<()> {
-        self.replace_value(&route!(section, index, key), value)
+        self.replace_value(&route!(section, index, key), key, value)
     }
 
-    fn replace_value(&mut self, route: &Route, value: &Value) -> Result<()> {
-        if matches!(value, Value::Sequence(_)) {
-            let span = {
-                let parsed = self.parsed()?;
-                let feature = parsed
-                    .query_exact(route)?
-                    .context("the value to replace is missing")?;
-                let (from, to) = feature.location.byte_span;
-                from..to
-            };
+    fn replace_value(&mut self, route: &Route, key: &str, value: &Value) -> Result<()> {
+        let span = if matches!(value, Value::Sequence(_)) {
+            let parsed = self.parsed()?;
+            let feature = parsed
+                .query_exact(route)?
+                .context("the value to replace is missing")?;
+            let (from, to) = feature.location.byte_span;
+            Some(from..to)
+        } else {
+            None
+        };
+        if key == "notes"
+            && let Some(span) = span
+        {
+            let rendered = crate::document::notes::sequence_like(&self.source, &span, value)?;
+            self.source.replace_range(span, &rendered);
+            return Ok(());
+        }
+        if let Some(span) = span {
             let written = value::sequence_like(&self.source, &span, value)?;
             self.source.replace_range(span, &written);
             return Ok(());
@@ -274,7 +284,7 @@ pub fn revise_fields(row: &str, changes: &[(&str, Option<Value>)]) -> Result<Str
             }
             (true, Some(value)) => {
                 let mut document = Document::new(kept);
-                document.replace_value(&route!(0, *key), value)?;
+                document.replace_value(&route!(0, *key), key, value)?;
                 kept = document.into_source();
             }
             (false, Some(value)) => {
