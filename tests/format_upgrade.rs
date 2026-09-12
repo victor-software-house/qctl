@@ -51,9 +51,8 @@ fn fmt_rewrites_v3_scalar_notes_into_a_list() {
     assert!(output.status.success(), "{}", stderr(&output));
     let body = dir.read();
     assert!(body.contains("schema_version: 4"), "{body}");
-    assert_eq!(body.matches("- |-").count(), 2, "{body}");
-    assert!(body.contains("First paragraph."), "{body}");
-    assert!(body.contains("Second paragraph."), "{body}");
+    assert!(body.contains("- First paragraph."), "{body}");
+    assert!(body.contains("- Second paragraph."), "{body}");
     let check = qctl(&["check", "-f", &path, "-g"]);
     assert!(check.status.success(), "{}", stderr(&check));
 }
