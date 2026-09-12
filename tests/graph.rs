@@ -222,6 +222,59 @@ fn statuses_partition_one_continuous_corpus() {
 }
 
 #[test]
+fn rejects_ids_outside_the_bounded_space_without_enumerating_them() {
+    let found = errors(indoc! {"
+        schema_version: 4
+        prefix: QCTL
+        active: null
+        queue:
+          - id: QCTL-4000000000
+            title: too high
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [a]
+        archive: []
+    "});
+    assert!(
+        found
+            .iter()
+            .any(|error| error.contains("outside the id space"))
+    );
+    assert!(
+        !found
+            .iter()
+            .any(|error| error.starts_with("missing task ids"))
+    );
+}
+
+#[test]
+fn next_id_refuses_u32_max_without_overflowing() {
+    let root = TempDir::new().expect("tempdir");
+    let path = root.path().join("tasks.yaml");
+    fs::write(
+        &path,
+        indoc! {"
+            schema_version: 4
+            prefix: QCTL
+            active: null
+            queue:
+              - id: QCTL-4294967295
+                title: too high
+                scope: s
+                outcome: o
+                blocked_by: []
+                acceptance: [a]
+            archive: []
+        "},
+    )
+    .expect("write");
+    let ledger = load(&path).expect("parse");
+    let error = qctl::ledger::next_id(&ledger).expect_err("id space is exhausted");
+    assert_eq!(error.to_string(), "id space exhausted");
+}
+
+#[test]
 fn rejects_active_that_is_not_queue_head() {
     let found = errors(indoc! {"
         schema_version: 4

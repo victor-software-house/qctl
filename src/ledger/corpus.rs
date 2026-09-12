@@ -2,6 +2,8 @@ use crate::schema::Ledger;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
+pub(super) const MAX_TASK_NUMBER: u32 = 999_999;
+
 #[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
 enum Status {
     Queue,
@@ -28,27 +30,26 @@ pub(super) fn errors(ledger: &Ledger) -> Vec<String> {
     let tasks = tasks(ledger);
     let mut errors = duplicate_errors(&tasks);
     let numbers = own_numbers(&tasks, &ledger.prefix, &mut errors);
-    if let Some(highest) = numbers.last().copied() {
-        let missing: Vec<u32> = (1..=highest)
-            .filter(|number| numbers.binary_search(number).is_err())
-            .collect();
-        if !missing.is_empty() {
-            errors.push(format!(
-                "missing task ids: {}",
-                format_ranges(&missing, &ledger.prefix).join(", ")
-            ));
-        }
+    let missing = missing_ranges(&numbers);
+    if !missing.is_empty() {
+        errors.push(format!(
+            "missing task ids: {}",
+            missing
+                .into_iter()
+                .map(|(start, end)| format_range(&ledger.prefix, start, end))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
     }
     errors
 }
 
-pub(super) fn next_number(ledger: &Ledger) -> u32 {
+pub(super) fn highest_number(ledger: &Ledger) -> u32 {
     tasks(ledger)
         .into_iter()
         .filter_map(|task| number(task.id, &ledger.prefix))
         .max()
         .unwrap_or(0)
-        + 1
 }
 
 fn tasks(ledger: &Ledger) -> Vec<Task<'_>> {
@@ -116,6 +117,13 @@ fn own_numbers(tasks: &[Task<'_>], prefix: &str, errors: &mut Vec<String>) -> Ve
             ));
             continue;
         }
+        if number > MAX_TASK_NUMBER {
+            errors.push(format!(
+                "{} is outside the id space (max {prefix}-{MAX_TASK_NUMBER})",
+                task.id
+            ));
+            continue;
+        }
         let canonical = format!("{prefix}-{number:03}");
         if task.id != canonical {
             errors.push(format!("{} is not canonical; use {canonical}", task.id));
@@ -124,23 +132,6 @@ fn own_numbers(tasks: &[Task<'_>], prefix: &str, errors: &mut Vec<String>) -> Ve
         numbers.insert(number);
     }
     numbers.into_iter().collect()
-}
-
-fn format_ranges(missing: &[u32], prefix: &str) -> Vec<String> {
-    let mut ranges = Vec::new();
-    let mut start = missing[0];
-    let mut end = start;
-    for number in &missing[1..] {
-        if *number == end + 1 {
-            end = *number;
-            continue;
-        }
-        ranges.push(format_range(prefix, start, end));
-        start = *number;
-        end = *number;
-    }
-    ranges.push(format_range(prefix, start, end));
-    ranges
 }
 
 fn format_range(prefix: &str, start: u32, end: u32) -> String {
@@ -155,15 +146,25 @@ fn number(id: &str, prefix: &str) -> Option<u32> {
     id.strip_prefix(prefix)?.strip_prefix('-')?.parse().ok()
 }
 
+fn missing_ranges(numbers: &[u32]) -> Vec<(u32, u32)> {
+    let mut missing = Vec::new();
+    let mut previous = 0;
+    for number in numbers {
+        if *number > previous + 1 {
+            missing.push((previous + 1, number - 1));
+        }
+        previous = *number;
+    }
+    missing
+}
+
 #[cfg(test)]
 mod tests {
-    use super::format_ranges;
+    use super::{format_range, missing_ranges};
 
     #[test]
     fn missing_ids_are_complete_compact_ranges() {
-        assert_eq!(
-            format_ranges(&[2, 4, 5, 6, 9], "QCTL"),
-            ["QCTL-002", "QCTL-004..QCTL-006", "QCTL-009"]
-        );
+        assert_eq!(missing_ranges(&[1, 3, 7, 8, 10]), [(2, 2), (4, 6), (9, 9)]);
+        assert_eq!(format_range("QCTL", 4, 6), "QCTL-004..QCTL-006");
     }
 }
