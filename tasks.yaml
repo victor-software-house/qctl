@@ -267,7 +267,7 @@ archive:
     completed: 2026-09-12T18:02:14
     evidence:
       - https://github.com/victor-software-house/qctl/pull/62
-      - 'qctl 1316f6f: distinct note items preserve intentional lines and paragraph breaks with readable YAML scalars; mise run verify and CI pass.'
+      - 'qctl 6bd76a0: readable ordered note items preserve intentional lines, paragraph breaks, leading and trailing whitespace through add, edit, and fmt; mise run verify and repository-ledger check passed on macbook-portable.'
     disposition: completed
 
   - id: QCTL-031
