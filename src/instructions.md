@@ -67,7 +67,7 @@ Horizon rows require `kind` (`research` / `evaluation` / `deferred`) and
 `open` (the missing start condition or the question). Promote to `queue`
 only when `open` is resolved and the row has `acceptance` and `blocked_by`.
 
-IDs are `{prefix}-NNN` (at least three digits), never reused, and never encode
+IDs are `{prefix}-NNN` (three to six digits), never reused, and never encode
 priority. Queue, horizon, and archive partition one task corpus: every id from
 `{prefix}-001` through the highest id exists exactly once across those lists. A
 move changes status without creating a second copy; `qctl check` reports every

@@ -47,7 +47,7 @@
 				},
 				"id": {
 					"description": "The id it held on the queue, never reused after this.",
-					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
+					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",
 					"type": "string"
 				},
 				"links": {
@@ -131,7 +131,7 @@
 			"properties": {
 				"id": {
 					"description": "Its id, drawn from the same sequence as the queue's.",
-					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
+					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",
 					"type": "string"
 				},
 				"kind": {
@@ -240,7 +240,7 @@
 				"blocked_by": {
 					"description": "Ids that must ship first. Each has to sit earlier in this queue.",
 					"items": {
-						"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
+						"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",
 						"type": "string"
 					},
 					"type": "array",
@@ -248,7 +248,7 @@
 				},
 				"id": {
 					"description": "This task's id, unique for the life of the repository.",
-					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
+					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",
 					"type": "string"
 				},
 				"links": {
@@ -374,7 +374,7 @@
 	"properties": {
 		"active": {
 			"description": "The one task currently being executed, or null when work is\nintentionally paused.",
-			"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
+			"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",
 			"type": [
 				"string",
 				"null"

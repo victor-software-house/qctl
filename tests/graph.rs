@@ -1,7 +1,7 @@
 //! Graph rules that JSON Schema cannot express.
 
 use indoc::indoc;
-use qctl::ledger::{graph_errors, load};
+use qctl::ledger::{graph_errors, load, read};
 use std::fs;
 use tempfile::TempDir;
 
@@ -223,19 +223,28 @@ fn statuses_partition_one_continuous_corpus() {
 
 #[test]
 fn rejects_ids_outside_the_bounded_space_without_enumerating_them() {
-    let found = errors(indoc! {"
-        schema_version: 4
-        prefix: QCTL
-        active: null
-        queue:
-          - id: QCTL-9999999999
-            title: too high
-            scope: s
-            outcome: o
-            blocked_by: []
-            acceptance: [a]
-        archive: []
-    "});
+    let root = TempDir::new().expect("tempdir");
+    let path = root.path().join("tasks.yaml");
+    fs::write(
+        &path,
+        indoc! {"
+            schema_version: 4
+            prefix: QCTL
+            active: null
+            queue:
+              - id: QCTL-9999999999
+                title: too high
+                scope: s
+                outcome: o
+                blocked_by: []
+                acceptance: [a]
+            archive: []
+        "},
+    )
+    .expect("write");
+    assert!(load(&path).is_err(), "validated load must refuse the id");
+    let ledger = read(&path).expect("parse without validation");
+    let found = graph_errors(&ledger, &path);
     assert!(
         found
             .iter()
@@ -295,7 +304,8 @@ fn next_id_ignores_an_already_invalid_overflowing_id() {
         "},
     )
     .expect("write");
-    let ledger = load(&path).expect("parse");
+    assert!(load(&path).is_err(), "validated load must refuse the id");
+    let ledger = read(&path).expect("parse without validation");
     assert_eq!(qctl::ledger::next_id(&ledger).expect("next id"), "QCTL-001");
 }
 

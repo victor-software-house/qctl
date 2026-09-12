@@ -232,7 +232,7 @@ fn id_matches_prefix(id: &str, prefix: &str) -> bool {
     else {
         return false;
     };
-    number.len() >= 3 && number.bytes().all(|byte| byte.is_ascii_digit())
+    (3..=6).contains(&number.len()) && number.bytes().all(|byte| byte.is_ascii_digit())
 }
 
 pub fn next_id(ledger: &Ledger) -> Result<String> {

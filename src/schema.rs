@@ -55,8 +55,8 @@ pattern!(
     "A repository's id prefix: PST, KAI, OMX."
 );
 pattern!(
-    TASK_ID = r"^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
-    "A task id: that prefix, then at least three digits."
+    TASK_ID = r"^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",
+    "A task id: that prefix, then three to six digits."
 );
 pattern!(
     PATCH = r"^[a-z][a-z0-9-]*$",
