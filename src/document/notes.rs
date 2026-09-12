@@ -64,9 +64,22 @@ fn sequence(value: &Value) -> Result<String> {
 }
 
 fn item(note: &str) -> Result<String> {
+    let scalar = yaml_serde::to_string(&Value::String(note.to_owned()))?;
+    let escaped_item = format!("- {}", serde_json::to_string(note)?);
+
     if note.contains('\n') {
-        let body = note
+        let trailing = note.len() - note.trim_end_matches('\n').len();
+        let has_whitespace_only_line = note
             .split('\n')
+            .any(|line| !line.is_empty() && line.trim().is_empty());
+        if trailing > 1 || has_whitespace_only_line {
+            return Ok(escaped_item.clone());
+        }
+        let content = &note[..note.len() - trailing];
+        let mut lines = content.split('\n').collect::<Vec<_>>();
+        lines.extend(std::iter::repeat_n("", trailing.saturating_sub(1)));
+        let body = lines
+            .into_iter()
             .map(|line| {
                 if line.is_empty() {
                     String::new()
@@ -76,13 +89,31 @@ fn item(note: &str) -> Result<String> {
             })
             .collect::<Vec<_>>()
             .join("\n");
-        return Ok(format!("- |2-\n{body}"));
+        let chomp = match trailing {
+            0 => "-",
+            1 => "",
+            _ => "+",
+        };
+        let block = format!("- |2{chomp}\n{body}");
+        return Ok(if round_trips(&block, note) {
+            block
+        } else {
+            escaped_item.clone()
+        });
     }
 
-    let scalar = yaml_serde::to_string(&Value::String(note.to_owned()))?;
     let scalar = scalar.trim_end();
     if scalar.starts_with(['\'', '"']) {
-        return Ok(format!("- >2-\n  {note}"));
+        let block = format!("- >2-\n  {note}");
+        return Ok(if round_trips(&block, note) {
+            block
+        } else {
+            escaped_item
+        });
     }
     Ok(format!("- {scalar}"))
+}
+
+fn round_trips(rendered: &str, expected: &str) -> bool {
+    serde_yml::from_str::<Vec<String>>(rendered).is_ok_and(|notes| notes.as_slice() == [expected])
 }

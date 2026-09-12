@@ -53,8 +53,20 @@ fn tidied(source: &str) -> String {
     let mut out = String::with_capacity(source.len());
     let mut blank_run = 0;
     let mut after_key = false;
-    for line in source.lines() {
-        let line = line.trim_end();
+    let mut block_indent = None;
+    for raw in source.lines() {
+        if let Some(indent) = block_indent {
+            let content_indent = raw.len() - raw.trim_start().len();
+            if raw.trim().is_empty() || content_indent > indent {
+                out.push_str(raw);
+                out.push('\n');
+                continue;
+            }
+            block_indent = None;
+            blank_run = 0;
+        }
+
+        let line = raw.trim_end();
         if line.is_empty() {
             blank_run += 1;
             if blank_run > 1 || after_key {
@@ -67,11 +79,23 @@ fn tidied(source: &str) -> String {
         after_key = line.ends_with(':') && !line.starts_with(char::is_whitespace);
         out.push_str(line);
         out.push('\n');
+        block_indent = block_scalar_indent(line);
     }
     while out.ends_with("\n\n") {
         out.pop();
     }
     out
+}
+
+fn block_scalar_indent(line: &str) -> Option<usize> {
+    let token = line.split_whitespace().next_back()?;
+    let mut chars = token.chars();
+    if !matches!(chars.next(), Some('|' | '>'))
+        || !chars.all(|character| character.is_ascii_digit() || matches!(character, '+' | '-'))
+    {
+        return None;
+    }
+    Some(line.len() - line.trim_start().len())
 }
 
 /// `qctl fmt`: write the ledger in its declared style, or with `--check` say
@@ -188,4 +212,29 @@ fn paragraphs(notes: &str) -> Vec<String> {
         .filter(|item| !item.is_empty())
         .map(ToOwned::to_owned)
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::tidied;
+    use indoc::indoc;
+
+    #[test]
+    fn tidied_keeps_block_scalar_contents_opaque() {
+        let source = "notes:\n  - |2+\n      leading  \n      \n\n    next\narchive: []\n\n\n";
+        let expected = "notes:\n  - |2+\n      leading  \n      \n\n    next\narchive: []\n";
+        assert_eq!(tidied(source), expected);
+    }
+
+    #[test]
+    fn block_scalar_detection_accepts_indent_and_chomp_indicators() {
+        let source = indoc! {"
+            notes:
+              - |2-
+                literal
+              - >2+
+                folded
+        "};
+        assert_eq!(tidied(source), source);
+    }
 }

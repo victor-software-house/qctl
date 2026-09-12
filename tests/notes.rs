@@ -53,6 +53,35 @@ fn repeated_notes_are_readable_distinct_list_items() {
 }
 
 #[test]
+fn trailing_and_blank_lines_survive_fmt() {
+    let dir = LedgerDir::empty();
+    dir.write(common::MINIMAL);
+    let path = dir.path.to_string_lossy();
+    let notes = ["one trailing\n", "two trailing\n\n", "first\n\n\n  \nlast"];
+    let output = qctl(&[
+        "add", "-f", &path, "-t", "t", "-s", "s", "-o", "o", "-a", "a", "-n", notes[0], "-n",
+        notes[1], "-n", notes[2],
+    ]);
+    assert!(output.status.success(), "{}", stderr(&output));
+    let before = parsed_notes(&dir.read());
+    assert_eq!(before, notes);
+
+    let formatted = qctl(&["fmt", "-f", &path]);
+    assert!(formatted.status.success(), "{}", stderr(&formatted));
+    assert_eq!(parsed_notes(&dir.read()), notes);
+}
+
+fn parsed_notes(body: &str) -> Vec<String> {
+    let ledger: serde_yml::Value = serde_yml::from_str(body).expect("parse output");
+    ledger["queue"][0]["notes"]
+        .as_sequence()
+        .expect("notes list")
+        .iter()
+        .map(|note| note.as_str().expect("note string").to_owned())
+        .collect()
+}
+
+#[test]
 fn edit_uses_the_same_note_item_policy() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
