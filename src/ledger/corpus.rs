@@ -47,7 +47,7 @@ pub(super) fn errors(ledger: &Ledger) -> Vec<String> {
 pub(super) fn highest_number(ledger: &Ledger) -> u32 {
     tasks(ledger)
         .into_iter()
-        .filter_map(|task| digits(task.id, &ledger.prefix))
+        .filter_map(|task| numeric_digits(task.id, &ledger.prefix))
         .map(|digits| digits.parse().unwrap_or(u32::MAX))
         .max()
         .unwrap_or(0)
@@ -108,7 +108,7 @@ fn duplicate_errors(tasks: &[Task<'_>]) -> Vec<String> {
 fn own_numbers(tasks: &[Task<'_>], prefix: &str, errors: &mut Vec<String>) -> Vec<u32> {
     let mut numbers = BTreeSet::new();
     for task in tasks {
-        let Some(digits) = digits(task.id, prefix) else {
+        let Some(digits) = numeric_digits(task.id, prefix) else {
             continue;
         };
         let Ok(number) = digits.parse::<u32>() else {
@@ -150,6 +150,11 @@ fn format_range(prefix: &str, start: u32, end: u32) -> String {
 
 fn digits<'a>(id: &'a str, prefix: &str) -> Option<&'a str> {
     id.strip_prefix(prefix)?.strip_prefix('-')
+}
+
+fn numeric_digits<'a>(id: &'a str, prefix: &str) -> Option<&'a str> {
+    let digits = digits(id, prefix)?;
+    (!digits.is_empty() && digits.bytes().all(|byte| byte.is_ascii_digit())).then_some(digits)
 }
 
 fn missing_ranges(numbers: &[u32]) -> Vec<(u32, u32)> {
