@@ -191,6 +191,7 @@ queue:
       - Instructions, the bundled skill, graph tests, and the complete verification gate state and prove the global-corpus rule.
     notes:
       - 'Operator direction, 2026-09-12: id continuity and uniqueness apply to the entire task corpus, never independently within queue, horizon, or archive.'
+      - QCTL-007 was restored from commit history as a dropped tombstone because commit e5e48b removed the duplicated daemon proposal after ctl-core CTC-003 became its owner; the id was not reused.
 
 horizon:
   - id: QCTL-019
@@ -464,6 +465,19 @@ archive:
     evidence:
       - 'All six owned ledgers speak schema 3 — three public (ctl-core#9, verctl#41, this one) and three private — each with a style block naming -03:00 and every archived row carrying the instant it last entered the archive, recovered from git. 88 rows across five repos; the day gate held everywhere except three rows that entered the archive at 00:21 and were accepted by name. Two upstream ledgers that are not ours were left alone.'
     disposition: completed
+
+  - id: QCTL-007
+    title: Optional per-user daemon sharing one session and view
+    scope: ctl-core
+    completed: 2026-08-19T21:13:45
+    outcome: The duplicate qctl daemon proposal is removed; ctl-core CTC-003 owns the evaluation.
+    evidence:
+      - commit e5e48b removed the qctl row after the same evaluation moved to ctl-core CTC-003.
+    disposition: dropped
+    notes:
+      - >-
+        Restored as a historical tombstone when qctl began enforcing a gapless
+        global id corpus. This does not revive the proposal or reuse the id.
 
   - id: QCTL-003
     title: "Publish native qctl so mise github: can install it"
