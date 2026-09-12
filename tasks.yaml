@@ -178,6 +178,20 @@ queue:
       - '2026-09-12 operator decisions: both releases are patch bumps; edit collapses position and removal flags; Rust code follows nested feature modules; qctl is reviewed as a PR stack.'
     plan: goals/row-edit/plan.md
 
+  - id: QCTL-032
+    title: Validate one gapless global task corpus
+    scope: qctl
+    outcome: Queue, horizon, and archive partition one globally unique, gapless task-id sequence.
+    blocked_by: []
+    acceptance:
+      - qctl check reports every missing positive id between PREFIX-001 and the highest id, regardless of which list contains the surrounding tasks.
+      - qctl check reports every id that appears more than once and names each status that claims it.
+      - A task id cannot represent more than one status, while moving a row between lists preserves its identity.
+      - The repository ledger contains every id from QCTL-001 through its highest id and passes qctl check.
+      - Instructions, the bundled skill, graph tests, and the complete verification gate state and prove the global-corpus rule.
+    notes:
+      - 'Operator direction, 2026-09-12: id continuity and uniqueness apply to the entire task corpus, never independently within queue, horizon, or archive.'
+
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
