@@ -29,12 +29,14 @@ pub(super) fn errors(ledger: &Ledger) -> Vec<String> {
     let mut errors = duplicate_errors(&tasks);
     let numbers = own_numbers(&tasks, &ledger.prefix, &mut errors);
     if let Some(highest) = numbers.last().copied() {
-        let missing: Vec<String> = (1..=highest)
+        let missing: Vec<u32> = (1..=highest)
             .filter(|number| numbers.binary_search(number).is_err())
-            .map(|number| format!("{}-{number:03}", ledger.prefix))
             .collect();
         if !missing.is_empty() {
-            errors.push(format!("missing task ids: {}", missing.join(", ")));
+            errors.push(format!(
+                "missing task ids: {}",
+                format_ranges(&missing, &ledger.prefix).join(", ")
+            ));
         }
     }
     errors
@@ -124,6 +126,44 @@ fn own_numbers(tasks: &[Task<'_>], prefix: &str, errors: &mut Vec<String>) -> Ve
     numbers.into_iter().collect()
 }
 
+fn format_ranges(missing: &[u32], prefix: &str) -> Vec<String> {
+    let mut ranges = Vec::new();
+    let mut start = missing[0];
+    let mut end = start;
+    for number in &missing[1..] {
+        if *number == end + 1 {
+            end = *number;
+            continue;
+        }
+        ranges.push(format_range(prefix, start, end));
+        start = *number;
+        end = *number;
+    }
+    ranges.push(format_range(prefix, start, end));
+    ranges
+}
+
+fn format_range(prefix: &str, start: u32, end: u32) -> String {
+    if start == end {
+        format!("{prefix}-{start:03}")
+    } else {
+        format!("{prefix}-{start:03}..{prefix}-{end:03}")
+    }
+}
+
 fn number(id: &str, prefix: &str) -> Option<u32> {
     id.strip_prefix(prefix)?.strip_prefix('-')?.parse().ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::format_ranges;
+
+    #[test]
+    fn missing_ids_are_complete_compact_ranges() {
+        assert_eq!(
+            format_ranges(&[2, 4, 5, 6, 9], "QCTL"),
+            ["QCTL-002", "QCTL-004..QCTL-006", "QCTL-009"]
+        );
+    }
 }

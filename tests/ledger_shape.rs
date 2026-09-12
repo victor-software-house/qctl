@@ -37,7 +37,7 @@ const WHOLE: &str = indoc! {r#"
         blocked_by: [QCTL-001]
         acceptance: [It also holds.]
     archive:
-      - id: QCTL-000
+      - id: QCTL-003
         title: Shipped earlier
         scope: qctl
         completed: 2026-08-01T09:12:00
@@ -45,7 +45,7 @@ const WHOLE: &str = indoc! {r#"
         evidence: [The tag exists.]
         disposition: completed
     horizon:
-      - id: QCTL-900
+      - id: QCTL-004
         title: Someday
         scope: qctl
         outcome: Something would be true.
@@ -255,7 +255,11 @@ fn reports_every_defect_in_one_pass() {
     "#};
     let (ok, complaint) = check(ledger);
     assert!(!ok);
-    for expected in ["title", "blocked_by", "duplicate id QCTL-001"] {
+    for expected in [
+        "title",
+        "blocked_by",
+        "duplicate id QCTL-001 appears 2 times in queue",
+    ] {
         assert!(
             complaint.contains(expected),
             "no {expected} in:\n{complaint}"
