@@ -70,8 +70,8 @@ step. Put the procedure in `plan` and supporting context in `notes`.
 
 `notes` is an ordered list; each repeated `-n/--note` is one item. Use separate
 items for distinct facts. Intentional line breaks and blank-line paragraph
-separators survive readback as `|-` literal blocks. YAML-sensitive single-line
-prose uses a readable `>-` block instead of quotes or escape sequences. Qctl does
+separators survive readback as `|2-` literal blocks. YAML-sensitive single-line
+prose uses a readable `>2-` block instead of quotes or escape sequences. Qctl does
 not mechanically wrap sentences.
 
 ## Mutate

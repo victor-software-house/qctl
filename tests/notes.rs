@@ -26,12 +26,14 @@ fn repeated_notes_are_readable_distinct_list_items() {
         "Source: the colon stays readable.",
         "-n",
         "First intentional line.\nSecond intentional line.\n\nNext paragraph.",
+        "-n",
+        "  Indented first line.\nPlain second line.",
     ]);
     assert!(output.status.success(), "{}", stderr(&output));
     let body = dir.read();
     assert!(
         body.contains(
-            "    notes:\n      - Short context.\n      - >-\n        Source: the colon stays readable.\n      - |-\n        First intentional line.\n        Second intentional line.\n\n        Next paragraph."
+            "    notes:\n      - Short context.\n      - >2-\n        Source: the colon stays readable.\n      - |2-\n        First intentional line.\n        Second intentional line.\n\n        Next paragraph.\n      - |2-\n          Indented first line.\n        Plain second line."
         ),
         "{body}"
     );
@@ -39,10 +41,14 @@ fn repeated_notes_are_readable_distinct_list_items() {
     let notes = ledger["queue"][0]["notes"]
         .as_sequence()
         .expect("notes list");
-    assert_eq!(notes.len(), 3);
+    assert_eq!(notes.len(), 4);
     assert_eq!(
         notes[2].as_str(),
         Some("First intentional line.\nSecond intentional line.\n\nNext paragraph.")
+    );
+    assert_eq!(
+        notes[3].as_str(),
+        Some("  Indented first line.\nPlain second line.")
     );
 }
 
@@ -78,9 +84,9 @@ fn edit_uses_the_same_note_item_policy() {
     assert!(output.status.success(), "{}", stderr(&output));
     let body = dir.read();
     assert!(body.contains("- Existing."), "{body}");
-    assert!(body.contains("- >-\n        Context: added."), "{body}");
+    assert!(body.contains("- >2-\n        Context: added."), "{body}");
     assert!(
-        body.contains("- |-\n        Line one.\n        Line two."),
+        body.contains("- |2-\n        Line one.\n        Line two."),
         "{body}"
     );
 }

@@ -76,13 +76,13 @@ fn item(note: &str) -> Result<String> {
             })
             .collect::<Vec<_>>()
             .join("\n");
-        return Ok(format!("- |-\n{body}"));
+        return Ok(format!("- |2-\n{body}"));
     }
 
     let scalar = yaml_serde::to_string(&Value::String(note.to_owned()))?;
     let scalar = scalar.trim_end();
     if scalar.starts_with(['\'', '"']) {
-        return Ok(format!("- >-\n  {note}"));
+        return Ok(format!("- >2-\n  {note}"));
     }
     Ok(format!("- {scalar}"))
 }
