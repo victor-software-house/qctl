@@ -134,11 +134,11 @@ which zone an old stamp was taken in. Change it deliberately.
 6. `qctl park ID -k KIND -O OPEN` demotes a queued row onto the horizon,
    dropping `acceptance` and `blocked_by`. It refuses if another queued
    row still names that id as a blocker. Parking `active` nulls `active`.
-   `qctl promote ID -a ACCEPTANCE` moves a horizon row onto the queue tail,
-   dropping kind and open. It does not become active. `--blocked-by` must
-   name a queued id. `add --horizon` creates an unfleshed horizon row;
-   `park` no longer creates. Both write a `horizon:` key if the ledger
-   omitted it. `fmt` still never inserts a key.
+   `qctl promote ID -a 'The decision record names the selected storage.'`
+   moves a horizon row onto the queue tail, dropping kind and open. It does
+   not become active. `--blocked-by` must name a queued id. `add --horizon`
+   creates an unfleshed horizon row; `park` no longer creates. Both write a
+   `horizon:` key if the ledger omitted it. `fmt` still never inserts a key.
 7. `qctl edit ID` rewrites named fields on a queued, horizon, or archived
    row. Scalars replace (`-t/-s/-o`, `-k/-O`, `-P/-l`, `-U/--unset
    patch|plan`). Lists append (`-a/-n/-L/-b/-e`). Repeatable
