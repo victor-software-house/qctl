@@ -51,8 +51,8 @@ fn sequence(value: &Value) -> Result<String> {
         return yaml_serde::to_string(value).context("render notes");
     };
     let mut rendered = String::new();
-    for value in items {
-        let Value::String(note) = value else {
+    for item_value in items {
+        let Value::String(note) = item_value else {
             return yaml_serde::to_string(value).context("render notes");
         };
         if !rendered.is_empty() {
@@ -76,10 +76,8 @@ fn item(note: &str) -> Result<String> {
             return Ok(escaped_item.clone());
         }
         let content = &note[..note.len() - trailing];
-        let mut lines = content.split('\n').collect::<Vec<_>>();
-        lines.extend(std::iter::repeat_n("", trailing.saturating_sub(1)));
-        let body = lines
-            .into_iter()
+        let body = content
+            .split('\n')
             .map(|line| {
                 if line.is_empty() {
                     String::new()
@@ -89,11 +87,7 @@ fn item(note: &str) -> Result<String> {
             })
             .collect::<Vec<_>>()
             .join("\n");
-        let chomp = match trailing {
-            0 => "-",
-            1 => "",
-            _ => "+",
-        };
+        let chomp = if trailing == 0 { "-" } else { "" };
         let block = format!("- |2{chomp}\n{body}");
         return Ok(if round_trips(&block, note) {
             block
@@ -116,4 +110,29 @@ fn item(note: &str) -> Result<String> {
 
 fn round_trips(rendered: &str, expected: &str) -> bool {
     serde_yml::from_str::<Vec<String>>(rendered).is_ok_and(|notes| notes.as_slice() == [expected])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{item, sequence};
+    use yaml_serde::Value;
+
+    #[test]
+    fn non_string_item_falls_back_to_the_whole_sequence() {
+        let value = Value::Sequence(vec![
+            Value::from("first"),
+            Value::from(7),
+            Value::from("last"),
+        ]);
+        let rendered = sequence(&value).expect("render sequence");
+        let parsed: Value = serde_yml::from_str(&rendered).expect("parse sequence");
+        assert_eq!(parsed, value);
+    }
+
+    #[test]
+    fn multiple_trailing_newlines_use_exact_escaped_fallback() {
+        let rendered = item("trailing\n\n").expect("render item");
+        assert_eq!(rendered, r#"- "trailing\n\n""#);
+        assert!(!rendered.contains("|2+"));
+    }
 }

@@ -53,49 +53,107 @@ fn tidied(source: &str) -> String {
     let mut out = String::with_capacity(source.len());
     let mut blank_run = 0;
     let mut after_key = false;
-    let mut block_indent = None;
+    let mut block: Option<BlockScalar> = None;
+    let mut block_blanks = Vec::new();
+    let mut preserve_trailing_block_blanks = false;
+
     for raw in source.lines() {
-        if let Some(indent) = block_indent {
+        if let Some(scalar) = block {
+            if raw.trim().is_empty() {
+                block_blanks.push(raw);
+                continue;
+            }
             let content_indent = raw.len() - raw.trim_start().len();
-            if raw.trim().is_empty() || content_indent > indent {
+            if content_indent > scalar.indent {
+                push_verbatim_blanks(&mut out, &mut block_blanks);
                 out.push_str(raw);
                 out.push('\n');
                 continue;
             }
-            block_indent = None;
-            blank_run = 0;
+            if scalar.keep_trailing {
+                push_verbatim_blanks(&mut out, &mut block_blanks);
+            } else {
+                for _ in block_blanks.drain(..) {
+                    push_blank(&mut out, &mut blank_run, after_key);
+                }
+            }
+            block = None;
         }
 
         let line = raw.trim_end();
         if line.is_empty() {
-            blank_run += 1;
-            if blank_run > 1 || after_key {
-                continue;
-            }
-            out.push('\n');
+            push_blank(&mut out, &mut blank_run, after_key);
             continue;
         }
         blank_run = 0;
         after_key = line.ends_with(':') && !line.starts_with(char::is_whitespace);
         out.push_str(line);
         out.push('\n');
-        block_indent = block_scalar_indent(line);
+        block = block_scalar(line);
     }
-    while out.ends_with("\n\n") {
-        out.pop();
+
+    if let Some(scalar) = block {
+        if scalar.keep_trailing && !block_blanks.is_empty() {
+            preserve_trailing_block_blanks = true;
+            push_verbatim_blanks(&mut out, &mut block_blanks);
+        } else {
+            for _ in block_blanks {
+                push_blank(&mut out, &mut blank_run, after_key);
+            }
+        }
+    }
+    if !preserve_trailing_block_blanks {
+        while out.ends_with("\n\n") {
+            out.pop();
+        }
     }
     out
 }
 
-fn block_scalar_indent(line: &str) -> Option<usize> {
-    let token = line.split_whitespace().next_back()?;
-    let mut chars = token.chars();
-    if !matches!(chars.next(), Some('|' | '>'))
-        || !chars.all(|character| character.is_ascii_digit() || matches!(character, '+' | '-'))
-    {
+#[derive(Clone, Copy)]
+struct BlockScalar {
+    indent: usize,
+    keep_trailing: bool,
+}
+
+fn block_scalar(line: &str) -> Option<BlockScalar> {
+    let trimmed = line.trim_start();
+    let content = trimmed.strip_prefix("- ").unwrap_or(trimmed);
+    let token = content
+        .rsplit_once(':')
+        .map_or(content, |(_, value)| value)
+        .trim();
+    let mut characters = token.chars();
+    if !matches!(characters.next(), Some('|' | '>')) {
         return None;
     }
-    Some(line.len() - line.trim_start().len())
+    let mut saw_indent = false;
+    let mut saw_chomp = false;
+    for character in characters {
+        match character {
+            '1'..='9' if !saw_indent => saw_indent = true,
+            '+' | '-' if !saw_chomp => saw_chomp = true,
+            _ => return None,
+        }
+    }
+    Some(BlockScalar {
+        indent: line.len() - trimmed.len(),
+        keep_trailing: token.contains('+'),
+    })
+}
+
+fn push_verbatim_blanks(out: &mut String, blanks: &mut Vec<&str>) {
+    for blank in blanks.drain(..) {
+        out.push_str(blank);
+        out.push('\n');
+    }
+}
+
+fn push_blank(out: &mut String, blank_run: &mut usize, after_key: bool) {
+    *blank_run += 1;
+    if *blank_run == 1 && !after_key {
+        out.push('\n');
+    }
 }
 
 /// `qctl fmt`: write the ledger in its declared style, or with `--check` say
@@ -216,7 +274,7 @@ fn paragraphs(notes: &str) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::tidied;
+    use super::{block_scalar, tidied};
     use indoc::indoc;
 
     #[test]
@@ -236,5 +294,20 @@ mod tests {
                 folded
         "};
         assert_eq!(tidied(source), source);
+    }
+
+    #[test]
+    fn tidied_collapses_trailing_blanks_after_a_stripped_block() {
+        let source = "notes:\n  - |2-\n    literal\n\n\narchive: []\n";
+        let expected = "notes:\n  - |2-\n    literal\n\narchive: []\n";
+        assert_eq!(tidied(source), expected);
+    }
+
+    #[test]
+    fn plain_scalars_ending_in_indicator_characters_are_not_blocks() {
+        assert!(block_scalar("title: literal |").is_none());
+        assert!(block_scalar("  - literal >").is_none());
+        assert!(block_scalar("title: >2-").is_some());
+        assert!(block_scalar("  - |2+").is_some());
     }
 }
