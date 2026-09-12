@@ -249,7 +249,33 @@ fn rejects_ids_outside_the_bounded_space_without_enumerating_them() {
 }
 
 #[test]
-fn next_id_refuses_u32_max_without_overflowing() {
+fn next_id_refuses_the_valid_maximum() {
+    let root = TempDir::new().expect("tempdir");
+    let path = root.path().join("tasks.yaml");
+    fs::write(
+        &path,
+        indoc! {"
+            schema_version: 4
+            prefix: QCTL
+            active: null
+            queue:
+              - id: QCTL-999999
+                title: last
+                scope: s
+                outcome: o
+                blocked_by: []
+                acceptance: [a]
+            archive: []
+        "},
+    )
+    .expect("write");
+    let ledger = load(&path).expect("parse");
+    let error = qctl::ledger::next_id(&ledger).expect_err("id space is exhausted");
+    assert_eq!(error.to_string(), "id space exhausted");
+}
+
+#[test]
+fn next_id_ignores_an_already_invalid_overflowing_id() {
     let root = TempDir::new().expect("tempdir");
     let path = root.path().join("tasks.yaml");
     fs::write(
@@ -270,8 +296,7 @@ fn next_id_refuses_u32_max_without_overflowing() {
     )
     .expect("write");
     let ledger = load(&path).expect("parse");
-    let error = qctl::ledger::next_id(&ledger).expect_err("id is outside the bounded space");
-    assert!(error.to_string().contains("outside the id space"));
+    assert_eq!(qctl::ledger::next_id(&ledger).expect("next id"), "QCTL-001");
 }
 
 #[test]
