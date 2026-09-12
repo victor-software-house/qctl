@@ -178,19 +178,6 @@ queue:
       - '2026-09-12 operator decisions: both releases are patch bumps; edit collapses position and removal flags; Rust code follows nested feature modules; qctl is reviewed as a PR stack.'
     plan: goals/row-edit/plan.md
 
-  - id: QCTL-031
-    title: Define acceptance as observable closure truth
-    scope: qctl
-    outcome: Every qctl surface teaches acceptance as demonstrably true end conditions, while plans and notes carry implementation method.
-    blocked_by: []
-    acceptance:
-      - The add, promote, and edit help describes acceptance as observable end conditions for closing a task.
-      - The installed instructions, bundled skill, README, and generated schema distinguish closure truth from implementation steps and plans.
-      - Published examples use concrete present-tense conditions instead of the placeholder Acceptance.
-      - Focused contract tests and the complete verification gate pass.
-    notes:
-      - 'Operator follow-up, 2026-09-12: make acceptance semantics unmistakable without changing the existing demonstrably-true schema contract.'
-
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
@@ -257,6 +244,18 @@ horizon:
         answer.
 
 archive:
+  - id: QCTL-031
+    title: Define acceptance as observable closure truth
+    scope: qctl
+    outcome: Every qctl surface teaches acceptance as demonstrably true end conditions, while plans and notes carry implementation method.
+    notes:
+      - 'Operator follow-up, 2026-09-12: make acceptance semantics unmistakable without changing the existing demonstrably-true schema contract.'
+    completed: 2026-09-12T16:41:25
+    evidence:
+      - https://github.com/victor-software-house/qctl/pull/60
+      - 'qctl 04509b1: help, instructions, skill, README, and schema state observable closure conditions; focused tests and mise run verify pass on macbook-portable.'
+    disposition: completed
+
   - id: QCTL-022
     title: The bundled skill says which release it describes
     scope: qctl
