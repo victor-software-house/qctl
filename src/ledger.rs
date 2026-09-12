@@ -236,7 +236,7 @@ fn id_matches_prefix(id: &str, prefix: &str) -> bool {
 }
 
 pub fn next_id(ledger: &Ledger) -> Result<String> {
-    let highest = corpus::highest_number(ledger);
+    let highest = corpus::highest_number(ledger)?;
     ensure!(highest < corpus::MAX_TASK_NUMBER, "id space exhausted");
     Ok(format!("{}-{:03}", ledger.prefix, highest + 1))
 }

@@ -1,4 +1,5 @@
 use crate::schema::Ledger;
+use anyhow::{Result, bail};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
@@ -44,13 +45,21 @@ pub(super) fn errors(ledger: &Ledger) -> Vec<String> {
     errors
 }
 
-pub(super) fn highest_number(ledger: &Ledger) -> u32 {
-    tasks(ledger)
-        .into_iter()
-        .filter_map(|task| numeric_digits(task.id, &ledger.prefix))
-        .map(|digits| digits.parse().unwrap_or(u32::MAX))
-        .max()
-        .unwrap_or(0)
+pub(super) fn highest_number(ledger: &Ledger) -> Result<u32> {
+    let mut highest = 0;
+    for task in tasks(ledger) {
+        let Some(digits) = numeric_digits(task.id, &ledger.prefix) else {
+            continue;
+        };
+        let Ok(number) = digits.parse::<u32>() else {
+            bail!(outside_space(task.id, &ledger.prefix));
+        };
+        if number > MAX_TASK_NUMBER {
+            bail!(outside_space(task.id, &ledger.prefix));
+        }
+        highest = highest.max(number);
+    }
+    Ok(highest)
 }
 
 fn tasks(ledger: &Ledger) -> Vec<Task<'_>> {

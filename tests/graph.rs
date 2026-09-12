@@ -270,8 +270,8 @@ fn next_id_refuses_u32_max_without_overflowing() {
     )
     .expect("write");
     let ledger = load(&path).expect("parse");
-    let error = qctl::ledger::next_id(&ledger).expect_err("id space is exhausted");
-    assert_eq!(error.to_string(), "id space exhausted");
+    let error = qctl::ledger::next_id(&ledger).expect_err("id is outside the bounded space");
+    assert!(error.to_string().contains("outside the id space"));
 }
 
 #[test]
