@@ -2,6 +2,7 @@ use crate::cli::{
     AddArgs, ArchiveArgs, CloseFromGitArgs, Disposition, InitArgs, ParkArgs, PromoteArgs,
 };
 use crate::document::Document;
+use crate::ledger::order::{self, Row};
 use crate::ledger::{load, next_id, resolve_path};
 use crate::report::{Destination, Report};
 use crate::schema::{HorizonTask, QueuedTask};
@@ -85,7 +86,7 @@ fn add_queue(args: &AddArgs) -> Result<Report> {
         patch: args.patch.clone(),
         plan: args.plan.clone(),
         links: args.links.clone(),
-        notes: args.notes.clone(),
+        notes: args.note.clone(),
     };
 
     let mut ids: Vec<String> = ledger.queue.iter().map(|task| task.id.clone()).collect();
@@ -99,13 +100,22 @@ fn add_queue(args: &AddArgs) -> Result<Report> {
             before = args.before.as_deref().unwrap_or(active)
         );
     }
-    for blocker in &args.blocked_by {
-        match ids.iter().position(|queued| queued == blocker) {
-            Some(index) if index < insertion => {}
-            Some(_) => bail!("{id} <- {blocker} is not earlier"),
-            None => bail!("{id} <- {blocker} is not queued"),
-        }
-    }
+    let mut ordered: Vec<Row<'_>> = ledger
+        .queue
+        .iter()
+        .map(|task| Row {
+            id: &task.id,
+            blockers: &task.blocked_by,
+        })
+        .collect();
+    ordered.insert(
+        insertion,
+        Row {
+            id: &id,
+            blockers: &args.blocked_by,
+        },
+    );
+    order::validate(&ordered)?;
 
     let mut document = read(&path)?;
     document.append("queue", &yaml_serde::to_value(&row)?)?;
@@ -138,7 +148,7 @@ fn add_horizon(args: &AddArgs) -> Result<Report> {
         patch: args.patch.clone(),
         plan: args.plan.clone(),
         links: args.links.clone(),
-        notes: args.notes.clone(),
+        notes: args.note.clone(),
     };
     let mut document = read(&path)?;
     document.append("horizon", &yaml_serde::to_value(&row)?)?;
@@ -191,27 +201,38 @@ pub fn start(args: &crate::cli::IdArgs) -> Result<Report> {
 pub fn park(args: &ParkArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
-    require_plan(&path, args.plan.as_deref())?;
-    let id = next_id(&ledger)?;
-    let row = HorizonTask {
-        id: id.clone(),
-        title: args.title.clone(),
-        scope: args.scope.clone(),
-        outcome: args.outcome.clone(),
-        kind: args.kind,
-        open: args.open.clone(),
-        patch: args.patch.clone(),
-        plan: args.plan.clone(),
-        links: args.links.clone(),
-        notes: args.notes.clone(),
-    };
+    ensure!(
+        ledger.queue.iter().any(|task| task.id == args.id),
+        "{} is not queued",
+        args.id
+    );
+    for task in &ledger.queue {
+        ensure!(
+            !task.blocked_by.contains(&args.id),
+            "{} still blocks {}; a parked row remains a real blocker",
+            args.id,
+            task.id
+        );
+    }
+
     let mut document = read(&path)?;
-    document.append("horizon", &yaml_serde::to_value(&row)?)?;
+    document.move_to_end(
+        "queue",
+        "horizon",
+        &args.id,
+        &["blocked_by", "acceptance"],
+        &[
+            ("kind", yaml_serde::Value::from(args.kind.to_string())),
+            ("open", yaml_serde::Value::from(args.open.as_str())),
+        ],
+    )?;
+    if ledger.active.as_deref() == Some(args.id.as_str()) {
+        document.set("active", yaml_serde::Value::Null)?;
+    }
     write(&path, document)?;
-    Ok(Report::Added {
+    Ok(Report::Parked {
         path: path.display().to_string(),
-        id,
-        destination: Destination::Horizon,
+        id: args.id.clone(),
     })
 }
 
@@ -371,7 +392,7 @@ fn now_in(zone: &str) -> Result<String> {
         .context("format the moment this row left the queue")
 }
 
-fn read(path: &Path) -> Result<Document> {
+pub(crate) fn read(path: &Path) -> Result<Document> {
     let source = fs::read_to_string(path).with_context(|| path.display().to_string())?;
     Ok(Document::new(source))
 }
@@ -382,7 +403,7 @@ fn read(path: &Path) -> Result<Document> {
 /// A ledger whose style asks for it is normalized on the way out. Off by
 /// default, because normalizing touches lines the verb had no business in, and a
 /// diff that shows only the work is worth more than one that is always tidy.
-fn write(path: &Path, document: Document) -> Result<()> {
+pub(crate) fn write(path: &Path, document: Document) -> Result<()> {
     let source = document.into_source();
     crate::document::must_still_parse(&source)?;
     let edited: crate::ledger::Ledger =
@@ -395,7 +416,7 @@ fn write(path: &Path, document: Document) -> Result<()> {
     fs::write(path, source).with_context(|| path.display().to_string())
 }
 
-fn require_plan(ledger: &Path, plan: Option<&str>) -> Result<()> {
+pub(crate) fn require_plan(ledger: &Path, plan: Option<&str>) -> Result<()> {
     let Some(plan) = plan else {
         return Ok(());
     };

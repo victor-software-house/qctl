@@ -171,8 +171,20 @@ use rstest::rstest;
           outcome: Something is true.
           blocked_by: []
           acceptance: [It holds.]
-          notes: ""
+          notes: [""]
     "#},
+    "notes"
+)]
+#[case::the_same_note_twice(
+    indoc! {"
+        - id: QCTL-001
+          title: A row
+          scope: qctl
+          outcome: Something is true.
+          blocked_by: []
+          acceptance: [It holds.]
+          notes: [Keep this., Keep this.]
+    "},
     "notes"
 )]
 #[case::a_link_that_is_not_a_url(

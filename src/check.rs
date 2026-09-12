@@ -9,6 +9,19 @@ pub fn run(args: &CheckArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let schema = schema_value()?;
     let instance = load_value(&path)?;
+    if instance
+        .get("schema_version")
+        .and_then(serde_json::Value::as_u64)
+        == Some(3)
+    {
+        return Ok(Report::Check {
+            path: path.display().to_string(),
+            problems: vec![format!(
+                "{}: schema_version 3; run qctl fmt to rewrite notes into a list and set schema_version 4",
+                path.display()
+            )],
+        });
+    }
     // `format` is an annotation by default, which would let `completed: last
     // Tuesday` through the one keyword that describes it.
     let validator = jsonschema::options()

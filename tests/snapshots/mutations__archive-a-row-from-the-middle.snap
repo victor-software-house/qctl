@@ -4,7 +4,7 @@ description: "qctl archive DEMO-002 --evidence \"It shipped.\""
 ---
 # -8 +9
  # yaml-language-server: $schema=./schema/tasks.schema.json
- schema_version: 3
+ schema_version: 4
  prefix: DEMO
  active: DEMO-001
  queue:

@@ -48,7 +48,8 @@ Every command returns one typed report. Human output is pretty by default.
 `--format json` serializes the report directly as one JSON line on stdout;
 failures remain machine-readable on stdout and exit non-zero. `--quiet`
 suppresses successful human output only, never JSON or failures. `-f` remains
-`--file`; format has no `-f` shorthand.
+`--file`; format has no `-f` shorthand. `--color` has no `-c` shorthand;
+`fmt -c` is `--check`.
 
 `status --format json` includes the complete ledger state. The JSON from
 `check --format json` carries `problems` as an array and exits non-zero when it
@@ -69,11 +70,10 @@ only when `open` is resolved and the row has `acceptance` and `blocked_by`.
 IDs are `{prefix}-NNN` (at least three digits), unique across all three
 lists, never reused, never encode priority.
 
-`schema_version` is `3`. An archived row's `completed` is the moment it left
-the queue, `YYYY-MM-DDThh:mm:ss`, to the second, in the zone the ledger
-declares — so two rows closed in the same session are told apart and
-ordered. A ledger on an earlier version has to be migrated before this qctl
-will touch it.
+`schema_version` is `4`. `notes` is a list of strings on every row. A
+schema 3 ledger still has scalar notes: run `qctl fmt` once to split those
+on blank-line paragraphs and set version 4. Other verbs refuse version 3
+and name that command. A ledger on an earlier version is not rewritten.
 
 ## Style
 
@@ -93,9 +93,11 @@ valid.
 nothing, names the lines that differ, and exits non-zero — that is the one
 for a hook.
 
-`fmt` does not guess. It changes what an option names, sorts the archive when
-asked, and removes whitespace nobody chose. It never adds a blank line, a
-comment, or a key, and it never rewrites a value.
+`fmt` does not guess. On a current-version file it changes what an option
+names, sorts the archive when asked, and removes whitespace nobody chose. It
+never adds a blank line, a comment, or a key, and it never rewrites a
+value. Schema 3 is the exception: scalar `notes` become a list, then the
+style rules run.
 
 Changing `timezone` does not move the stamps already written: nothing records
 which zone an old stamp was taken in. Change it deliberately.
@@ -103,11 +105,11 @@ which zone an old stamp was taken in. Change it deliberately.
 ## Workflow
 
 1. `qctl status` then `qctl check` before mutation.
-2. `qctl add` writes a queue row and prints the new id. `--notes`,
-   `--blocked-by`, `--plan` and `--link` fill the fields a hand edit
-   used to. `--after ID` / `--before ID` place it; the tail is the
+2. `qctl add` writes a queue row and prints the new id. Repeatable `-n/--note`,
+   `-b/--blocked-by`, `-l/--plan` and `-L/--link` fill the fields a hand edit
+   used to. `-A/--after ID` / `-B/--before ID` place it; the tail is the
    default. A blocker that would not sit earlier than the new row is
-   refused. `--horizon --kind KIND --open OPEN` writes a horizon row
+   refused. `-H/--horizon -k KIND -O OPEN` writes a horizon row
    instead. `--plan` must name a file next to the ledger, the same
    rule `check` uses. A tail add to an empty queue is allowed even
    when `active` is set; it does not invent a `--before`.
@@ -115,30 +117,43 @@ which zone an old stamp was taken in. Change it deliberately.
    `queue[0]` and `active`.
 4. `qctl archive ID -e EVIDENCE` moves a queued row to archive.
    `qctl close-from-git` archives every queued id a commit-body trailer
-   closed. Default scan is the same history `check` uses. `--range
-   main..HEAD` narrows it. `--pre-push` reads the hook stdin. If it
+   closed. Default scan is the same history `check` uses. `-r/--range
+   main..HEAD` narrows it. `-u/--pre-push` reads the hook stdin. If it
    wrote the ledger, it exits non-zero so the file can be committed;
    it does not amend.
 5. `qctl hook install` prefers Lefthook: it prints `mise run q close-from-git`
    for `pre-push.commands` and does not edit `lefthook.yml`. Until that command
    is in Lefthook, install exits non-zero. Without Lefthook it writes
-   `.git/hooks/pre-push`. `--force` overwrites the git hook only.
-6. `qctl park` writes a horizon row (`--kind` and `--open` required).
-   `qctl promote ID -a ACCEPTANCE` moves it onto the queue tail, dropping
-   kind and open. It does not become active. `--blocked-by` must name a
-   queued id. `add --horizon` and `park` write a `horizon:` key if the
-   ledger omitted it (an empty list is the serde default). `fmt` still
-   never inserts a key.
+   `.git/hooks/pre-push`. `-F/--force` overwrites the git hook only.
+6. `qctl park ID -k KIND -O OPEN` demotes a queued row onto the horizon,
+   dropping `acceptance` and `blocked_by`. It refuses if another queued
+   row still names that id as a blocker. Parking `active` nulls `active`.
+   `qctl promote ID -a ACCEPTANCE` moves a horizon row onto the queue tail,
+   dropping kind and open. It does not become active. `--blocked-by` must
+   name a queued id. `add --horizon` creates an unfleshed horizon row;
+   `park` no longer creates. Both write a `horizon:` key if the ledger
+   omitted it. `fmt` still never inserts a key.
+7. `qctl edit ID` rewrites named fields on a queued, horizon, or archived
+   row. Scalars replace (`-t/-s/-o`, `-k/-O`, `-P/-l`, `-U/--unset
+   patch|plan`). Lists append (`-a/-n/-L/-b/-e`). Repeatable
+   `-x/--remove field:index|exact-text` drops notes, acceptance, links,
+   blockers, or evidence; the field names are `note`, `acceptance`, `link`,
+   `blocked-by`, and `evidence`. `-R/--reorder-notes 3,1,2` permutes notes.
+   `-p/--position front|back|before:ID|after:ID` moves a queued row without
+   stealing `active`; every dependency must still point backward. Archive
+   rows accept only note, evidence, and link operations. `id` and `completed`
+   are never editable. A missing id fails.
 
 YAML: quote list items that start with `#` or contain `: `.
 
-`add` / `start` / `archive` / `park` / `promote` change only the lines they
-must, so a comment, a blank line, a folded scalar and an inline list all
-survive a verb. Do not splice a new `- id:` into the file: `add` and `park`
-create rows. Prefer the verb over a hand edit: `archive` also takes the
+`add` / `start` / `archive` / `park` / `promote` / `edit` change only the
+lines they must, so a comment, a blank line, a folded scalar and an inline
+list all survive a verb. Do not splice a new `- id:` into the file: `add`
+creates rows; `add --horizon` creates unfleshed horizon rows; `park`
+demotes. Prefer the verb over a hand edit: `archive` also takes the
 archived id out of every `blocked_by` that named it, which a hand edit
-forgets. There is no verb yet to change notes or acceptance on an existing
-row.
+forgets. `edit` is the verb for notes, acceptance, and the other fields
+on an existing row.
 
 ## Stop conditions
 

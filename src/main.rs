@@ -24,6 +24,7 @@ fn execute(cli: Cli) -> Result<Report> {
         Command::Archive(args) => mutate::archive(&args),
         Command::Park(args) => mutate::park(&args),
         Command::Promote(args) => mutate::promote(&args),
+        Command::Edit(args) => qctl::edit::run(&args),
         Command::Show(args) => ledger::show(&args),
         Command::Fmt(args) => qctl::format::run(&args),
         Command::CloseFromGit(args) => mutate::close_from_git(&args),

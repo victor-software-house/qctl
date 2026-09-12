@@ -61,11 +61,12 @@
 				},
 				"notes": {
 					"description": "What a later reader will want to know and cannot reconstruct.",
-					"minLength": 1,
-					"type": [
-						"string",
-						"null"
-					]
+					"items": {
+						"minLength": 1,
+						"type": "string"
+					},
+					"type": "array",
+					"uniqueItems": true
 				},
 				"outcome": {
 					"description": "What became true.",
@@ -148,11 +149,12 @@
 				},
 				"notes": {
 					"description": "Context a reader needs and the row cannot carry in its other fields.",
-					"minLength": 1,
-					"type": [
-						"string",
-						"null"
-					]
+					"items": {
+						"minLength": 1,
+						"type": "string"
+					},
+					"type": "array",
+					"uniqueItems": true
 				},
 				"open": {
 					"description": "The missing start condition, or the question that keeps it off the\nqueue.",
@@ -260,11 +262,12 @@
 				},
 				"notes": {
 					"description": "Context a reader needs and the row cannot carry in its other fields.",
-					"minLength": 1,
-					"type": [
-						"string",
-						"null"
-					]
+					"items": {
+						"minLength": 1,
+						"type": "string"
+					},
+					"type": "array",
+					"uniqueItems": true
 				},
 				"outcome": {
 					"description": "What is true once this is done.",
@@ -404,7 +407,7 @@
 			"type": "array"
 		},
 		"schema_version": {
-			"const": 3,
+			"const": 4,
 			"description": "Ledger schema version, the one this qctl writes and accepts. Increment\nonly with a coordinated schema and ledger migration.",
 			"format": "uint32",
 			"minimum": 0,

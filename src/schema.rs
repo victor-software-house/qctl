@@ -21,7 +21,8 @@ use std::sync::LazyLock;
 
 /// The one version of this shape a ledger may declare. 3 gave a ledger a
 /// `style` block and moved the zone out of every `completed` stamp into it.
-pub const VERSION: u32 = 3;
+/// 4 made `notes` a list on every row.
+pub const VERSION: u32 = 4;
 
 /// The published identity of the generated schema.
 const SCHEMA_ID: &str =
@@ -166,10 +167,10 @@ pub struct QueuedTask {
     pub links: Vec<String>,
 
     /// Context a reader needs and the row cannot carry in its other fields.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[garde(inner(length(min = 1)))]
-    #[schemars(length(min = 1))]
-    pub notes: Option<String>,
+    #[schemars(extend("uniqueItems" = true))]
+    pub notes: Vec<String>,
 }
 
 /// A task that has left the queue, either shipped or deliberately dropped.
@@ -226,10 +227,10 @@ pub struct ArchivedTask {
     pub links: Vec<String>,
 
     /// What a later reader will want to know and cannot reconstruct.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[garde(inner(length(min = 1)))]
-    #[schemars(length(min = 1))]
-    pub notes: Option<String>,
+    #[schemars(extend("uniqueItems" = true))]
+    pub notes: Vec<String>,
 }
 
 /// Work that is mapped but has no place on the queue yet.
@@ -280,10 +281,10 @@ pub struct HorizonTask {
     pub links: Vec<String>,
 
     /// Context a reader needs and the row cannot carry in its other fields.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[garde(inner(length(min = 1)))]
-    #[schemars(length(min = 1))]
-    pub notes: Option<String>,
+    #[schemars(extend("uniqueItems" = true))]
+    pub notes: Vec<String>,
 }
 
 /// How a ledger is written, declared by the ledger itself.

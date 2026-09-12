@@ -11,12 +11,13 @@
 //! options, and are deliberately not decided here yet.
 
 use crate::cli::FmtArgs;
-use crate::document::{Document, must_still_parse};
-use crate::ledger::{Ledger, load, resolve_path};
+use crate::document::{Document, KeyShape, must_still_parse};
+use crate::ledger::{Ledger, resolve_path};
 use crate::report::Report;
-use crate::schema::{ArchiveOrder, Section};
-use anyhow::{Context, Result};
+use crate::schema::{ArchiveOrder, Section, VERSION};
+use anyhow::{Context, Result, bail};
 use std::fs;
+use yaml_serde::Value;
 
 /// The ledger as its own style says it should be written.
 pub fn normalized(source: &str, ledger: &Ledger) -> Result<String> {
@@ -74,14 +75,24 @@ fn tidied(source: &str) -> String {
 }
 
 /// `qctl fmt`: write the ledger in its declared style, or with `--check` say
-/// what is not in it and leave the file alone.
+/// what is not in it and leave the file alone. A schema 3 file is rewritten
+/// to schema 4 first: each scalar `notes` becomes a list of paragraphs.
 pub fn run(args: &FmtArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
-    let ledger = load(&path)?;
-    let source = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
+    let original = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
+    let source = upgrade_v3(&original)?;
+    let ledger: Ledger =
+        serde_yml::from_str(&source).with_context(|| format!("parse {}", path.display()))?;
+    let complaints = crate::ledger::value_errors(&ledger);
+    anyhow::ensure!(
+        complaints.is_empty(),
+        "validate {}: {}",
+        path.display(),
+        complaints.join("; ")
+    );
     let wanted = normalized(&source, &ledger)?;
 
-    if source == wanted {
+    if original == wanted {
         return Ok(Report::Formatted {
             path: path.display().to_string(),
             changed: false,
@@ -89,7 +100,7 @@ pub fn run(args: &FmtArgs) -> Result<Report> {
             differences: Vec::new(),
         });
     }
-    let differences = changes(&source, &wanted);
+    let differences = changes(&original, &wanted);
     if !args.check {
         fs::write(&path, wanted).with_context(|| format!("write {}", path.display()))?;
     }
@@ -113,5 +124,68 @@ fn changes(source: &str, wanted: &str) -> Vec<String> {
         .enumerate()
         .filter(|(_, (before, after))| before != after)
         .map(|(at, (before, after))| format!("line {}: {:?} would be {:?}", at + 1, before, after))
+        .collect()
+}
+
+/// A schema 3 ledger becomes schema 4: scalar `notes` split on blank-line
+/// paragraphs, then `schema_version` is set to 4. A current-version file is
+/// returned unchanged. Other versions are refused.
+fn upgrade_v3(source: &str) -> Result<String> {
+    match peek_schema_version(source) {
+        Some(version) if version == u64::from(VERSION) => Ok(source.to_owned()),
+        Some(3) => rewrite_v3_notes(source),
+        Some(version) => {
+            bail!("schema_version {version} must be {VERSION} (or 3, which fmt rewrites)")
+        }
+        None => Ok(source.to_owned()),
+    }
+}
+
+fn peek_schema_version(source: &str) -> Option<u64> {
+    let value: serde_yml::Value = serde_yml::from_str(source).ok()?;
+    value.get("schema_version")?.as_u64()
+}
+
+fn rewrite_v3_notes(source: &str) -> Result<String> {
+    let parsed: serde_yml::Value =
+        serde_yml::from_str(source).context("parse a schema 3 ledger")?;
+    let mut document = Document::new(source.to_owned());
+    for section in ["queue", "archive", "horizon"] {
+        let Some(rows) = parsed.get(section).and_then(serde_yml::Value::as_sequence) else {
+            continue;
+        };
+        for (index, row) in rows.iter().enumerate() {
+            let Some(notes) = row.get("notes") else {
+                continue;
+            };
+            if document.row_key_shape(section, index, "notes")? != Some(KeyShape::Scalar) {
+                continue;
+            }
+            let Some(text) = notes.as_str() else {
+                continue;
+            };
+            let items = paragraphs(text);
+            if items.is_empty() {
+                document.remove_row_key(section, index, "notes")?;
+            } else {
+                document.replace_row_value(
+                    section,
+                    index,
+                    "notes",
+                    &yaml_serde::to_value(&items)?,
+                )?;
+            }
+        }
+    }
+    document.set("schema_version", Value::from(VERSION))?;
+    Ok(document.into_source())
+}
+
+fn paragraphs(notes: &str) -> Vec<String> {
+    notes
+        .split("\n\n")
+        .map(str::trim)
+        .filter(|item| !item.is_empty())
+        .map(ToOwned::to_owned)
         .collect()
 }

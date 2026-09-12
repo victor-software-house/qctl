@@ -34,6 +34,14 @@ pub enum Report {
         path: String,
         id: String,
     },
+    Parked {
+        path: String,
+        id: String,
+    },
+    Edited {
+        path: String,
+        id: String,
+    },
     Promoted {
         path: String,
         id: String,
