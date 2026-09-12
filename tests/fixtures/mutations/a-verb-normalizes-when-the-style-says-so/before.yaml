@@ -22,7 +22,7 @@ queue:
     blocked_by: []
     acceptance: [It also holds.]
 archive:
-  - id: DEMO-000
+  - id: DEMO-003
     title: Oldest
     scope: demo
     completed: 2026-08-14T09:00:00
@@ -30,7 +30,7 @@ archive:
     evidence: [The tag exists.]
     disposition: completed
 
-  - id: DEMO-100
+  - id: DEMO-004
     title: Newer, and written second
     scope: demo
     completed: 2026-08-16T23:08:28

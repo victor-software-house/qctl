@@ -17,7 +17,7 @@ queue:
     acceptance: [It holds.]
 
 horizon:
-  - id: DEMO-900
+  - id: DEMO-003
     title: Someday
     scope: demo
     outcome: Something would be true.

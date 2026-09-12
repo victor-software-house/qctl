@@ -21,7 +21,7 @@ description: qctl fmt
      blocked_by: []
      acceptance: [It holds.]
 +horizon:
-+  - id: DEMO-900
++  - id: DEMO-003
 +    title: Someday
 +    scope: demo
 +    outcome: Something would be true.
@@ -37,7 +37,7 @@ description: qctl fmt
      evidence: [It shipped.]
      disposition: completed
 -horizon:
--  - id: DEMO-900
+-  - id: DEMO-003
 -    title: Someday
 -    scope: demo
 -    outcome: Something would be true.
