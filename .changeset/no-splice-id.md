@@ -2,4 +2,4 @@
 qctl: patch
 ---
 
-Tell agents not to splice a new `- id:` into `tasks.yaml`. `add` and `park` create rows; the other verbs still beat a hand edit because `archive` also clears `blocked_by`. State that notes and acceptance on an existing row have no verb yet.
+Existing rows can now be revised without splicing YAML: `edit ID` updates fields, list items, and dependency-safe queue position, while `park ID` demotes queued work to the horizon. Notes are ordered list items in schema 4, and `fmt` upgrades schema 3 scalar notes without rewriting unrelated rows.
