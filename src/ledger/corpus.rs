@@ -47,7 +47,8 @@ pub(super) fn errors(ledger: &Ledger) -> Vec<String> {
 pub(super) fn highest_number(ledger: &Ledger) -> u32 {
     tasks(ledger)
         .into_iter()
-        .filter_map(|task| number(task.id, &ledger.prefix))
+        .filter_map(|task| digits(task.id, &ledger.prefix))
+        .map(|digits| digits.parse().unwrap_or(u32::MAX))
         .max()
         .unwrap_or(0)
 }
@@ -107,7 +108,11 @@ fn duplicate_errors(tasks: &[Task<'_>]) -> Vec<String> {
 fn own_numbers(tasks: &[Task<'_>], prefix: &str, errors: &mut Vec<String>) -> Vec<u32> {
     let mut numbers = BTreeSet::new();
     for task in tasks {
-        let Some(number) = number(task.id, prefix) else {
+        let Some(digits) = digits(task.id, prefix) else {
+            continue;
+        };
+        let Ok(number) = digits.parse::<u32>() else {
+            errors.push(outside_space(task.id, prefix));
             continue;
         };
         if number == 0 {
@@ -118,10 +123,7 @@ fn own_numbers(tasks: &[Task<'_>], prefix: &str, errors: &mut Vec<String>) -> Ve
             continue;
         }
         if number > MAX_TASK_NUMBER {
-            errors.push(format!(
-                "{} is outside the id space (max {prefix}-{MAX_TASK_NUMBER})",
-                task.id
-            ));
+            errors.push(outside_space(task.id, prefix));
             continue;
         }
         let canonical = format!("{prefix}-{number:03}");
@@ -134,6 +136,10 @@ fn own_numbers(tasks: &[Task<'_>], prefix: &str, errors: &mut Vec<String>) -> Ve
     numbers.into_iter().collect()
 }
 
+fn outside_space(id: &str, prefix: &str) -> String {
+    format!("{id} is outside the id space (max {prefix}-{MAX_TASK_NUMBER})")
+}
+
 fn format_range(prefix: &str, start: u32, end: u32) -> String {
     if start == end {
         format!("{prefix}-{start:03}")
@@ -142,8 +148,8 @@ fn format_range(prefix: &str, start: u32, end: u32) -> String {
     }
 }
 
-fn number(id: &str, prefix: &str) -> Option<u32> {
-    id.strip_prefix(prefix)?.strip_prefix('-')?.parse().ok()
+fn digits<'a>(id: &'a str, prefix: &str) -> Option<&'a str> {
+    id.strip_prefix(prefix)?.strip_prefix('-')
 }
 
 fn missing_ranges(numbers: &[u32]) -> Vec<(u32, u32)> {

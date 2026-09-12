@@ -228,7 +228,7 @@ fn rejects_ids_outside_the_bounded_space_without_enumerating_them() {
         prefix: QCTL
         active: null
         queue:
-          - id: QCTL-4000000000
+          - id: QCTL-9999999999
             title: too high
             scope: s
             outcome: o
