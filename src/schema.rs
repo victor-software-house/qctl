@@ -101,18 +101,20 @@ pub struct Ledger {
     #[schemars(required, pattern(*TASK_ID), extend("type" = ["string", "null"]))]
     pub active: Option<String>,
 
-    /// Pending work in priority order. The order is the priority.
+    /// Pending work in priority order. The order is the priority. Queue,
+    /// archive, and horizon partition one globally unique, continuous id corpus.
     #[garde(dive)]
     pub queue: Vec<QueuedTask>,
 
     /// Completed or deliberately dropped work, newest first. Archived ids are
-    /// never reused.
+    /// never reused and remain part of the global task corpus.
     #[garde(dive)]
     pub archive: Vec<ArchivedTask>,
 
     /// Mapped work that is not on the short-term queue: research, evaluations,
-    /// or deferred items without a start condition. File order is not
-    /// priority, and `active` must never name a horizon id.
+    /// or deferred items without a start condition. File order is not priority,
+    /// `active` must never name a horizon id, and each id still belongs to the
+    /// same global task corpus.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[garde(dive)]
     pub horizon: Vec<HorizonTask>,

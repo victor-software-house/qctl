@@ -6,6 +6,9 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
 - This repo's queue is [`tasks.yaml`](tasks.yaml) (`QCTL-###`).
 - `horizon` maps research/evaluations that are not startable. Do not put
   them on `queue` and do not set `active` to a horizon id.
+- Queue, horizon, and archive partition one global task corpus. IDs are
+  continuous from `PREFIX-001` through the maximum and appear exactly once;
+  status changes move one row rather than copying it between lists.
 - Acceptance states observable, demonstrably true end conditions for closing a
   row. It does not carry implementation instructions or procedural steps;
   `plan` and `notes` own how the work is done.

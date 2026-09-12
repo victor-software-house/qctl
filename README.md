@@ -6,7 +6,8 @@
 </picture>
 
 Control in-repo YAML work queues. One file, one active task, file order is
-priority. Replaces copied Ajv `test:ledger` scripts.
+priority. Queue, horizon, and archive partition one continuous, globally unique
+id sequence. Replaces copied Ajv `test:ledger` scripts.
 
 Every command returns typed data through ctl-core. Human output is pretty by
 default; `--color never` or `--no-color` keeps the same layout without ANSI,

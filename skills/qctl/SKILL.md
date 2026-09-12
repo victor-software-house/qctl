@@ -52,6 +52,11 @@ no short `-f`.
 - **horizon** — mapped work with no start condition (`research`, `evaluation`,
   `deferred`). `open` names the missing condition. Not priority. Never `active`.
 
+The three lists partition one global task corpus. Every id from `PREFIX-001`
+through the highest id exists exactly once across them. `qctl check` reports
+missing numbers, duplicate rows, and an id claimed by more than one status.
+Moving a row changes its status; it never creates another copy.
+
 Promote horizon → queue with `qctl promote ID -a …` after `open` is
 resolved. Do not start a horizon id.
 
