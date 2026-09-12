@@ -120,7 +120,105 @@ fn rejects_duplicate_ids_across_lists() {
             kind: research
             open: why
     "});
-    assert!(found.iter().any(|e| e.contains("duplicate id QCTL-001")));
+    assert!(
+        found
+            .iter()
+            .any(|error| error == "id QCTL-001 has multiple statuses: queue, archive")
+    );
+}
+
+#[test]
+fn rejects_duplicate_ids_within_one_status() {
+    let found = errors(indoc! {"
+        schema_version: 4
+        prefix: QCTL
+        active: null
+        queue:
+          - id: QCTL-001
+            title: first
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [a]
+          - id: QCTL-001
+            title: second
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [a]
+        archive: []
+    "});
+    assert!(
+        found
+            .iter()
+            .any(|error| error == "duplicate id QCTL-001 appears 2 times in queue")
+    );
+}
+
+#[test]
+fn rejects_gaps_across_the_combined_corpus() {
+    let found = errors(indoc! {"
+        schema_version: 4
+        prefix: QCTL
+        active: null
+        queue:
+          - id: QCTL-001
+            title: queued
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [a]
+        archive:
+          - id: QCTL-003
+            title: archived
+            scope: s
+            completed: 2026-08-16T09:12:00
+            outcome: o
+            evidence: [e]
+        horizon:
+          - id: QCTL-004
+            title: horizon
+            scope: s
+            outcome: o
+            kind: deferred
+            open: later
+    "});
+    assert!(
+        found
+            .iter()
+            .any(|error| error == "missing task ids: QCTL-002")
+    );
+}
+
+#[test]
+fn statuses_partition_one_continuous_corpus() {
+    let found = errors(indoc! {"
+        schema_version: 4
+        prefix: QCTL
+        active: null
+        queue:
+          - id: QCTL-001
+            title: queued
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [a]
+        archive:
+          - id: QCTL-002
+            title: archived
+            scope: s
+            completed: 2026-08-16T09:12:00
+            outcome: o
+            evidence: [e]
+        horizon:
+          - id: QCTL-003
+            title: horizon
+            scope: s
+            outcome: o
+            kind: deferred
+            open: later
+    "});
+    assert!(found.is_empty(), "{found:?}");
 }
 
 #[test]

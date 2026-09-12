@@ -1,3 +1,4 @@
+mod corpus;
 pub(crate) mod order;
 
 use crate::cli::LedgerArgs;
@@ -5,7 +6,7 @@ use crate::report::{Report, Task};
 use anyhow::{Context, Result, bail, ensure};
 use garde::Validate;
 use serde_json::Value;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -137,7 +138,6 @@ pub fn graph_errors(ledger: &Ledger, root: &Path) -> Vec<String> {
         }
     }
 
-    let mut seen = HashSet::new();
     for id in ledger
         .queue
         .iter()
@@ -148,10 +148,8 @@ pub fn graph_errors(ledger: &Ledger, root: &Path) -> Vec<String> {
         if !id_matches_prefix(id, prefix) {
             errors.push(format!("{id} does not match {prefix}-NNN"));
         }
-        if !seen.insert(id) {
-            errors.push(format!("duplicate id {id}"));
-        }
     }
+    errors.extend(corpus::errors(ledger));
 
     if let Some(active) = &ledger.active {
         if ledger.horizon.iter().any(|task| task.id == *active) {
@@ -238,23 +236,9 @@ fn id_matches_prefix(id: &str, prefix: &str) -> bool {
 }
 
 pub fn next_id(ledger: &Ledger) -> Result<String> {
-    let mut max = 0_u32;
-    for id in ledger
-        .queue
-        .iter()
-        .map(|task| task.id.as_str())
-        .chain(ledger.archive.iter().map(|task| task.id.as_str()))
-        .chain(ledger.horizon.iter().map(|task| task.id.as_str()))
-    {
-        let Some((_, number)) = id.rsplit_once('-') else {
-            continue;
-        };
-        if let Ok(value) = number.parse::<u32>() {
-            max = max.max(value);
-        }
-    }
-    ensure!(max < 999_999, "id space exhausted");
-    Ok(format!("{}-{:03}", ledger.prefix, max + 1))
+    let next = corpus::next_number(ledger);
+    ensure!(next <= 999_999, "id space exhausted");
+    Ok(format!("{}-{next:03}", ledger.prefix))
 }
 
 #[cfg(test)]
