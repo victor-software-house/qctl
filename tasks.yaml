@@ -178,6 +178,21 @@ queue:
       - '2026-09-12 operator decisions: both releases are patch bumps; edit collapses position and removal flags; Rust code follows nested feature modules; qctl is reviewed as a PR stack.'
     plan: goals/row-edit/plan.md
 
+  - id: QCTL-033
+    title: Write readable structured note items
+    scope: qctl
+    outcome: Every note remains one list item with intentional line and paragraph breaks readable in YAML.
+    blocked_by: []
+    acceptance:
+      - Each repeated -n/--note writes one notes list item in argument order.
+      - Intentional line breaks use a literal block scalar and blank lines remain paragraph separators after readback.
+      - A YAML-sensitive single-line note, including colon text, uses a readable block scalar instead of quoted escapes.
+      - Short safe notes remain compact plain list items, and qctl does not mechanically wrap prose mid-sentence.
+      - Instructions, the bundled skill, fixtures, focused tests, and the complete verification gate describe and prove the note-writing policy.
+    notes:
+      - 'Operator direction: notes are lists, and each repeated -n is one item.'
+      - Intentional lines and blank paragraph separators must survive readback; qctl does not insert mechanical sentence wraps.
+
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
