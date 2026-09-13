@@ -1,5 +1,13 @@
 # Changelog
 
+## qctl 0.4.1
+
+- Adopt ctl-core 0.5.1 so automatically sized output reserves its configurable nested-shell margin, while the shared surface contract prevents new long-only flags.
+- Make `qctl check` treat queue, horizon, and archive as one task corpus, reporting missing id numbers, duplicate rows, and ids claimed by more than one status.
+- Existing rows can now be revised without splicing YAML: `edit ID` updates fields, list items, and dependency-safe queue position, while `park ID` demotes queued work to the horizon. Notes are ordered list items in schema 4, and `fmt` upgrades schema 3 scalar notes without rewriting unrelated rows.
+- Clarify that acceptance criteria are observable end conditions that must be demonstrably true before a task closes, while plans and notes describe how the work is done.
+- Write each repeated note as a distinct ordered list item, preserving intentional line and paragraph breaks while using readable block scalars for YAML-sensitive prose.
+
 ## qctl 0.4.0
 
 - Route every command through ctl-core's typed App and semantic Document presentation. Add shared pretty, colorless, JSON, quiet, stream, and error behavior; `status --format json` exposes ledger state and `check --format json` exposes its problem array.
