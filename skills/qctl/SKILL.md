@@ -9,7 +9,7 @@ description: >-
   row instead of editing tasks.yaml by hand.
   Do not use the vault ompex/task-ledger plugin.
 license: MIT
-version: 0.4.0
+version: 0.4.1
 compatibility: Requires a qctl binary. A repository-mounted mise `q` task may provision an exact version after a GitHub Release exists.
 ---
 
