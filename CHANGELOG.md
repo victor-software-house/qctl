@@ -1,5 +1,10 @@
 # Changelog
 
+## qctl 0.4.2
+
+- Adopt ctl-core's isolated Surface model feature so short-option contract tests no longer enable the MiniJinja template engine.
+- Remove disposable Cargo package staging before rust-cache cleanup so successful publish runs no longer emit false missing-directory annotations.
+
 ## qctl 0.4.1
 
 - Adopt ctl-core 0.5.1 so automatically sized output reserves its configurable nested-shell margin, while the shared surface contract prevents new long-only flags.
