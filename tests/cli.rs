@@ -896,30 +896,9 @@ fn colorless_flags_render_the_same_document() {
 
 #[test]
 fn every_long_option_has_a_short() {
-    use clap::CommandFactory;
-    let mut missing = Vec::new();
-    collect_long_only(&qctl::cli::Cli::command(), "", &mut missing);
-    let allow = ["format", "color", "no-color", "help", "version"];
-    missing.retain(|(long, _)| !allow.contains(&long.as_str()));
-    assert!(missing.is_empty(), "long option has no short: {missing:?}");
-}
-
-fn collect_long_only(command: &clap::Command, path: &str, missing: &mut Vec<(String, String)>) {
-    for argument in command.get_arguments() {
-        if let Some(long) = argument.get_long()
-            && argument.get_short().is_none()
-        {
-            missing.push((long.to_string(), path.to_string()));
-        }
-    }
-    for child in command.get_subcommands() {
-        let child_path = if path.is_empty() {
-            child.get_name().to_string()
-        } else {
-            format!("{path} {}", child.get_name())
-        };
-        collect_long_only(child, &child_path, missing);
-    }
+    ctl_core::Surface::new::<qctl::cli::Cli>("qctl")
+        .require_shorts(["--format", "--color", "--no-color"])
+        .expect("every other long option has an operator-visible short");
 }
 
 #[test]
