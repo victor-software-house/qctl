@@ -244,6 +244,30 @@ horizon:
         answer.
 
 archive:
+  - id: QCTL-036
+    title: Adopt isolated Surface model feature
+    scope: qctl
+    outcome: qctl uses ctl-core surface-model for its short-option test without enabling MiniJinja in any qctl dependency graph.
+    notes:
+      - Stacked above QCTL-035 so the cache mitigation and dependency-isolation adoption merge and release together.
+    completed: 2026-09-12T23:49:18
+    evidence:
+      - 'qctl 3fe13db: ctl-core 0.5.2 surface-model replaces surface in tests; MiniJinja is absent from normal and all-target trees; short-option test, full verify, schema stability, ledger check, and two patch fragments pass.'
+    disposition: completed
+
+  - id: QCTL-035
+    title: Silence rust-cache package cleanup noise
+    scope: qctl-ci
+    outcome: The publish job removes only disposable Cargo package staging before rust-cache cleanup, avoiding false ENOENT annotations without changing cache keys, scopes, targets, or save policy.
+    notes:
+      - >2-
+        Swatinem/rust-cache 2.9.2 issue #193: its tests-profile cleanup starts un-awaited scans of absent target and trybuild children, so try/catch cannot suppress their rejected promises.
+    completed: 2026-09-12T23:30:43
+    evidence:
+      - https://github.com/victor-software-house/qctl/pull/66
+      - 'qctl 7e506a8: workflow YAML, release-equivalent Cargo package staging, cache-preservation sentinel, repository ledger, and CI pass; cache configuration is unchanged.'
+    disposition: completed
+
   - id: QCTL-034
     title: Adopt released ctl-core contracts
     scope: qctl
