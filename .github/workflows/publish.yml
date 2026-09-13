@@ -56,6 +56,10 @@ jobs:
       - uses: victor-software-house/verctl/actions/publish@c9f41e8df9746ad240cf59bc18626c0d938c7662 # v0.2.3
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      # rust-cache #193 mistakes Cargo package staging's tests/ for a nested
+      # test profile and scans absent target/trybuild children during cleanup.
+      - name: Remove Cargo package staging
+        run: rm -rf target/package
 
   assets:
     name: ${{ matrix.id }}
