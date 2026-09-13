@@ -178,6 +178,19 @@ queue:
       - '2026-09-12 operator decisions: both releases are patch bumps; edit collapses position and removal flags; Rust code follows nested feature modules; qctl is reviewed as a PR stack.'
     plan: goals/row-edit/plan.md
 
+  - id: QCTL-034
+    title: Adopt released ctl-core contracts
+    scope: qctl
+    outcome: qctl pins ctl-core 0.5.1, inherits its automatic width policy, and verifies short options through Surface without adding surface-only dependencies to the release binary.
+    blocked_by: []
+    acceptance:
+      - Cargo.toml pins ctl-core 0.5.1 with app and usage in production and surface only for tests.
+      - tests/cli.rs uses Surface::require_shorts with exact scoped allowances and contains no local Clap walker.
+      - The normal dependency tree excludes MiniJinja while test builds exercise the surface feature.
+      - The complete portable verification gate, schema check, and repository ledger check pass.
+    notes:
+      - Final adoption slice above the reviewed qctl stack, unblocked by the published ctl-core 0.5.1 patch release.
+
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
