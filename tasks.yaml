@@ -178,6 +178,19 @@ queue:
       - '2026-09-12 operator decisions: both releases are patch bumps; edit collapses position and removal flags; Rust code follows nested feature modules; qctl is reviewed as a PR stack.'
     plan: goals/row-edit/plan.md
 
+  - id: QCTL-036
+    title: Adopt isolated Surface model feature
+    scope: qctl
+    outcome: qctl uses ctl-core surface-model for its short-option test without enabling MiniJinja in any qctl dependency graph.
+    blocked_by: []
+    acceptance:
+      - Cargo.toml pins released ctl-core 0.5.2 and the test-only declaration enables surface-model rather than surface.
+      - The shared Surface::require_shorts test still passes with no local walker.
+      - Normal and all-target test dependency trees contain no MiniJinja.
+      - Full verification, schema stability, repository ledger, CI, and review pass.
+    notes:
+      - Stacked above QCTL-035 so the cache mitigation and dependency-isolation adoption merge and release together.
+
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
