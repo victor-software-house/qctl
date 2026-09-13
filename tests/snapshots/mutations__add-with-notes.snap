@@ -1,10 +1,10 @@
 ---
 source: tests/mutations.rs
-description: "qctl add --title \"Teach it to write\" --scope demo --outcome \"The file comes back as it went in.\" --acceptance \"It holds.\" --notes \"The evidence lives here.\""
+description: "qctl add --title \"Teach it to write\" --scope demo --outcome \"The file comes back as it went in.\" --acceptance \"It holds.\" --note \"The evidence lives here.\""
 ---
-# -1 +9
+# -1 +10
  # yaml-language-server: $schema=./schema/tasks.schema.json
- schema_version: 3
+ schema_version: 4
  prefix: DEMO
  active: null
 -queue: []
@@ -16,6 +16,7 @@ description: "qctl add --title \"Teach it to write\" --scope demo --outcome \"Th
 +    blocked_by: []
 +    acceptance:
 +      - It holds.
-+    notes: The evidence lives here.
++    notes:
++      - The evidence lives here.
  archive: []
  horizon: []

@@ -4,7 +4,7 @@ description: qctl fmt
 ---
 # -8 +8
  # yaml-language-server: $schema=./schema/tasks.schema.json
- schema_version: 3
+ schema_version: 4
  prefix: DEMO
  active: null
  queue: []

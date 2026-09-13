@@ -11,12 +11,13 @@
 //! options, and are deliberately not decided here yet.
 
 use crate::cli::FmtArgs;
-use crate::document::{Document, must_still_parse};
-use crate::ledger::{Ledger, load, resolve_path};
+use crate::document::{Document, KeyShape, must_still_parse};
+use crate::ledger::{Ledger, resolve_path};
 use crate::report::Report;
-use crate::schema::{ArchiveOrder, Section};
-use anyhow::{Context, Result};
+use crate::schema::{ArchiveOrder, Section, VERSION};
+use anyhow::{Context, Result, bail};
 use std::fs;
+use yaml_serde::Value;
 
 /// The ledger as its own style says it should be written.
 pub fn normalized(source: &str, ledger: &Ledger) -> Result<String> {
@@ -52,36 +53,128 @@ fn tidied(source: &str) -> String {
     let mut out = String::with_capacity(source.len());
     let mut blank_run = 0;
     let mut after_key = false;
-    for line in source.lines() {
-        let line = line.trim_end();
-        if line.is_empty() {
-            blank_run += 1;
-            if blank_run > 1 || after_key {
+    let mut block: Option<BlockScalar> = None;
+    let mut block_blanks = Vec::new();
+    let mut preserve_trailing_block_blanks = false;
+
+    for raw in source.lines() {
+        if let Some(scalar) = block {
+            if raw.trim().is_empty() {
+                block_blanks.push(raw);
                 continue;
             }
-            out.push('\n');
+            let content_indent = raw.len() - raw.trim_start().len();
+            if content_indent > scalar.indent {
+                push_verbatim_blanks(&mut out, &mut block_blanks);
+                out.push_str(raw);
+                out.push('\n');
+                continue;
+            }
+            if scalar.keep_trailing {
+                push_verbatim_blanks(&mut out, &mut block_blanks);
+            } else {
+                for _ in block_blanks.drain(..) {
+                    push_blank(&mut out, &mut blank_run, after_key);
+                }
+            }
+            block = None;
+        }
+
+        let line = raw.trim_end();
+        if line.is_empty() {
+            push_blank(&mut out, &mut blank_run, after_key);
             continue;
         }
         blank_run = 0;
         after_key = line.ends_with(':') && !line.starts_with(char::is_whitespace);
         out.push_str(line);
         out.push('\n');
+        block = block_scalar(line);
     }
-    while out.ends_with("\n\n") {
-        out.pop();
+
+    if let Some(scalar) = block {
+        if scalar.keep_trailing && !block_blanks.is_empty() {
+            preserve_trailing_block_blanks = true;
+            push_verbatim_blanks(&mut out, &mut block_blanks);
+        } else {
+            for _ in block_blanks {
+                push_blank(&mut out, &mut blank_run, after_key);
+            }
+        }
+    }
+    if !preserve_trailing_block_blanks {
+        while out.ends_with("\n\n") {
+            out.pop();
+        }
     }
     out
 }
 
+#[derive(Clone, Copy)]
+struct BlockScalar {
+    indent: usize,
+    keep_trailing: bool,
+}
+
+fn block_scalar(line: &str) -> Option<BlockScalar> {
+    let trimmed = line.trim_start();
+    let content = trimmed.strip_prefix("- ").unwrap_or(trimmed);
+    let token = content
+        .rsplit_once(':')
+        .map_or(content, |(_, value)| value)
+        .trim();
+    let mut characters = token.chars();
+    if !matches!(characters.next(), Some('|' | '>')) {
+        return None;
+    }
+    let mut saw_indent = false;
+    let mut saw_chomp = false;
+    for character in characters {
+        match character {
+            '1'..='9' if !saw_indent => saw_indent = true,
+            '+' | '-' if !saw_chomp => saw_chomp = true,
+            _ => return None,
+        }
+    }
+    Some(BlockScalar {
+        indent: line.len() - trimmed.len(),
+        keep_trailing: token.contains('+'),
+    })
+}
+
+fn push_verbatim_blanks(out: &mut String, blanks: &mut Vec<&str>) {
+    for blank in blanks.drain(..) {
+        out.push_str(blank);
+        out.push('\n');
+    }
+}
+
+fn push_blank(out: &mut String, blank_run: &mut usize, after_key: bool) {
+    *blank_run += 1;
+    if *blank_run == 1 && !after_key {
+        out.push('\n');
+    }
+}
+
 /// `qctl fmt`: write the ledger in its declared style, or with `--check` say
-/// what is not in it and leave the file alone.
+/// what is not in it and leave the file alone. A schema 3 file is rewritten
+/// to schema 4 first: each scalar `notes` becomes a list of paragraphs.
 pub fn run(args: &FmtArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
-    let ledger = load(&path)?;
-    let source = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
+    let original = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
+    let source = upgrade_v3(&original)?;
+    let ledger: Ledger =
+        serde_yml::from_str(&source).with_context(|| format!("parse {}", path.display()))?;
+    let complaints = crate::ledger::value_errors(&ledger);
+    anyhow::ensure!(
+        complaints.is_empty(),
+        "validate {}: {}",
+        path.display(),
+        complaints.join("; ")
+    );
     let wanted = normalized(&source, &ledger)?;
 
-    if source == wanted {
+    if original == wanted {
         return Ok(Report::Formatted {
             path: path.display().to_string(),
             changed: false,
@@ -89,7 +182,7 @@ pub fn run(args: &FmtArgs) -> Result<Report> {
             differences: Vec::new(),
         });
     }
-    let differences = changes(&source, &wanted);
+    let differences = changes(&original, &wanted);
     if !args.check {
         fs::write(&path, wanted).with_context(|| format!("write {}", path.display()))?;
     }
@@ -114,4 +207,107 @@ fn changes(source: &str, wanted: &str) -> Vec<String> {
         .filter(|(_, (before, after))| before != after)
         .map(|(at, (before, after))| format!("line {}: {:?} would be {:?}", at + 1, before, after))
         .collect()
+}
+
+/// A schema 3 ledger becomes schema 4: scalar `notes` split on blank-line
+/// paragraphs, then `schema_version` is set to 4. A current-version file is
+/// returned unchanged. Other versions are refused.
+fn upgrade_v3(source: &str) -> Result<String> {
+    match peek_schema_version(source) {
+        Some(version) if version == u64::from(VERSION) => Ok(source.to_owned()),
+        Some(3) => rewrite_v3_notes(source),
+        Some(version) => {
+            bail!("schema_version {version} must be {VERSION} (or 3, which fmt rewrites)")
+        }
+        None => Ok(source.to_owned()),
+    }
+}
+
+fn peek_schema_version(source: &str) -> Option<u64> {
+    let value: serde_yml::Value = serde_yml::from_str(source).ok()?;
+    value.get("schema_version")?.as_u64()
+}
+
+fn rewrite_v3_notes(source: &str) -> Result<String> {
+    let parsed: serde_yml::Value =
+        serde_yml::from_str(source).context("parse a schema 3 ledger")?;
+    let mut document = Document::new(source.to_owned());
+    for section in ["queue", "archive", "horizon"] {
+        let Some(rows) = parsed.get(section).and_then(serde_yml::Value::as_sequence) else {
+            continue;
+        };
+        for (index, row) in rows.iter().enumerate() {
+            let Some(notes) = row.get("notes") else {
+                continue;
+            };
+            if document.row_key_shape(section, index, "notes")? != Some(KeyShape::Scalar) {
+                continue;
+            }
+            let Some(text) = notes.as_str() else {
+                continue;
+            };
+            let items = paragraphs(text);
+            if items.is_empty() {
+                document.remove_row_key(section, index, "notes")?;
+            } else {
+                document.replace_row_value(
+                    section,
+                    index,
+                    "notes",
+                    &yaml_serde::to_value(&items)?,
+                )?;
+            }
+        }
+    }
+    document.set("schema_version", Value::from(VERSION))?;
+    Ok(document.into_source())
+}
+
+fn paragraphs(notes: &str) -> Vec<String> {
+    notes
+        .split("\n\n")
+        .map(str::trim)
+        .filter(|item| !item.is_empty())
+        .map(ToOwned::to_owned)
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{block_scalar, tidied};
+    use indoc::indoc;
+
+    #[test]
+    fn tidied_keeps_block_scalar_contents_opaque() {
+        let source = "notes:\n  - |2+\n      leading  \n      \n\n    next\narchive: []\n\n\n";
+        let expected = "notes:\n  - |2+\n      leading  \n      \n\n    next\narchive: []\n";
+        assert_eq!(tidied(source), expected);
+    }
+
+    #[test]
+    fn block_scalar_detection_accepts_indent_and_chomp_indicators() {
+        let source = indoc! {"
+            notes:
+              - |2-
+                literal
+              - >2+
+                folded
+        "};
+        assert_eq!(tidied(source), source);
+    }
+
+    #[test]
+    fn tidied_collapses_trailing_blanks_after_a_stripped_block() {
+        let source = "notes:\n  - |2-\n    literal\n\n\narchive: []\n";
+        let expected = "notes:\n  - |2-\n    literal\n\narchive: []\n";
+        assert_eq!(tidied(source), expected);
+    }
+
+    #[test]
+    fn plain_scalars_ending_in_indicator_characters_are_not_blocks() {
+        assert!(block_scalar("title: literal |").is_none());
+        assert!(block_scalar("  - literal >").is_none());
+        assert!(block_scalar("title: >2-").is_some());
+        assert!(block_scalar("  - |2+").is_some());
+    }
 }

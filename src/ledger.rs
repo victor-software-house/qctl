@@ -1,14 +1,17 @@
+mod corpus;
+pub(crate) mod order;
+
 use crate::cli::LedgerArgs;
 use crate::report::{Report, Task};
 use anyhow::{Context, Result, bail, ensure};
 use garde::Validate;
 use serde_json::Value;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::schema::ArchiveOrder;
-pub use crate::schema::Ledger;
+pub use crate::schema::{Ledger, VERSION};
 
 /// The schema qctl was built with, generated from [`crate::schema`].
 pub const CANONICAL_SCHEMA: &str = include_str!("../schema/tasks.schema.json");
@@ -24,7 +27,12 @@ pub fn resolve_path(args: &LedgerArgs) -> PathBuf {
 /// The ledger, refusing to hand back one whose values are wrong. This is what
 /// the verbs use: none of them should edit a file they cannot vouch for.
 pub fn load(path: &Path) -> Result<Ledger> {
-    let ledger = read(path)?;
+    let raw = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
+    if let Some(message) = stale_schema_message(&raw, path) {
+        bail!("{message}");
+    }
+    let ledger: Ledger =
+        serde_yml::from_str(&raw).with_context(|| format!("parse {}", path.display()))?;
     let complaints = value_errors(&ledger);
     ensure!(
         complaints.is_empty(),
@@ -33,6 +41,27 @@ pub fn load(path: &Path) -> Result<Ledger> {
         complaints.join("; ")
     );
     Ok(ledger)
+}
+
+/// Schema 3 is rewritten by `qctl fmt`; any other version is not this binary's.
+#[must_use]
+pub fn stale_schema_message(raw: &str, path: &Path) -> Option<String> {
+    let version = serde_yml::from_str::<serde_yml::Value>(raw)
+        .ok()
+        .and_then(|value| value.get("schema_version")?.as_u64())?;
+    if version == u64::from(VERSION) {
+        return None;
+    }
+    if version == 3 {
+        return Some(format!(
+            "{}: schema_version 3; run qctl fmt to rewrite notes into a list and set schema_version 4",
+            path.display()
+        ));
+    }
+    Some(format!(
+        "{}: schema_version {version} must be {VERSION}",
+        path.display()
+    ))
 }
 
 /// The ledger as written, whether or not its values pass.
@@ -109,7 +138,6 @@ pub fn graph_errors(ledger: &Ledger, root: &Path) -> Vec<String> {
         }
     }
 
-    let mut seen = HashSet::new();
     for id in ledger
         .queue
         .iter()
@@ -120,10 +148,8 @@ pub fn graph_errors(ledger: &Ledger, root: &Path) -> Vec<String> {
         if !id_matches_prefix(id, prefix) {
             errors.push(format!("{id} does not match {prefix}-NNN"));
         }
-        if !seen.insert(id) {
-            errors.push(format!("duplicate id {id}"));
-        }
     }
+    errors.extend(corpus::errors(ledger));
 
     if let Some(active) = &ledger.active {
         if ledger.horizon.iter().any(|task| task.id == *active) {
@@ -206,27 +232,13 @@ fn id_matches_prefix(id: &str, prefix: &str) -> bool {
     else {
         return false;
     };
-    number.len() >= 3 && number.bytes().all(|byte| byte.is_ascii_digit())
+    (3..=6).contains(&number.len()) && number.bytes().all(|byte| byte.is_ascii_digit())
 }
 
 pub fn next_id(ledger: &Ledger) -> Result<String> {
-    let mut max = 0_u32;
-    for id in ledger
-        .queue
-        .iter()
-        .map(|task| task.id.as_str())
-        .chain(ledger.archive.iter().map(|task| task.id.as_str()))
-        .chain(ledger.horizon.iter().map(|task| task.id.as_str()))
-    {
-        let Some((_, number)) = id.rsplit_once('-') else {
-            continue;
-        };
-        if let Ok(value) = number.parse::<u32>() {
-            max = max.max(value);
-        }
-    }
-    ensure!(max < 999_999, "id space exhausted");
-    Ok(format!("{}-{:03}", ledger.prefix, max + 1))
+    let highest = corpus::highest_number(ledger);
+    ensure!(highest < corpus::MAX_TASK_NUMBER, "id space exhausted");
+    Ok(format!("{}-{:03}", ledger.prefix, highest + 1))
 }
 
 #[cfg(test)]

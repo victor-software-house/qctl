@@ -1,7 +1,7 @@
 //! Graph rules that JSON Schema cannot express.
 
 use indoc::indoc;
-use qctl::ledger::{graph_errors, load};
+use qctl::ledger::{graph_errors, load, read};
 use std::fs;
 use tempfile::TempDir;
 
@@ -17,7 +17,7 @@ fn errors(body: &str) -> Vec<String> {
 fn empty_ledger_is_clean() {
     assert_eq!(
         errors(indoc! {"
-            schema_version: 3
+            schema_version: 4
             prefix: QCTL
             active: null
             queue: []
@@ -34,7 +34,7 @@ fn missing_horizon_defaults_to_empty() {
     fs::write(
         &path,
         indoc! {"
-            schema_version: 3
+            schema_version: 4
             prefix: PST
             active: null
             queue: []
@@ -49,7 +49,7 @@ fn missing_horizon_defaults_to_empty() {
 #[test]
 fn rejects_an_id_from_another_repository() {
     let found = errors(indoc! {"
-        schema_version: 3
+        schema_version: 4
         prefix: QCTL
         active: null
         queue:
@@ -74,7 +74,7 @@ fn refuses_a_malformed_id_before_the_graph_sees_it() {
     fs::write(
         &path,
         indoc! {"
-            schema_version: 3
+            schema_version: 4
             prefix: QCTL
             active: null
             queue:
@@ -95,7 +95,7 @@ fn refuses_a_malformed_id_before_the_graph_sees_it() {
 #[test]
 fn rejects_duplicate_ids_across_lists() {
     let found = errors(indoc! {"
-        schema_version: 3
+        schema_version: 4
         prefix: QCTL
         active: null
         queue:
@@ -120,13 +120,199 @@ fn rejects_duplicate_ids_across_lists() {
             kind: research
             open: why
     "});
-    assert!(found.iter().any(|e| e.contains("duplicate id QCTL-001")));
+    assert!(
+        found
+            .iter()
+            .any(|error| error == "id QCTL-001 has multiple statuses: queue, archive")
+    );
+}
+
+#[test]
+fn rejects_duplicate_ids_within_one_status() {
+    let found = errors(indoc! {"
+        schema_version: 4
+        prefix: QCTL
+        active: null
+        queue:
+          - id: QCTL-001
+            title: first
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [a]
+          - id: QCTL-001
+            title: second
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [a]
+        archive: []
+    "});
+    assert!(
+        found
+            .iter()
+            .any(|error| error == "duplicate id QCTL-001 appears 2 times in queue")
+    );
+}
+
+#[test]
+fn rejects_gaps_across_the_combined_corpus() {
+    let found = errors(indoc! {"
+        schema_version: 4
+        prefix: QCTL
+        active: null
+        queue:
+          - id: QCTL-001
+            title: queued
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [a]
+        archive:
+          - id: QCTL-003
+            title: archived
+            scope: s
+            completed: 2026-08-16T09:12:00
+            outcome: o
+            evidence: [e]
+        horizon:
+          - id: QCTL-004
+            title: horizon
+            scope: s
+            outcome: o
+            kind: deferred
+            open: later
+    "});
+    assert!(
+        found
+            .iter()
+            .any(|error| error == "missing task ids: QCTL-002")
+    );
+}
+
+#[test]
+fn statuses_partition_one_continuous_corpus() {
+    let found = errors(indoc! {"
+        schema_version: 4
+        prefix: QCTL
+        active: null
+        queue:
+          - id: QCTL-001
+            title: queued
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [a]
+        archive:
+          - id: QCTL-002
+            title: archived
+            scope: s
+            completed: 2026-08-16T09:12:00
+            outcome: o
+            evidence: [e]
+        horizon:
+          - id: QCTL-003
+            title: horizon
+            scope: s
+            outcome: o
+            kind: deferred
+            open: later
+    "});
+    assert!(found.is_empty(), "{found:?}");
+}
+
+#[test]
+fn rejects_ids_outside_the_bounded_space_without_enumerating_them() {
+    let root = TempDir::new().expect("tempdir");
+    let path = root.path().join("tasks.yaml");
+    fs::write(
+        &path,
+        indoc! {"
+            schema_version: 4
+            prefix: QCTL
+            active: null
+            queue:
+              - id: QCTL-9999999999
+                title: too high
+                scope: s
+                outcome: o
+                blocked_by: []
+                acceptance: [a]
+            archive: []
+        "},
+    )
+    .expect("write");
+    assert!(load(&path).is_err(), "validated load must refuse the id");
+    let ledger = read(&path).expect("parse without validation");
+    let found = graph_errors(&ledger, &path);
+    assert!(
+        found
+            .iter()
+            .any(|error| error.contains("outside the id space"))
+    );
+    assert!(
+        !found
+            .iter()
+            .any(|error| error.starts_with("missing task ids"))
+    );
+}
+
+#[test]
+fn next_id_refuses_the_valid_maximum() {
+    let root = TempDir::new().expect("tempdir");
+    let path = root.path().join("tasks.yaml");
+    fs::write(
+        &path,
+        indoc! {"
+            schema_version: 4
+            prefix: QCTL
+            active: null
+            queue:
+              - id: QCTL-999999
+                title: last
+                scope: s
+                outcome: o
+                blocked_by: []
+                acceptance: [a]
+            archive: []
+        "},
+    )
+    .expect("write");
+    let ledger = load(&path).expect("parse");
+    let error = qctl::ledger::next_id(&ledger).expect_err("id space is exhausted");
+    assert_eq!(error.to_string(), "id space exhausted");
+}
+
+#[test]
+fn next_id_ignores_an_already_invalid_overflowing_id() {
+    let root = TempDir::new().expect("tempdir");
+    let path = root.path().join("tasks.yaml");
+    fs::write(
+        &path,
+        indoc! {"
+            schema_version: 4
+            prefix: QCTL
+            active: null
+            queue:
+              - id: QCTL-4294967295
+                title: too high
+                scope: s
+                outcome: o
+                blocked_by: []
+                acceptance: [a]
+            archive: []
+        "},
+    )
+    .expect("write");
+    assert!(load(&path).is_err(), "validated load must refuse the id");
+    let ledger = read(&path).expect("parse without validation");
+    assert_eq!(qctl::ledger::next_id(&ledger).expect("next id"), "QCTL-001");
 }
 
 #[test]
 fn rejects_active_that_is_not_queue_head() {
     let found = errors(indoc! {"
-        schema_version: 3
+        schema_version: 4
         prefix: QCTL
         active: QCTL-002
         queue:
@@ -150,7 +336,7 @@ fn rejects_active_that_is_not_queue_head() {
 #[test]
 fn rejects_blocked_active() {
     let found = errors(indoc! {"
-        schema_version: 3
+        schema_version: 4
         prefix: QCTL
         active: QCTL-002
         queue:
@@ -174,7 +360,7 @@ fn rejects_blocked_active() {
 #[test]
 fn rejects_horizon_active() {
     let found = errors(indoc! {"
-        schema_version: 3
+        schema_version: 4
         prefix: QCTL
         active: QCTL-009
         queue: []
@@ -193,7 +379,7 @@ fn rejects_horizon_active() {
 #[test]
 fn rejects_blocker_not_earlier_or_missing() {
     let found = errors(indoc! {"
-        schema_version: 3
+        schema_version: 4
         prefix: QCTL
         active: null
         queue:
@@ -218,7 +404,7 @@ fn rejects_blocker_not_earlier_or_missing() {
 #[test]
 fn rejects_archive_not_newest_first() {
     let found = errors(indoc! {"
-        schema_version: 3
+        schema_version: 4
         prefix: QCTL
         active: null
         queue: []
@@ -242,7 +428,7 @@ fn rejects_archive_not_newest_first() {
 #[test]
 fn rejects_missing_plan_path() {
     let found = errors(indoc! {"
-        schema_version: 3
+        schema_version: 4
         prefix: QCTL
         active: null
         queue:
@@ -265,7 +451,7 @@ fn next_id_skips_horizon_and_archive() {
     fs::write(
         &path,
         indoc! {"
-            schema_version: 3
+            schema_version: 4
             prefix: QCTL
             active: null
             queue: []

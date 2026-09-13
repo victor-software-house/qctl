@@ -16,6 +16,12 @@ impl Present for Report {
             Self::Archived { id, .. } => {
                 Document::new().paragraph(Text::new().success("archived").then("  ").token(id))
             }
+            Self::Parked { id, .. } => {
+                Document::new().paragraph(Text::new().success("parked").then("  ").token(id))
+            }
+            Self::Edited { id, .. } => {
+                Document::new().paragraph(Text::new().success("edited").then("  ").token(id))
+            }
             Self::Promoted { id, .. } => {
                 Document::new().paragraph(Text::new().success("queued").then("  ").token(id))
             }
@@ -140,8 +146,8 @@ fn show(task: &Task) -> Document {
                     .then(&task.title)
                     .muted(format!("  (archived {completed})")),
             );
-            if let Some(notes) = &task.notes {
-                document = document.fields(Fields::new().row("notes", notes.as_str()));
+            if !task.notes.is_empty() {
+                document = document.fields(Fields::new().row("notes", task.notes.join(" · ")));
             }
             document
         }

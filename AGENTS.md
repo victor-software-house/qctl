@@ -6,10 +6,21 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
 - This repo's queue is [`tasks.yaml`](tasks.yaml) (`QCTL-###`).
 - `horizon` maps research/evaluations that are not startable. Do not put
   them on `queue` and do not set `active` to a horizon id.
+- Queue, horizon, and archive partition one global task corpus. IDs are
+  continuous from `PREFIX-001` through the maximum and appear exactly once;
+  status changes move one row rather than copying it between lists.
+- Acceptance states observable, demonstrably true end conditions for closing a
+  row. It does not carry implementation instructions or procedural steps;
+  `plan` and `notes` own how the work is done.
+- `notes` is an ordered list, and each `-n/--note` is one item. Preserve
+  intentional line breaks and blank-line paragraph separators with literal YAML
+  blocks; use folded blocks for YAML-sensitive single-line prose. Never insert
+  mechanical sentence wraps or encode readable prose as escape sequences.
 - Schema is types + schemars (QCTL-001). Generated JSON lives only here.
-  Consumers pin a `$schema` URL and run `qctl check`. `schema_version` is 3:
-  a ledger declares its `style`, and `completed` is a moment in the zone that
-  block names. A rule that both `check` and the verbs must agree on is stated
+  Consumers pin a `$schema` URL and run `qctl check`. `schema_version` is 4:
+  `notes` is a list, a ledger declares its `style`, and `completed` is a moment
+  in the zone that block names. A schema 3 file is rewritten by `qctl fmt`.
+  A rule that both `check` and the verbs must agree on is stated
   once, as a `#[garde(...)]` attribute — schemars reads those, so a second
   `#[schemars(...)]` copy is drift waiting to happen.
 - Mutations rewrite only the lines they change (QCTL-002). Each scenario in
@@ -58,6 +69,13 @@ test fixtures and assertions.
 
 - `src/cli.rs` is the Clap grammar. `src/report.rs` owns serializable command
   results. Domain modules return those results and never print.
+- Growing domain features use nested module trees, not flat helper files.
+  `src/edit.rs` is the row-edit entry point; its field, list, policy, and
+  position mechanics live under `src/edit/`. Document rendering helpers live
+  under `src/document/`, and dependency ordering under `src/ledger/`.
+  Cross-feature APIs use the narrowest visibility that works.
+- Queue dependency validation builds one id-to-position index and is shared by
+  `add` and `edit`; do not restore per-blocker queue scans.
 - `src/presentation.rs` maps reports onto ctl-core semantic documents. ctl-core
   alone owns help, pretty/colorless/JSON emission, stream selection, quiet
   behavior, terminal width, styling, and tables.

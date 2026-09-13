@@ -26,7 +26,7 @@ fn repo() -> TempDir {
     fs::write(
         root.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 3
+            schema_version: 4
             prefix: CTC
             active: CTC-001
             queue:

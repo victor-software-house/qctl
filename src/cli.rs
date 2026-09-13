@@ -34,13 +34,15 @@ pub enum Command {
     Start(IdArgs),
     /// Move a queued task to the archive.
     Archive(ArchiveArgs),
-    /// Write a horizon row.
+    /// Demote a queued task onto the horizon.
     Park(ParkArgs),
     /// Move a horizon row onto the queue.
     Promote(PromoteArgs),
+    /// Rewrite fields or queue position of an existing row.
+    Edit(Box<EditArgs>),
     /// Print one queued, archived, or horizon task.
     Show(IdArgs),
-    /// Rewrite a ledger into the style it declares.
+    /// Rewrite a ledger into the style it declares. Upgrades schema 3 to 4.
     Fmt(FmtArgs),
     /// Archive queued ids that commit-body trailers closed.
     CloseFromGit(CloseFromGitArgs),
@@ -58,7 +60,7 @@ pub struct FmtArgs {
     pub ledger: LedgerArgs,
 
     /// Say what is not in the declared style and exit non-zero, writing nothing.
-    #[arg(long)]
+    #[arg(short = 'c', long)]
     pub check: bool,
 }
 
@@ -75,7 +77,7 @@ pub struct CheckArgs {
     pub ledger: LedgerArgs,
     /// Skip the git trailer scan. Needed for a scratch ledger that is not in
     /// the current repository.
-    #[arg(long)]
+    #[arg(short = 'g', long)]
     pub no_git: bool,
 }
 
@@ -84,10 +86,10 @@ pub struct CloseFromGitArgs {
     #[command(flatten)]
     pub ledger: LedgerArgs,
     /// Read pre-push stdin (`<local-ref> <local-sha> <remote-ref> <remote-sha>`).
-    #[arg(long)]
+    #[arg(short = 'u', long)]
     pub pre_push: bool,
     /// `git log` revision range, such as `main..HEAD`. Default: the whole history, same as `check`.
-    #[arg(long, conflicts_with = "pre_push")]
+    #[arg(short = 'r', long, conflicts_with = "pre_push")]
     pub range: Option<String>,
 }
 
@@ -109,7 +111,7 @@ pub struct HookInstallArgs {
     pub ledger: LedgerArgs,
     /// Overwrite an existing git pre-push. Rejected when Lefthook is present
     /// and does not already run close-from-git.
-    #[arg(long)]
+    #[arg(short = 'F', long)]
     pub force: bool,
 }
 
@@ -128,7 +130,7 @@ pub struct InitArgs {
     #[command(flatten)]
     pub ledger: LedgerArgs,
     /// Overwrite an existing ledger.
-    #[arg(long)]
+    #[arg(short = 'F', long)]
     pub force: bool,
 }
 
@@ -142,35 +144,36 @@ pub struct AddArgs {
     pub scope: String,
     #[arg(short = 'o', long)]
     pub outcome: String,
-    /// Repeatable acceptance line. Required on the queue; not used on the horizon.
+    /// Repeatable end condition that must be demonstrably true to close the row. Required on the queue; not used on the horizon.
     #[arg(short = 'a', long = "acceptance", required_unless_present = "horizon")]
     pub acceptance: Vec<String>,
-    #[arg(long)]
+    #[arg(short = 'P', long)]
     pub patch: Option<String>,
-    #[arg(long)]
-    pub notes: Option<String>,
+    /// Repeatable note item. Intentional line and paragraph breaks are preserved.
+    #[arg(short = 'n', long = "note")]
+    pub note: Vec<String>,
     /// Repeatable blocker id. Each must sit earlier than the new row.
-    #[arg(long = "blocked-by")]
+    #[arg(short = 'b', long = "blocked-by")]
     pub blocked_by: Vec<String>,
-    #[arg(long)]
+    #[arg(short = 'l', long)]
     pub plan: Option<String>,
     /// Repeatable URI.
-    #[arg(long = "link")]
+    #[arg(short = 'L', long = "link")]
     pub links: Vec<String>,
     /// Place the new row immediately after this queued id.
-    #[arg(long, conflicts_with_all = ["before", "horizon"])]
+    #[arg(short = 'A', long, conflicts_with_all = ["before", "horizon"])]
     pub after: Option<String>,
     /// Place the new row immediately before this queued id.
-    #[arg(long, conflicts_with_all = ["after", "horizon"])]
+    #[arg(short = 'B', long, conflicts_with_all = ["after", "horizon"])]
     pub before: Option<String>,
     /// Write a horizon row instead of a queue row.
-    #[arg(long, requires_all = ["kind", "open"])]
+    #[arg(short = 'H', long, requires_all = ["kind", "open"])]
     pub horizon: bool,
     /// Why it is on the horizon. Required with --horizon.
-    #[arg(long, value_parser = parse_kind)]
+    #[arg(short = 'k', long, value_parser = parse_kind)]
     pub kind: Option<Kind>,
     /// The missing start condition. Required with --horizon.
-    #[arg(long)]
+    #[arg(short = 'O', long)]
     pub open: Option<String>,
 }
 
@@ -200,32 +203,19 @@ pub struct ArchiveArgs {
     /// Repeatable evidence line.
     #[arg(short = 'e', long = "evidence", required = true)]
     pub evidence: Vec<String>,
-    #[arg(long, value_enum, default_value = "completed")]
+    #[arg(short = 'd', long, value_enum, default_value = "completed")]
     pub disposition: Disposition,
 }
 
 #[derive(Args)]
 pub struct ParkArgs {
+    pub id: String,
     #[command(flatten)]
     pub ledger: LedgerArgs,
-    #[arg(short = 't', long)]
-    pub title: String,
-    #[arg(short = 's', long)]
-    pub scope: String,
-    #[arg(short = 'o', long)]
-    pub outcome: String,
-    #[arg(long, value_parser = parse_kind)]
+    #[arg(short = 'k', long, value_parser = parse_kind)]
     pub kind: Kind,
-    #[arg(long)]
+    #[arg(short = 'O', long)]
     pub open: String,
-    #[arg(long)]
-    pub notes: Option<String>,
-    #[arg(long)]
-    pub plan: Option<String>,
-    #[arg(long = "link")]
-    pub links: Vec<String>,
-    #[arg(long)]
-    pub patch: Option<String>,
 }
 
 #[derive(Args)]
@@ -233,12 +223,134 @@ pub struct PromoteArgs {
     pub id: String,
     #[command(flatten)]
     pub ledger: LedgerArgs,
-    /// Repeatable acceptance line the queue row must have.
+    /// Repeatable end condition that must be demonstrably true to close the promoted row.
     #[arg(short = 'a', long = "acceptance", required = true)]
     pub acceptance: Vec<String>,
     /// Repeatable blocker id. Each must already sit on the queue.
-    #[arg(long = "blocked-by")]
+    #[arg(short = 'b', long = "blocked-by")]
     pub blocked_by: Vec<String>,
+}
+
+#[derive(Args)]
+pub struct EditArgs {
+    pub id: String,
+    #[command(flatten)]
+    pub ledger: LedgerArgs,
+    #[arg(short = 't', long)]
+    pub title: Option<String>,
+    #[arg(short = 's', long)]
+    pub scope: Option<String>,
+    #[arg(short = 'o', long)]
+    pub outcome: Option<String>,
+    #[arg(short = 'k', long, value_parser = parse_kind)]
+    pub kind: Option<Kind>,
+    #[arg(short = 'O', long)]
+    pub open: Option<String>,
+    #[arg(short = 'P', long)]
+    pub patch: Option<String>,
+    #[arg(short = 'l', long)]
+    pub plan: Option<String>,
+    /// Drop `patch` or `plan`.
+    #[arg(short = 'U', long, value_enum)]
+    pub unset: Vec<UnsetField>,
+    /// Repeatable end condition that must be demonstrably true to close the row.
+    #[arg(short = 'a', long = "acceptance")]
+    pub acceptance: Vec<String>,
+    /// Repeatable note item to append. Intentional line and paragraph breaks are preserved.
+    #[arg(short = 'n', long = "note")]
+    pub note: Vec<String>,
+    /// Repeatable URI to append.
+    #[arg(short = 'L', long = "link")]
+    pub links: Vec<String>,
+    /// Repeatable blocker id to append.
+    #[arg(short = 'b', long = "blocked-by")]
+    pub blocked_by: Vec<String>,
+    /// Repeatable evidence line to append.
+    #[arg(short = 'e', long = "evidence")]
+    pub evidence: Vec<String>,
+    /// Remove one list item as `field:index` or `field:exact text`.
+    #[arg(short = 'x', long = "remove", value_parser = parse_remove)]
+    pub remove: Vec<RemoveSpec>,
+    /// Permutation of 1-based note indexes, such as `3,1,2`.
+    #[arg(short = 'R', long = "reorder-notes")]
+    pub reorder_notes: Option<String>,
+    /// Move this queued row to `front`, `back`, `before:ID`, or `after:ID`.
+    #[arg(short = 'p', long = "position", value_parser = parse_position)]
+    pub position: Option<EditPosition>,
+}
+
+#[derive(Clone)]
+pub enum EditPosition {
+    Front,
+    Back,
+    Before(String),
+    After(String),
+}
+
+fn parse_position(raw: &str) -> Result<EditPosition, String> {
+    match raw {
+        "front" => Ok(EditPosition::Front),
+        "back" => Ok(EditPosition::Back),
+        _ => {
+            let (relation, id) = raw
+                .split_once(':')
+                .ok_or_else(|| "position must be front, back, before:ID, or after:ID".to_owned())?;
+            if id.is_empty() {
+                return Err("position needs an id after ':'".to_owned());
+            }
+            match relation {
+                "before" => Ok(EditPosition::Before(id.to_owned())),
+                "after" => Ok(EditPosition::After(id.to_owned())),
+                _ => Err("position must be front, back, before:ID, or after:ID".to_owned()),
+            }
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct RemoveSpec {
+    pub field: RemoveField,
+    pub selector: String,
+}
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum RemoveField {
+    Note,
+    Acceptance,
+    Link,
+    BlockedBy,
+    Evidence,
+}
+
+fn parse_remove(raw: &str) -> Result<RemoveSpec, String> {
+    let (field, selector) = raw
+        .split_once(':')
+        .ok_or_else(|| "remove must be field:index or field:exact text".to_owned())?;
+    if selector.is_empty() {
+        return Err("remove needs an index or exact text after ':'".to_owned());
+    }
+    let field = match field {
+        "note" => RemoveField::Note,
+        "acceptance" => RemoveField::Acceptance,
+        "link" => RemoveField::Link,
+        "blocked-by" => RemoveField::BlockedBy,
+        "evidence" => RemoveField::Evidence,
+        _ => {
+            return Err(
+                "remove field must be note, acceptance, link, blocked-by, or evidence".to_owned(),
+            );
+        }
+    };
+    Ok(RemoveSpec {
+        field,
+        selector: selector.to_owned(),
+    })
+}
+
+#[derive(Clone, Copy, ValueEnum, PartialEq, Eq)]
+pub enum UnsetField {
+    Patch,
+    Plan,
 }
 
 #[derive(Clone, Copy, ValueEnum)]

@@ -66,7 +66,7 @@ pub fn stderr(output: &Output) -> String {
 }
 
 pub const MINIMAL: &str = indoc! {"
-    schema_version: 3
+    schema_version: 4
     prefix: QCTL
     active: null
     queue: []
@@ -77,7 +77,7 @@ pub const MINIMAL: &str = indoc! {"
 /// A queued row on its own, in the smallest ledger that can hold one.
 pub fn queued(row: &str) -> String {
     formatdoc! {"
-        schema_version: 3
+        schema_version: 4
         prefix: QCTL
         active: null
         queue:
@@ -89,7 +89,7 @@ pub fn queued(row: &str) -> String {
 /// An archived row on its own.
 pub fn archived(row: &str) -> String {
     formatdoc! {"
-        schema_version: 3
+        schema_version: 4
         prefix: QCTL
         active: null
         queue: []
@@ -101,7 +101,7 @@ pub fn archived(row: &str) -> String {
 /// A horizon row on its own.
 pub fn on_the_horizon(row: &str) -> String {
     formatdoc! {"
-        schema_version: 3
+        schema_version: 4
         prefix: QCTL
         active: null
         queue: []

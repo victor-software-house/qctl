@@ -21,7 +21,8 @@ use std::sync::LazyLock;
 
 /// The one version of this shape a ledger may declare. 3 gave a ledger a
 /// `style` block and moved the zone out of every `completed` stamp into it.
-pub const VERSION: u32 = 3;
+/// 4 made `notes` a list on every row.
+pub const VERSION: u32 = 4;
 
 /// The published identity of the generated schema.
 const SCHEMA_ID: &str =
@@ -54,8 +55,8 @@ pattern!(
     "A repository's id prefix: PST, KAI, OMX."
 );
 pattern!(
-    TASK_ID = r"^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
-    "A task id: that prefix, then at least three digits."
+    TASK_ID = r"^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",
+    "A task id: that prefix, then three to six digits."
 );
 pattern!(
     PATCH = r"^[a-z][a-z0-9-]*$",
@@ -100,18 +101,20 @@ pub struct Ledger {
     #[schemars(required, pattern(*TASK_ID), extend("type" = ["string", "null"]))]
     pub active: Option<String>,
 
-    /// Pending work in priority order. The order is the priority.
+    /// Pending work in priority order. The order is the priority. Queue,
+    /// archive, and horizon partition one globally unique, continuous id corpus.
     #[garde(dive)]
     pub queue: Vec<QueuedTask>,
 
     /// Completed or deliberately dropped work, newest first. Archived ids are
-    /// never reused.
+    /// never reused and remain part of the global task corpus.
     #[garde(dive)]
     pub archive: Vec<ArchivedTask>,
 
     /// Mapped work that is not on the short-term queue: research, evaluations,
-    /// or deferred items without a start condition. File order is not
-    /// priority, and `active` must never name a horizon id.
+    /// or deferred items without a start condition. File order is not priority,
+    /// `active` must never name a horizon id, and each id still belongs to the
+    /// same global task corpus.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[garde(dive)]
     pub horizon: Vec<HorizonTask>,
@@ -142,7 +145,8 @@ pub struct QueuedTask {
     #[schemars(extend("uniqueItems" = true))]
     pub blocked_by: Vec<String>,
 
-    /// What has to be demonstrably true to close it.
+    /// Observable end conditions that must be demonstrably true to close it.
+    /// Implementation instructions and procedural steps belong in `plan` or `notes`.
     #[garde(length(min = 1), inner(length(min = 1)))]
     #[schemars(extend("uniqueItems" = true))]
     pub acceptance: Vec<String>,
@@ -165,11 +169,12 @@ pub struct QueuedTask {
     #[schemars(extend("uniqueItems" = true, "items" = *LINK_ITEMS))]
     pub links: Vec<String>,
 
-    /// Context a reader needs and the row cannot carry in its other fields.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// Ordered context items a reader needs and the row cannot carry in its
+    /// other fields. Intentional line and paragraph breaks are preserved.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[garde(inner(length(min = 1)))]
-    #[schemars(length(min = 1))]
-    pub notes: Option<String>,
+    #[schemars(extend("uniqueItems" = true))]
+    pub notes: Vec<String>,
 }
 
 /// A task that has left the queue, either shipped or deliberately dropped.
@@ -225,11 +230,12 @@ pub struct ArchivedTask {
     #[schemars(extend("uniqueItems" = true, "items" = *LINK_ITEMS))]
     pub links: Vec<String>,
 
-    /// What a later reader will want to know and cannot reconstruct.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// Ordered context items a later reader will want to know and cannot
+    /// reconstruct. Intentional line and paragraph breaks are preserved.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[garde(inner(length(min = 1)))]
-    #[schemars(length(min = 1))]
-    pub notes: Option<String>,
+    #[schemars(extend("uniqueItems" = true))]
+    pub notes: Vec<String>,
 }
 
 /// Work that is mapped but has no place on the queue yet.
@@ -279,11 +285,12 @@ pub struct HorizonTask {
     #[schemars(extend("uniqueItems" = true, "items" = *LINK_ITEMS))]
     pub links: Vec<String>,
 
-    /// Context a reader needs and the row cannot carry in its other fields.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// Ordered context items a reader needs and the row cannot carry in its
+    /// other fields. Intentional line and paragraph breaks are preserved.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[garde(inner(length(min = 1)))]
-    #[schemars(length(min = 1))]
-    pub notes: Option<String>,
+    #[schemars(extend("uniqueItems" = true))]
+    pub notes: Vec<String>,
 }
 
 /// How a ledger is written, declared by the ledger itself.

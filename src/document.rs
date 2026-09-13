@@ -16,9 +16,14 @@
 //! `acceptance` from a row would take the following row's comment with it. A row
 //! on its own has no neighbour to rob.
 
+mod notes;
+mod rows;
+mod text;
+mod value;
+
 use anyhow::{Context, Result, bail};
-use std::fmt::Write;
 use std::ops::Range;
+use text::{dedent, indent_by};
 use yaml_serde::Value;
 use yamlpatch::{Op, Patch, apply_yaml_patches};
 use yamlpath::{Document as Parsed, Route, route};
@@ -48,82 +53,6 @@ impl Document {
     }
 
     /// Every id a section's rows carry, in file order.
-    pub fn ids(&self, section: &str) -> Result<Vec<String>> {
-        let parsed = self.parsed()?;
-        let mut ids = Vec::new();
-        let mut index = 0;
-        while let Ok(Some(feature)) = parsed.query_exact(&route!(section, index)) {
-            if let Some(id) = id_of(parsed.extract(&feature)) {
-                ids.push(id.to_owned());
-            }
-            index += 1;
-        }
-        Ok(ids)
-    }
-
-    /// Move a row to the head of its own section.
-    pub fn move_to_front(&mut self, section: &str, id: &str) -> Result<()> {
-        if self.ids(section)?.first().is_some_and(|first| first == id) {
-            return Ok(());
-        }
-        let row = self.cut(section, id)?;
-        self.paste_front(section, &row)
-    }
-
-    /// Take a row out of one section and put it at the head of another, with the
-    /// keys it gains and loses on the way.
-    pub fn move_between(
-        &mut self,
-        from: &str,
-        to: &str,
-        id: &str,
-        drop: &[&str],
-        add: &[(&str, Value)],
-    ) -> Result<()> {
-        let row = self.cut(from, id)?;
-        let row = revise(&row, drop, add)?;
-        self.close_if_empty(from)?;
-        self.paste_front(to, &row)
-    }
-
-    /// Take a row out of one section and put it at the end of another.
-    pub fn move_to_end(
-        &mut self,
-        from: &str,
-        to: &str,
-        id: &str,
-        drop: &[&str],
-        add: &[(&str, Value)],
-    ) -> Result<()> {
-        let row = self.cut(from, id)?;
-        let row = revise(&row, drop, add)?;
-        self.close_if_empty(from)?;
-        self.paste_back(to, &row)
-    }
-
-    /// Add a row to the end of a section, written from a value so the serializer
-    /// decides the quoting rather than this file.
-    pub fn append(&mut self, section: &str, value: &Value) -> Result<()> {
-        let rendered = yaml_serde::to_string(value).context("render the new row")?;
-        self.paste_back(section, &as_item(&rendered))
-    }
-
-    /// Put a section's rows in the order these ids name, keeping each row's
-    /// text — and the comment above it — as it was written.
-    pub fn reorder_rows(&mut self, section: &str, ids: &[String]) -> Result<()> {
-        if self.ids(section)? == ids {
-            return Ok(());
-        }
-        let mut rows = Vec::with_capacity(ids.len());
-        for id in ids {
-            rows.push(self.cut(section, id)?);
-        }
-        for row in rows {
-            self.paste_back(section, &row)?;
-        }
-        Ok(())
-    }
-
     /// Put the lists in the order these names give, moving each one whole: its
     /// key line, its rows, and the comments and blank lines between them.
     ///
@@ -242,54 +171,6 @@ impl Document {
         }])
     }
 
-    /// Take an id out of every `blocked_by` that still names it. A blocker is
-    /// resolved against the queue, so a row left naming an archived id fails
-    /// `check` the moment the verb returns.
-    pub fn rewrite_blockers(&mut self, section: &str, row: &str, kept: &[String]) -> Result<()> {
-        let index = self.position_of(section, row)?;
-        let route: Route = route!(section, index, "blocked_by");
-        let span = {
-            let parsed = self.parsed()?;
-            let feature = parsed
-                .query_exact(&route)?
-                .with_context(|| format!("{row} has no blocked_by to rewrite"))?;
-            let (from, to) = feature.location.byte_span;
-            from..to
-        };
-        let written = self.rewrite_list(&span, kept);
-        self.source.replace_range(span, &written);
-        Ok(())
-    }
-
-    /// The same list, shorter, in the style it was already written in.
-    ///
-    /// No quoting decision arises: a blocker is a task id, and the schema's
-    /// pattern leaves no id that could need quotes. `Op::Replace` is not used
-    /// here because it cannot write a non-empty sequence back into a mapping.
-    fn rewrite_list(&self, span: &Range<usize>, kept: &[String]) -> String {
-        let was = &self.source[span.clone()];
-        if !was.trim_start().starts_with('-') {
-            return format!("[{}]", kept.join(", "));
-        }
-        if kept.is_empty() {
-            return "[]".to_owned();
-        }
-        let indent = self.source[..span.start]
-            .rfind('\n')
-            .map_or(0, |line| span.start - line - 1);
-        let pad = " ".repeat(indent);
-        kept.iter()
-            .enumerate()
-            .map(|(at, blocker)| {
-                if at == 0 {
-                    format!("- {blocker}")
-                } else {
-                    format!("\n{pad}- {blocker}")
-                }
-            })
-            .collect()
-    }
-
     /// Apply patch operations, stated against routes rather than offsets, so
     /// they cannot invalidate one another.
     fn patch(&mut self, patches: &[Patch]) -> Result<()> {
@@ -299,328 +180,124 @@ impl Document {
         Ok(())
     }
 
-    /// Remove a row and hand back its text, dedented to stand on its own. The
-    /// blank lines that separated it from the row above go with it, so the seam
-    /// left behind reads the way it did before the row was written.
-    fn cut(&mut self, section: &str, id: &str) -> Result<String> {
-        let index = self.position_of(section, id)?;
-        let rows = self.rows(section)?;
-        let span = rows[index].clone();
-        let indent = self.indent_of(section)?;
-        let row = dedent(self.source[span.clone()].trim_end(), indent);
-        let last = index + 1 == rows.len();
-        // A row's span reaches to where the next row begins, so it already holds
-        // the blank line that separated them. Taking the blank line above as well
-        // would remove two separators for one row, and the rows either side of it
-        // would end up written against each other.
-        //
-        // The last row has no next row, so its span stops at the end of its text:
-        // there the blank line above is the one to take, along with the line
-        // ending, or the section keeps a blank line nobody wrote.
-        //
-        // A blank line above the *first* row is not a separator between rows —
-        // it sits between the list's key and the list. A verb leaves it, because
-        // it did not put it there; `fmt` is what removes it.
-        let from = if last {
-            self.start_of_blank_run(span.start)
-        } else {
-            span.start
-        };
-        let to = if last && self.source[span.end..].starts_with('\n') {
-            span.end + 1
-        } else {
-            span.end
-        };
-        self.source.replace_range(from..to, "");
-        Ok(row)
+    /// Replace one key on a row that is still in the file. Used by `fmt` when
+    /// rewriting a v3 scalar `notes` into a list without moving the row.
+    pub fn replace_row_value(
+        &mut self,
+        section: &str,
+        index: usize,
+        key: &str,
+        value: &Value,
+    ) -> Result<()> {
+        self.replace_value(&route!(section, index, key), key, value)
     }
 
-    /// Put a row at the head of a section, separated from what follows.
-    fn paste_front(&mut self, section: &str, row: &str) -> Result<()> {
-        self.ensure_section(section)?;
-        self.open(section)?;
-        let crowded = !self.ids(section)?.is_empty();
-        let indent = self.indent_of(section)?;
-        let at = self.front_of(section)?;
-        let block = if crowded {
-            format!("{}\n\n", indent_by(row, indent))
+    fn replace_value(&mut self, route: &Route, key: &str, value: &Value) -> Result<()> {
+        let span = if matches!(value, Value::Sequence(_)) {
+            let parsed = self.parsed()?;
+            let feature = parsed
+                .query_exact(route)?
+                .context("the value to replace is missing")?;
+            let (from, to) = feature.location.byte_span;
+            Some(from..to)
         } else {
-            format!("{}\n", indent_by(row, indent))
+            None
         };
-        self.source.insert_str(at, &block);
-        Ok(())
+        if key == "notes"
+            && let Some(span) = span
+        {
+            let rendered = crate::document::notes::sequence_like(&self.source, &span, value)?;
+            self.source.replace_range(span, &rendered);
+            return Ok(());
+        }
+        if let Some(span) = span {
+            let written = value::sequence_like(&self.source, &span, value)?;
+            self.source.replace_range(span, &written);
+            return Ok(());
+        }
+        self.patch(&[Patch {
+            route: route.clone(),
+            operation: Op::Replace(value.clone()),
+        }])
     }
 
-    /// Put a row after a section's last one.
-    fn paste_back(&mut self, section: &str, row: &str) -> Result<()> {
-        self.ensure_section(section)?;
-        self.open(section)?;
-        let indent = self.indent_of(section)?;
-        let rows = self.rows(section)?;
-        let at = match rows.last() {
-            // Past the last row's line ending, so the blank line separating it
-            // from the new row lands between them rather than after.
-            Some(last) => self.source[last.end..]
-                .find('\n')
-                .map_or(self.source.len(), |at| last.end + at + 1),
-            None => self.front_of(section)?,
-        };
-        let block = if rows.is_empty() {
-            format!("{}\n", indent_by(row, indent))
-        } else {
-            format!("\n{}\n", indent_by(row, indent))
-        };
-        self.source.insert_str(at, &block);
-        Ok(())
+    /// Drop a key from a row that is still in the file.
+    pub fn remove_row_key(&mut self, section: &str, index: usize, key: &str) -> Result<()> {
+        self.patch(&[Patch {
+            route: route!(section, index, key),
+            operation: Op::Remove,
+        }])
     }
 
-    /// Where each row of a section begins and ends, in file order.
-    fn rows(&self, section: &str) -> Result<Vec<Range<usize>>> {
+    /// Whether this row has `key`, and whether its value is a YAML sequence.
+    pub fn row_key_shape(
+        &self,
+        section: &str,
+        index: usize,
+        key: &str,
+    ) -> Result<Option<KeyShape>> {
         let parsed = self.parsed()?;
-        let mut bounds = Vec::new();
-        let mut index = 0;
-        while let Ok(Some(feature)) = parsed.query_exact(&route!(section, index)) {
-            let (content, end) = feature.location.byte_span;
-            bounds.push((self.line_holding(content), end));
-            index += 1;
-        }
-        let last = bounds
-            .last()
-            .map(|(_, end)| self.without_trailing_remarks(*end));
-        Ok(bounds
-            .iter()
-            .enumerate()
-            .map(|(at, (start, _))| {
-                let end = bounds
-                    .get(at + 1)
-                    .map_or(last.unwrap_or(*start), |(next, _)| *next);
-                *start..end
-            })
-            .collect())
-    }
-
-    /// Which row of a section carries this id.
-    fn position_of(&self, section: &str, id: &str) -> Result<usize> {
-        self.ids(section)?
-            .iter()
-            .position(|carried| carried == id)
-            .with_context(|| format!("{id} is not in {section}"))
-    }
-
-    /// The start of the line an offset sits on, widened over the comment lines
-    /// written directly above it.
-    fn line_holding(&self, offset: usize) -> usize {
-        let mut start = self.source[..offset].rfind('\n').map_or(0, |at| at + 1);
-        while let Some(above) = self.source[..start.saturating_sub(1)].rfind('\n') {
-            if !self.source[above + 1..start].trim_start().starts_with('#') {
-                break;
-            }
-            start = above + 1;
-        }
-        start
-    }
-
-    /// The beginning of the run of blank lines ending at this offset.
-    fn start_of_blank_run(&self, offset: usize) -> usize {
-        let mut start = offset;
-        while start > 0 {
-            let line_start = self.source[..start - 1].rfind('\n').map_or(0, |at| at + 1);
-            if !self.source[line_start..start - 1].trim().is_empty() {
-                return start;
-            }
-            start = line_start;
-        }
-        start
-    }
-
-    /// An end offset pulled back over trailing blank and comment lines, which
-    /// belong to the file rather than to the row that happens to precede them.
-    fn without_trailing_remarks(&self, end: usize) -> usize {
-        let mut end = end;
-        loop {
-            let line_start = self.source[..end].rfind('\n').map_or(0, |at| at + 1);
-            let line = self.source[line_start..end].trim_start();
-            if line_start == 0 || !(line.is_empty() || line.starts_with('#')) {
-                return end;
-            }
-            end = line_start.saturating_sub(1);
-        }
-    }
-
-    /// How deep this section's rows sit, taken from the rows already there.
-    fn indent_of(&self, section: &str) -> Result<usize> {
-        let Some(first) = self.rows(section)?.first().cloned() else {
-            return Ok(DEFAULT_INDENT);
+        let Ok(Some(feature)) = parsed.query_exact(&route!(section, index, key)) else {
+            return Ok(None);
         };
-        let line = &self.source[first.start..];
-        Ok(line.len() - line.trim_start().len())
-    }
-
-    /// Where a section's first row goes: just past its key line.
-    fn front_of(&self, section: &str) -> Result<usize> {
-        let after = self.key_span(section)?.1;
-        Ok(self.source[after..]
-            .find('\n')
-            .map_or(self.source.len(), |at| after + at + 1))
-    }
-
-    /// Turn `section: []` into `section:`, so a first row has a block to join.
-    fn open(&mut self, section: &str) -> Result<()> {
-        let (from, line_end) = self.key_line(section)?;
-        if !self.source[from..line_end].trim_end().ends_with("[]") {
-            return Ok(());
+        let text = parsed.extract(&feature).trim();
+        if text.starts_with('[') || text.starts_with('-') {
+            return Ok(Some(KeyShape::Sequence));
         }
-        self.source
-            .replace_range(from..line_end, &format!("{section}:"));
-        Ok(())
+        Ok(Some(KeyShape::Scalar))
     }
+}
 
-    /// Insert `section: []` when the file has no such list. `horizon` is
-    /// optional on load; a verb that writes the first row has to create the
-    /// key. `fmt` still never adds one.
-    fn ensure_section(&mut self, section: &str) -> Result<()> {
-        if self.parsed()?.query_key_only(&route!(section)).is_ok() {
-            return Ok(());
-        }
-        if !self.source.ends_with('\n') {
-            self.source.push('\n');
-        }
-        writeln!(self.source, "{section}: []").context("write the missing list key")?;
-        Ok(())
-    }
-
-    /// Turn an emptied `section:` back into `section: []`.
-    fn close_if_empty(&mut self, section: &str) -> Result<()> {
-        if !self.ids(section)?.is_empty() {
-            return Ok(());
-        }
-        let (from, line_end) = self.key_line(section)?;
-        self.source
-            .replace_range(from..line_end, &format!("{section}: []"));
-        Ok(())
-    }
-
-    fn key_span(&self, section: &str) -> Result<(usize, usize)> {
-        let parsed = self.parsed()?;
-        let key = parsed
-            .query_key_only(&route!(section))
-            .with_context(|| format!("{section}: is missing"))?;
-        Ok(key.location.byte_span)
-    }
-
-    /// The whole line a section's key is written on.
-    fn key_line(&self, section: &str) -> Result<(usize, usize)> {
-        let (from, key_end) = self.key_span(section)?;
-        let line_end = self.source[key_end..]
-            .find('\n')
-            .map_or(self.source.len(), |at| key_end + at);
-        Ok((from, line_end))
-    }
+/// How a row field is written.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum KeyShape {
+    /// A string, number, or folded/literal scalar.
+    Scalar,
+    /// A block or flow sequence.
+    Sequence,
 }
 
 /// Drop keys from one row and add others, with the row standing alone so no
 /// removal can reach a neighbour's comment.
 fn revise(row: &str, drop: &[&str], add: &[(&str, Value)]) -> Result<String> {
-    let document = Parsed::new(row.to_owned()).context("read the row on its own")?;
-    let patches: Vec<Patch> = drop
-        .iter()
-        .filter(|key| document.query_exists(&route!(0, **key)))
-        .map(|key| Patch {
-            route: route!(0, *key),
-            operation: Op::Remove,
-        })
-        .collect();
-    let mut kept = if patches.is_empty() {
-        row.to_owned()
-    } else {
-        apply_yaml_patches(&document, &patches)
-            .context("revise the row")?
-            .source()
-            .to_owned()
-    };
-    // Added keys are appended as their own lines rather than patched in, so a
-    // list arrives written the way the ledgers write lists. The values are still
-    // the serializer's: only where the text sits is decided here.
-    for (key, value) in add {
-        kept = format!(
-            "{}\n{}",
-            kept.trim_end(),
-            indent_by(&render(key, value)?, 2)
-        );
+    let mut changes = Vec::with_capacity(drop.len() + add.len());
+    changes.extend(drop.iter().map(|key| (*key, None)));
+    changes.extend(add.iter().map(|(key, value)| (*key, Some(value.clone()))));
+    revise_fields(row, &changes)
+}
+
+/// Drop, replace, or add keys on a row standing alone so a neighbour's comment
+/// cannot be taken. Existing keys stay where they are; new keys are appended.
+pub fn revise_fields(row: &str, changes: &[(&str, Option<Value>)]) -> Result<String> {
+    let mut kept = row.to_owned();
+    for (key, value) in changes {
+        let document = Parsed::new(kept.clone()).context("read the row on its own")?;
+        let exists = document.query_exists(&route!(0, *key));
+        match (exists, value) {
+            (true, None) => {
+                let mut document = Document::new(kept);
+                document.patch(&[Patch {
+                    route: route!(0, *key),
+                    operation: Op::Remove,
+                }])?;
+                kept = document.into_source();
+            }
+            (true, Some(value)) => {
+                let mut document = Document::new(kept);
+                document.replace_value(&route!(0, *key), key, value)?;
+                kept = document.into_source();
+            }
+            (false, Some(value)) => {
+                kept = format!(
+                    "{}\n{}",
+                    kept.trim_end(),
+                    indent_by(&value::mapping_entry(key, value)?, 2)
+                );
+            }
+            (false, None) => {}
+        }
     }
     Ok(kept.trim_end().to_owned())
-}
-
-/// One key and its value, as the serializer writes them.
-fn render(key: &str, value: &Value) -> Result<String> {
-    let mut mapping = yaml_serde::Mapping::new();
-    mapping.insert(Value::from(key), value.clone());
-    let rendered =
-        yaml_serde::to_string(&Value::Mapping(mapping)).with_context(|| format!("render {key}"))?;
-    Ok(as_the_ledgers_write_lists(&rendered))
-}
-
-/// A rendered mapping turned into a block sequence item.
-fn as_item(mapping: &str) -> String {
-    let written = as_the_ledgers_write_lists(mapping);
-    let mut lines = written.lines();
-    let Some(first) = lines.next() else {
-        return String::new();
-    };
-    let rest = lines.fold(String::new(), |mut item, line| {
-        item.push_str("\n  ");
-        item.push_str(line);
-        item
-    });
-    format!("- {first}{rest}")
-}
-
-/// The serializer puts a nested list flush against its key. Every ledger indents
-/// it, so a generated row is written the way the rows around it are.
-fn as_the_ledgers_write_lists(rendered: &str) -> String {
-    rendered
-        .trim_end()
-        .lines()
-        .map(|line| {
-            if line.trim_start().starts_with("- ") {
-                format!("  {line}")
-            } else {
-                line.to_owned()
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
-/// The id a row's text declares.
-fn id_of(text: &str) -> Option<&str> {
-    text.lines().find_map(|line| {
-        line.trim_start()
-            .trim_start_matches("- ")
-            .strip_prefix("id:")
-            .map(|value| value.trim().trim_matches(['"', '\'']))
-    })
-}
-
-fn dedent(text: &str, spaces: usize) -> String {
-    text.lines()
-        .map(|line| line.get(spaces..).unwrap_or(line.trim_start()))
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
-fn indent_by(text: &str, spaces: usize) -> String {
-    let pad = " ".repeat(spaces);
-    text.lines()
-        .map(|line| {
-            if line.trim().is_empty() {
-                String::new()
-            } else {
-                format!("{pad}{line}")
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
 }
 
 /// Fail rather than write something the next verb cannot read.
