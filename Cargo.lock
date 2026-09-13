@@ -302,9 +302,9 @@ dependencies = [
 
 [[package]]
 name = "ctl-core"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e637068f9f0f5d2cf21d4329c861bd1d7cd7acac3a07b70b7460735221174da"
+checksum = "13b0739f76e38c9ad611204a33fb6eb86e07bb6562d060cb952a0d53f903461b"
 dependencies = [
  "anstream",
  "anstyle",
@@ -313,7 +313,6 @@ dependencies = [
  "comfy-table",
  "document-features",
  "indoc",
- "minijinja",
  "serde",
  "serde_json",
  "unicode-bidi",
@@ -883,12 +882,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
-name = "memo-map"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5449c8c750f1a07ea702bbd212bd999fceece9b3d1508b17023b3e174583124b"
-
-[[package]]
 name = "micromap"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -914,16 +907,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
-]
-
-[[package]]
-name = "minijinja"
-version = "2.24.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86886cf6dbf4e614b19c9a1eec9775f021869d7eadde0fc73921a81b90c9b4c9"
-dependencies = [
- "memo-map",
- "serde",
 ]
 
 [[package]]
