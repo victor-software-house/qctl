@@ -178,6 +178,19 @@ queue:
       - '2026-09-12 operator decisions: both releases are patch bumps; edit collapses position and removal flags; Rust code follows nested feature modules; qctl is reviewed as a PR stack.'
     plan: goals/row-edit/plan.md
 
+  - id: QCTL-035
+    title: Silence rust-cache package cleanup noise
+    scope: qctl-ci
+    outcome: The publish job removes only disposable Cargo package staging before rust-cache cleanup, avoiding false ENOENT annotations without changing cache keys, scopes, targets, or save policy.
+    blocked_by: []
+    acceptance:
+      - The cleanup step runs after successful crate publication and removes only target/package.
+      - Existing rust-cache action pins, shared keys, target caching, registry caching, and save-if behavior are unchanged.
+      - Workflow validation and a release-equivalent package-staging check pass.
+    notes:
+      - >2-
+        Swatinem/rust-cache 2.9.2 issue #193: its tests-profile cleanup starts un-awaited scans of absent target and trybuild children, so try/catch cannot suppress their rejected promises.
+
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
