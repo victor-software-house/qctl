@@ -19,16 +19,6 @@ queue:
       - The two separators repaired by hand in QCTL-013 would have been fixed by running fmt.
     patch: blank-between-rows
 
-  - id: QCTL-038
-    title: Archive the adopt-ctl-core-0-6 OpenSpec change
-    scope: presentation
-    outcome: The finished change leaves openspec/changes and its presentation spec lands in openspec/specs.
-    blocked_by: []
-    acceptance:
-      - openspec archive adopt-ctl-core-0-6 merges its presentation spec, and openspec validate passes.
-    links:
-      - https://github.com/victor-software-house/qctl/pull/74
-
   - id: QCTL-015
     title: Write a ledger atomically so a crash cannot truncate it
     scope: qctl
@@ -254,6 +244,17 @@ horizon:
         answer.
 
 archive:
+  - id: QCTL-038
+    title: Archive the adopt-ctl-core-0-6 OpenSpec change
+    scope: presentation
+    outcome: The finished change leaves openspec/changes and its presentation spec lands in openspec/specs.
+    links:
+      - https://github.com/victor-software-house/qctl/pull/74
+    completed: 2026-09-23T20:13:55
+    evidence:
+      - https://github.com/victor-software-house/qctl/pull/76
+    disposition: completed
+
   - id: QCTL-037
     title: Adopt the ctl-core 0.6 presentation defaults
     scope: presentation
