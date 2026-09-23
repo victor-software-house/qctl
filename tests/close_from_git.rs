@@ -172,6 +172,7 @@ fn close_from_git_pre_push_refuses_to_amend() {
             path.to_str().expect("utf-8"),
         ])
         .env_remove("TASKS_LEDGER")
+        .env("COLUMNS", "1000")
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())

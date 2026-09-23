@@ -187,6 +187,7 @@ fn check_reports_when_git_cannot_run() {
         .args(["check", "-f", path.to_str().expect("utf-8")])
         .env("PATH", empty.path())
         .env_remove("TASKS_LEDGER")
+        .env("COLUMNS", "1000")
         .output()
         .expect("spawn qctl");
     assert!(!output.status.success(), "missing git must not pass");

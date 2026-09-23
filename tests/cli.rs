@@ -87,6 +87,36 @@ fn show_reads_a_stamp_without_moving_it() {
     );
 }
 
+/// Agent and CI captures pipe every stream and set no `COLUMNS`, so the fallback
+/// width is what keeps `show` inside a readable line there.
+#[test]
+fn piped_show_without_columns_stays_within_80_columns() {
+    let dir = LedgerDir::empty();
+    dir.write(indoc! {"
+        schema_version: 4
+        prefix: QCTL
+        active: null
+        queue: []
+        archive:
+          - id: QCTL-001
+            title: Keep every piped line inside the fallback width even when a title runs far past what one line holds
+            scope: qctl
+            completed: 2026-08-16T23:08:28
+            outcome: It shipped.
+            evidence: [The tag exists.]
+    "});
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_qctl"))
+        .args(["show", "QCTL-001", "-f", dir.path.to_str().unwrap()])
+        .env_remove("TASKS_LEDGER")
+        .env_remove("COLUMNS")
+        .output()
+        .expect("spawn qctl");
+    assert!(output.status.success(), "{}", stderr(&output));
+    let out = stdout(&output);
+    assert!(out.lines().count() > 1, "{out}");
+    assert!(out.lines().all(|line| line.chars().count() <= 80), "{out}");
+}
+
 /// The zone a stamp is written in comes from the ledger, and the only way to see
 /// that is to read the stamp back as the declared zone and land on now. Written
 /// in UTC instead, it would be three hours out.

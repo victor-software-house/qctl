@@ -27,7 +27,7 @@ pedantic = { level = "deny", priority = -1 }
 [dependencies]
 anyhow = "1.0.100"
 clap = { version = "4.6.6", features = ["derive", "env"] }
-ctl-core = { version = "=0.5.2", default-features = false, features = ["app", "usage"] }
+ctl-core = { version = "=0.6.3", default-features = false, features = ["app", "usage"] }
 garde = { version = "0.23.0", features = ["derive", "regex"] }
 indoc = "2.0.7"
 jsonschema = { version = "0.49.9", default-features = false }
@@ -42,7 +42,7 @@ yamlpatch = "1.29.0"
 yamlpath = "1.29.0"
 
 [dev-dependencies]
-ctl-core = { version = "=0.5.2", default-features = false, features = ["surface-model"] }
+ctl-core = { version = "=0.6.3", default-features = false, features = ["surface-model"] }
 insta = { version = "1.48.0", features = ["filters"] }
 rstest = "0.26.1"
 shlex = "2.0.1"
