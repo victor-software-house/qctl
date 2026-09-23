@@ -2,7 +2,7 @@
 
 ## Why
 
-qctl pins ctl-core 0.5.2. ctl-core 0.6.2 ships the look chosen in its
+qctl pins ctl-core 0.5.2. ctl-core 0.6.3 ships the look chosen in its
 `choose-visual-identity` change: borderless records, an identifier role, pretty
 JSON, a two-column automatic-width buffer, and an 80-column fallback when no
 width is detected. On 0.5.2 a piped `qctl show` of a row with a 104-character
@@ -12,7 +12,7 @@ Queue row: QCTL-037.
 
 ## What changes
 
-1. Pin ctl-core `=0.6.2`.
+1. Pin ctl-core `=0.6.3`.
 2. Row ids render through the identifier role (`Text::id`, `Table::id_column`).
    Paths stay tokens.
 3. Integration tests that match message text set a wide `COLUMNS`, so a message

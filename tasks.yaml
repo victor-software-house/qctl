@@ -25,10 +25,10 @@ queue:
     outcome: 'qctl output uses the shared default look: borderless records, the id role for row ids, pretty JSON, and an 80-column fallback in piped captures.'
     blocked_by: []
     acceptance:
-      - Cargo.toml pins ctl-core =0.6.2.
       - Row ids render through the id role, and paths stay tokens.
       - Piped `qctl show` with no COLUMNS keeps every line within 80 columns.
       - '`mise run verify` passes.'
+      - Cargo.toml pins ctl-core =0.6.3.
     links:
       - https://github.com/victor-software-house/ctl-core/tree/main/openspec/changes/choose-visual-identity
 
