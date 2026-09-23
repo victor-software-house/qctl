@@ -81,3 +81,10 @@ test fixtures and assertions.
   behavior, terminal width, styling, and tables.
 - `-f` remains qctl's ledger-file shorthand. The root composes ctl-core
   `FormatLong` with `ColorLong`, so shared `--format` never takes `-f` back.
+
+## Changes
+
+Plan a behaviour or contract change as an OpenSpec change in
+`openspec/changes/<name>/` before writing code. `openspec/config.yaml` holds
+this repository's context and rules, and `openspec validate <name>` checks the
+change. One change maps to one `tasks.yaml` row.
