@@ -302,9 +302,9 @@ dependencies = [
 
 [[package]]
 name = "ctl-core"
-version = "0.5.2"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13b0739f76e38c9ad611204a33fb6eb86e07bb6562d060cb952a0d53f903461b"
+checksum = "35a57adaefd1efc988462653666e2b536ef508ed8a02129f1e4d36242b14b1d9"
 dependencies = [
  "anstream",
  "anstyle",

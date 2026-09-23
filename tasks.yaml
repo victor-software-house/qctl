@@ -19,6 +19,19 @@ queue:
       - The two separators repaired by hand in QCTL-013 would have been fixed by running fmt.
     patch: blank-between-rows
 
+  - id: QCTL-037
+    title: Adopt the ctl-core 0.6 presentation defaults
+    scope: presentation
+    outcome: 'qctl output uses the shared default look: borderless records, the id role for row ids, pretty JSON, and an 80-column fallback in piped captures.'
+    blocked_by: []
+    acceptance:
+      - Cargo.toml pins ctl-core =0.6.2.
+      - Row ids render through the id role, and paths stay tokens.
+      - Piped `qctl show` with no COLUMNS keeps every line within 80 columns.
+      - '`mise run verify` passes.'
+    links:
+      - https://github.com/victor-software-house/ctl-core/tree/main/openspec/changes/choose-visual-identity
+
   - id: QCTL-015
     title: Write a ledger atomically so a crash cannot truncate it
     scope: qctl

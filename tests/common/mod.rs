@@ -40,10 +40,13 @@ impl LedgerDir {
     }
 }
 
+/// Content checks run wide, so a message is matched whole rather than across
+/// the fallback width's line breaks.
 pub fn qctl(args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_qctl"))
         .args(args)
         .env_remove("TASKS_LEDGER")
+        .env("COLUMNS", "1000")
         .output()
         .expect("spawn qctl")
 }
@@ -53,6 +56,7 @@ pub fn qctl_in(dir: &Path, args: &[&str]) -> Output {
         .current_dir(dir)
         .args(args)
         .env_remove("TASKS_LEDGER")
+        .env("COLUMNS", "1000")
         .output()
         .expect("spawn qctl")
 }
