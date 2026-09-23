@@ -1,5 +1,9 @@
 # Changelog
 
+## qctl 0.4.3
+
+- Adopt ctl-core 0.6.3: borderless records, bold row ids, indented JSON, and an 80-column fallback width in piped output.
+
 ## qctl 0.4.2
 
 - Adopt ctl-core's isolated Surface model feature so short-option contract tests no longer enable the MiniJinja template engine.
