@@ -192,6 +192,20 @@ queue:
       - >2-
         2026-09-28: src/document/notes.rs item() writes '- >2-' for every single-line note that yaml_serde would quote. Nearly every note starts with a date and a colon, which as a plain scalar would read as a mapping, so nearly every note takes this path. '>' and '-' are needed for an exact round trip; the '2' is needed only for a leading space.
 
+  - id: QCTL-040
+    title: Read ledgers through the ctl-core loader and edit them through yamled
+    scope: qctl reader and writer
+    outcome: qctl reads every YAML input through ctl-core's serde-saphyr loader and edits ledgers through yamled, and carries no YAML crate of its own.
+    blocked_by: []
+    acceptance:
+      - qctl depends on no serde_yml, yaml_serde, yamlpath, yamlpatch, or tree-sitter crate; cargo tree shows none.
+      - qctl check reports every schema error with its file and line, placed through the loader.
+      - Every mutation fixture keeps its accepted snapshot, or a changed snapshot names the byte it now keeps that it lost before.
+      - The comment-ownership, list-rewrite, and empty-queue workarounds in src/document.rs are gone, because yamled owns those rules.
+    notes:
+      - >2-
+        2026-09-28: Waits on ctl-core CTC-008 (the loader) and the first yamled release with the location index and edits (yamled YMD-001). QCTL-039's note style becomes TextStyle::Folded on push_text.
+
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
