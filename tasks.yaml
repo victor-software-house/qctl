@@ -178,6 +178,20 @@ queue:
       - '2026-09-12 operator decisions: both releases are patch bumps; edit collapses position and removal flags; Rust code follows nested feature modules; qctl is reviewed as a PR stack.'
     plan: goals/row-edit/plan.md
 
+  - id: QCTL-039
+    title: Write a note that needs quoting as a plain folded block
+    scope: qctl writer
+    outcome: A dated note is written as '- >-' followed by its text, so the ledger carries no indentation indicator it does not need.
+    blocked_by: []
+    acceptance:
+      - A single-line note that the serializer would quote is written as '- >-' with the text on the next line.
+      - The '2' indentation indicator is written only when the note starts with a space.
+      - Every note still reads back to exactly the string that was given; the existing round-trip check stays.
+      - qctl fmt rewrites existing '>2-' notes to '>-' where the indicator is not needed, and changes no other bytes.
+    notes:
+      - >2-
+        2026-09-28: src/document/notes.rs item() writes '- >2-' for every single-line note that yaml_serde would quote. Nearly every note starts with a date and a colon, which as a plain scalar would read as a mapping, so nearly every note takes this path. '>' and '-' are needed for an exact round trip; the '2' is needed only for a leading space.
+
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
