@@ -1,252 +1,262 @@
 //! A ledger as the text somebody wrote, edited where it must change and copied
 //! everywhere else.
 //!
-//! The structure comes from a real YAML parser: [`yamlpath`] gives the byte span
-//! of any row and [`yamlpatch`] performs the key-level edits, so nothing here
-//! guesses at indentation or decides how to quote a value.
-//!
-//! Two things are ours, because the format leaves them open. A row moves by
-//! byte range, since no patch operation offers a move. And a comment written
-//! directly above a row — no blank line between — belongs to that row: the
-//! parser hands a comment to the row *above* it, which would strand a comment
-//! on one move and steal it on the next.
-//!
-//! That same attribution is why a row is edited while it is out of the file. A
-//! removal span for the last key of a row reaches past it, so removing
-//! `acceptance` from a row would take the following row's comment with it. A row
-//! on its own has no neighbour to rob.
+//! [`yamled`] does the editing: it finds each node by path, moves a row with
+//! the comments it owns, closes a list that loses its last row, and keeps a
+//! rewritten list in the style it was written in. What stays here is the
+//! ledger's vocabulary: sections, rows found by id, and how a note is written.
 
 mod notes;
 mod rows;
-mod text;
-mod value;
 
 use anyhow::{Context, Result, bail};
-use std::ops::Range;
-use text::{dedent, indent_by};
-use yaml_serde::Value;
-use yamlpatch::{Op, Patch, apply_yaml_patches};
-use yamlpath::{Document as Parsed, Route, route};
+use serde::Serialize;
+use yamled::{Path, Segment, Spacing, Style};
 
-/// How deep a section's rows sit. Every ledger this tool has written uses two
-/// spaces; a file that says otherwise is followed rather than corrected.
-const DEFAULT_INDENT: usize = 2;
-
-/// A ledger's text, with the parser's view of it available on demand.
+/// A ledger's text, parsed so it can be edited in place.
 pub struct Document {
-    source: String,
+    yaml: yamled::Document,
+}
+
+/// One change to a row's fields.
+#[derive(Clone, Debug)]
+pub enum Change {
+    /// A value written in place, or added at the end of the row.
+    Set {
+        key: String,
+        value: serde_json::Value,
+    },
+    /// A key taken off the row.
+    Unset { key: String },
+    /// A list of strings rewritten. Items appended to a block list are added
+    /// after the ones already written, so those keep their bytes.
+    List {
+        key: String,
+        before: Vec<String>,
+        after: Vec<String>,
+    },
+}
+
+impl Change {
+    /// Write `value` under `key`.
+    pub fn set(key: &str, value: impl Into<serde_json::Value>) -> Self {
+        Self::Set {
+            key: key.to_owned(),
+            value: value.into(),
+        }
+    }
+
+    /// Take `key` off the row.
+    #[must_use]
+    pub fn unset(key: &str) -> Self {
+        Self::Unset {
+            key: key.to_owned(),
+        }
+    }
 }
 
 impl Document {
-    #[must_use]
-    pub fn new(source: String) -> Self {
-        Self { source }
+    /// A ledger's text. A row added to a list whose own rows do not settle
+    /// its spacing is set off by a blank line, as every ledger qctl writes.
+    pub fn new(source: String) -> Result<Self> {
+        let yaml = yamled::Document::parse(source)
+            .context("this ledger is not YAML qctl can edit")?
+            .with_spacing(Spacing::Blank);
+        Ok(Self { yaml })
     }
 
     #[must_use]
     pub fn into_source(self) -> String {
-        self.source
+        self.yaml.into_string()
     }
 
-    fn parsed(&self) -> Result<Parsed> {
-        Parsed::new(self.source.clone()).context("this ledger is not YAML the parser can follow")
-    }
-
-    /// Every id a section's rows carry, in file order.
-    /// Put the lists in the order these names give, moving each one whole: its
-    /// key line, its rows, and the comments and blank lines between them.
-    ///
-    /// Everything above the first list — the version, the prefix, the style, the
-    /// active row — stays where it is.
+    /// Put the lists in the order these names give, each with the comments it
+    /// owns. A list the file does not have is skipped; everything that is not
+    /// a list stays in its slot. A file already in that order is left alone.
     pub fn reorder_sections(&mut self, order: &[&str]) -> Result<()> {
-        // Only the lists this file has: `horizon` is optional, and a ledger
-        // without one is still a ledger.
-        let mut blocks = Vec::with_capacity(order.len());
-        for section in order {
-            if let Some(span) = self.block_of(section)? {
-                blocks.push((*section, span));
-            }
-        }
-        if blocks.len() < 2 {
-            return Ok(());
-        }
-        let mut found: Vec<Range<usize>> = blocks.iter().map(|(_, span)| span.clone()).collect();
-        found.sort_by_key(|span| span.start);
-        let wanted: Vec<&str> = blocks.iter().map(|(section, _)| *section).collect();
-        let already: Vec<&str> = {
-            let mut named: Vec<(usize, &str)> = blocks
-                .iter()
-                .map(|(section, span)| (span.start, *section))
-                .collect();
-            named.sort_by_key(|(start, _)| *start);
-            named.into_iter().map(|(_, section)| section).collect()
-        };
-        // Nothing below moves anything, so a file already in its order is done —
-        // and must not be refused for a comment that only a move would disturb.
-        if already == wanted {
-            return Ok(());
-        }
-        for pair in found.windows(2) {
-            if pair[0].end > pair[1].start {
-                bail!("these lists overlap, which is not a file this can reorder");
-            }
-            // A comment directly above a key belongs to that list and moves with
-            // it. Anything else out here belongs to no list, and moving the
-            // lists around it would either take it along or lose it. Refuse
-            // instead: better a ledger this will not reorder than a comment
-            // silently gone.
-            if !self.source[pair[0].end..pair[1].start].trim().is_empty() {
-                bail!(
-                    "something between these lists belongs to neither; move it above a key or out of the way"
-                );
-            }
-        }
-        // The blank lines between the lists are the file's own spacing, so they
-        // stay in the sequence they were written in. Only the lists move.
-        let gaps: Vec<String> = found
-            .windows(2)
-            .map(|pair| self.source[pair[0].end..pair[1].start].to_owned())
+        let wanted: Vec<&str> = order
+            .iter()
+            .copied()
+            .filter(|name| self.yaml.node(&section(name)).is_some())
             .collect();
-        let mut rebuilt = String::new();
-        for (at, (_, span)) in blocks.iter().enumerate() {
-            rebuilt.push_str(self.source[span.clone()].trim_end());
-            if let Some(gap) = gaps.get(at) {
-                rebuilt.push_str(gap);
-            }
-        }
-        let (from, to) = (found[0].start, found[found.len() - 1].end);
-        self.source.replace_range(from..to, &rebuilt);
-        Ok(())
-    }
-
-    /// Move every row of a section to sit this far under its key.
-    pub fn set_indent(&mut self, section: &str, indent: usize) -> Result<()> {
-        loop {
-            let Some(row) = self
-                .rows(section)?
-                .into_iter()
-                .find(|row| self.depth_of(row.start) != indent)
-            else {
-                return Ok(());
-            };
-            let depth = self.depth_of(row.start);
-            let text = self.source[row.clone()].to_owned();
-            // A row's span runs to the next row's first line, so it carries the
-            // blank lines that separate them — and the last row's span stops at
-            // the end of its text. Whatever ended the span has to end it still.
-            let (body, tail) = text.split_at(text.trim_end().len());
-            let moved = indent_by(&dedent(body, depth), indent);
-            self.source
-                .replace_range(row.start..row.end, &format!("{moved}{tail}"));
-        }
-    }
-
-    /// A section from the comment above its key through its last row, without
-    /// the blank lines or comments that follow it. `None` when the file has no
-    /// such list, which `horizon` is allowed to be.
-    fn block_of(&self, section: &str) -> Result<Option<Range<usize>>> {
-        if self.parsed()?.query_key_only(&route!(section)).is_err() {
-            return Ok(None);
-        }
-        let (key_start, key_line_end) = self.key_line(section)?;
-        let from = self.line_holding(key_start);
-        let end = self
-            .rows(section)?
-            .last()
-            .map_or(key_line_end, |last| last.end);
-        Ok(Some(from..end.max(key_line_end)))
-    }
-
-    /// How far the line at this offset is indented.
-    fn depth_of(&self, offset: usize) -> usize {
-        let line = &self.source[offset..];
-        line.len() - line.trim_start().len()
-    }
-
-    /// Replace a top-level scalar, leaving its line where it was.
-    pub fn set(&mut self, key: &str, value: Value) -> Result<()> {
-        self.patch(&[Patch {
-            route: route!(key),
-            operation: Op::Replace(value),
-        }])
-    }
-
-    /// Apply patch operations, stated against routes rather than offsets, so
-    /// they cannot invalidate one another.
-    fn patch(&mut self, patches: &[Patch]) -> Result<()> {
-        let parsed = self.parsed()?;
-        let edited = apply_yaml_patches(&parsed, patches).context("edit this ledger")?;
-        edited.source().clone_into(&mut self.source);
-        Ok(())
-    }
-
-    /// Replace one key on a row that is still in the file. Used by `fmt` when
-    /// rewriting a v3 scalar `notes` into a list without moving the row.
-    pub fn replace_row_value(
-        &mut self,
-        section: &str,
-        index: usize,
-        key: &str,
-        value: &Value,
-    ) -> Result<()> {
-        self.replace_value(&route!(section, index, key), key, value)
-    }
-
-    fn replace_value(&mut self, route: &Route, key: &str, value: &Value) -> Result<()> {
-        let span = if matches!(value, Value::Sequence(_)) {
-            let parsed = self.parsed()?;
-            let feature = parsed
-                .query_exact(route)?
-                .context("the value to replace is missing")?;
-            let (from, to) = feature.location.byte_span;
-            Some(from..to)
-        } else {
-            None
-        };
-        if key == "notes"
-            && let Some(span) = span
+        let mut written: Vec<(usize, &str)> = wanted
+            .iter()
+            .filter_map(|name| Some((self.yaml.locate(&section(name))?.start, *name)))
+            .collect();
+        written.sort_unstable();
+        if written
+            .iter()
+            .map(|(_, name)| *name)
+            .eq(wanted.iter().copied())
         {
-            let rendered = crate::document::notes::sequence_like(&self.source, &span, value)?;
-            self.source.replace_range(span, &rendered);
             return Ok(());
         }
-        if let Some(span) = span {
-            let written = value::sequence_like(&self.source, &span, value)?;
-            self.source.replace_range(span, &written);
+        let present: Vec<Segment> = wanted
+            .iter()
+            .map(|name| Segment::Key((*name).to_owned()))
+            .collect();
+        self.yaml
+            .reorder(&Path::root(), &present)
+            .context("reorder the lists")
+    }
+
+    /// Move every row of a section to sit this far under its key. A section
+    /// with no rows has nothing to move.
+    pub fn set_indent(&mut self, name: &str, indent: usize) -> Result<()> {
+        let path = section(name);
+        let Some(list) = self.yaml.node(&path) else {
+            return Ok(());
+        };
+        if list.style() != Style::BlockSequence || list.is_empty() {
             return Ok(());
         }
-        self.patch(&[Patch {
-            route: route.clone(),
-            operation: Op::Replace(value.clone()),
-        }])
+        let Some(first) = self.yaml.locate(&path.clone().index(0)) else {
+            return Ok(());
+        };
+        let source = self.yaml.as_str();
+        let line = &source[source[..first.start].rfind('\n').map_or(0, |at| at + 1)..];
+        if line.len() - line.trim_start().len() == indent {
+            return Ok(());
+        }
+        self.yaml
+            .reindent(&path, indent)
+            .with_context(|| format!("re-indent {name}"))
+    }
+
+    /// Replace a top-level value, leaving its line where it was.
+    pub fn set<T: Serialize + ?Sized>(&mut self, key: &str, value: &T) -> Result<()> {
+        self.yaml
+            .replace(&section(key), value)
+            .with_context(|| format!("write {key}"))
+    }
+
+    /// Whether this row has `key`, and whether its value is a sequence.
+    #[must_use]
+    pub fn row_key_shape(&self, name: &str, index: usize, key: &str) -> Option<KeyShape> {
+        let node = self.yaml.node(&section(name).index(index).key(key))?;
+        Some(match node.style() {
+            Style::BlockSequence | Style::FlowSequence => KeyShape::Sequence,
+            _ => KeyShape::Scalar,
+        })
     }
 
     /// Drop a key from a row that is still in the file.
-    pub fn remove_row_key(&mut self, section: &str, index: usize, key: &str) -> Result<()> {
-        self.patch(&[Patch {
-            route: route!(section, index, key),
-            operation: Op::Remove,
-        }])
+    pub fn remove_row_key(&mut self, name: &str, index: usize, key: &str) -> Result<()> {
+        self.yaml
+            .remove(&section(name).index(index).key(key))
+            .with_context(|| format!("remove {key} from {name}[{index}]"))
     }
 
-    /// Whether this row has `key`, and whether its value is a YAML sequence.
-    pub fn row_key_shape(
-        &self,
-        section: &str,
-        index: usize,
-        key: &str,
-    ) -> Result<Option<KeyShape>> {
-        let parsed = self.parsed()?;
-        let Ok(Some(feature)) = parsed.query_exact(&route!(section, index, key)) else {
-            return Ok(None);
-        };
-        let text = parsed.extract(&feature).trim();
-        if text.starts_with('[') || text.starts_with('-') {
-            return Ok(Some(KeyShape::Sequence));
+    /// Write a row's notes as a list, each note in the style [`notes::style`]
+    /// picks. Used by `fmt` when rewriting a v3 scalar `notes`.
+    pub fn replace_row_notes(&mut self, name: &str, index: usize, items: &[String]) -> Result<()> {
+        let path = section(name).index(index).key("notes");
+        self.yaml
+            .replace(&path, &NO_ITEMS)
+            .context("empty the notes")?;
+        self.push_notes(&path, items)
+    }
+
+    /// Apply field changes to one row.
+    pub fn revise(&mut self, name: &str, index: usize, changes: &[Change]) -> Result<()> {
+        let row = section(name).index(index);
+        for change in changes {
+            match change {
+                Change::Set { key, value } => self.write_field(&row, key, value)?,
+                Change::Unset { key } => self.drop_field(&row, key)?,
+                Change::List { key, before, after } => {
+                    self.write_list(&row, key, before, after)?;
+                }
+            }
         }
-        Ok(Some(KeyShape::Scalar))
+        Ok(())
+    }
+
+    fn write_field(&mut self, row: &Path, key: &str, value: &serde_json::Value) -> Result<()> {
+        let path = row.clone().key(key);
+        if self.yaml.node(&path).is_some() {
+            self.yaml.replace(&path, value)
+        } else {
+            self.yaml.insert(row, key, value, yamled::Position::End)
+        }
+        .with_context(|| format!("write {key}"))
+    }
+
+    fn drop_field(&mut self, row: &Path, key: &str) -> Result<()> {
+        let path = row.clone().key(key);
+        if self.yaml.node(&path).is_none() {
+            return Ok(());
+        }
+        self.yaml
+            .remove(&path)
+            .with_context(|| format!("remove {key}"))
+    }
+
+    fn write_list(
+        &mut self,
+        row: &Path,
+        key: &str,
+        before: &[String],
+        after: &[String],
+    ) -> Result<()> {
+        if after.is_empty() {
+            return self.drop_field(row, key);
+        }
+        let path = row.clone().key(key);
+        let Some(list) = self.yaml.node(&path) else {
+            self.yaml
+                .insert(row, key, &NO_ITEMS, yamled::Position::End)
+                .with_context(|| format!("add {key}"))?;
+            return self.push_items(&path, key, after);
+        };
+        let appended = list.style() == Style::BlockSequence && after.starts_with(before);
+        if appended {
+            return self.push_items(&path, key, &after[before.len()..]);
+        }
+        if key == "notes" {
+            self.yaml
+                .replace(&path, &NO_ITEMS)
+                .context("empty the notes")?;
+            return self.push_notes(&path, after);
+        }
+        self.yaml
+            .replace(&path, after)
+            .with_context(|| format!("write {key}"))
+    }
+
+    fn push_items(&mut self, path: &Path, key: &str, items: &[String]) -> Result<()> {
+        if key == "notes" {
+            return self.push_notes(path, items);
+        }
+        self.tight(|yaml| {
+            items
+                .iter()
+                .try_for_each(|item| yaml.push(path, item))
+                .with_context(|| format!("add to {key}"))
+        })
+    }
+
+    fn push_notes(&mut self, path: &Path, items: &[String]) -> Result<()> {
+        self.tight(|yaml| {
+            items
+                .iter()
+                .try_for_each(|note| yaml.push_text(path, note, notes::style(note)))
+                .context("add a note")
+        })
+    }
+
+    /// Run an edit with items added tight: only rows are set off by a blank
+    /// line, and a row's own lists never are.
+    fn tight<R>(&mut self, edit: impl FnOnce(&mut yamled::Document) -> R) -> R {
+        let mut yaml = self.yaml.clone().with_spacing(Spacing::Tight);
+        let result = edit(&mut yaml);
+        self.yaml = yaml.with_spacing(Spacing::Blank);
+        result
     }
 }
+
+/// An empty list, for a key that is about to be filled.
+const NO_ITEMS: [&str; 0] = [];
 
 /// How a row field is written.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -257,47 +267,9 @@ pub enum KeyShape {
     Sequence,
 }
 
-/// Drop keys from one row and add others, with the row standing alone so no
-/// removal can reach a neighbour's comment.
-fn revise(row: &str, drop: &[&str], add: &[(&str, Value)]) -> Result<String> {
-    let mut changes = Vec::with_capacity(drop.len() + add.len());
-    changes.extend(drop.iter().map(|key| (*key, None)));
-    changes.extend(add.iter().map(|(key, value)| (*key, Some(value.clone()))));
-    revise_fields(row, &changes)
-}
-
-/// Drop, replace, or add keys on a row standing alone so a neighbour's comment
-/// cannot be taken. Existing keys stay where they are; new keys are appended.
-pub fn revise_fields(row: &str, changes: &[(&str, Option<Value>)]) -> Result<String> {
-    let mut kept = row.to_owned();
-    for (key, value) in changes {
-        let document = Parsed::new(kept.clone()).context("read the row on its own")?;
-        let exists = document.query_exists(&route!(0, *key));
-        match (exists, value) {
-            (true, None) => {
-                let mut document = Document::new(kept);
-                document.patch(&[Patch {
-                    route: route!(0, *key),
-                    operation: Op::Remove,
-                }])?;
-                kept = document.into_source();
-            }
-            (true, Some(value)) => {
-                let mut document = Document::new(kept);
-                document.replace_value(&route!(0, *key), key, value)?;
-                kept = document.into_source();
-            }
-            (false, Some(value)) => {
-                kept = format!(
-                    "{}\n{}",
-                    kept.trim_end(),
-                    indent_by(&value::mapping_entry(key, value)?, 2)
-                );
-            }
-            (false, None) => {}
-        }
-    }
-    Ok(kept.trim_end().to_owned())
+/// The path of a top-level key.
+fn section(name: &str) -> Path {
+    Path::root().key(name)
 }
 
 /// Fail rather than write something the next verb cannot read.

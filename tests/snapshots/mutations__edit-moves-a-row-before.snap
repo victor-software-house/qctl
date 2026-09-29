@@ -2,7 +2,7 @@
 source: tests/mutations.rs
 description: "qctl edit DEMO-003 --position before:DEMO-002"
 ---
-# -6 +7
+# -6 +6
  # yaml-language-server: $schema=./schema/tasks.schema.json
  schema_version: 4
  prefix: DEMO
@@ -27,7 +27,6 @@ description: "qctl edit DEMO-003 --position before:DEMO-002"
        - It holds.
 -  - id: DEMO-003
 -    title: Third
-+
 +  - id: DEMO-002
 +    title: Second
      scope: demo

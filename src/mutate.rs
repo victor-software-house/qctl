@@ -1,7 +1,7 @@
 use crate::cli::{
     AddArgs, ArchiveArgs, CloseFromGitArgs, Disposition, InitArgs, ParkArgs, PromoteArgs,
 };
-use crate::document::Document;
+use crate::document::{Change, Document};
 use crate::ledger::order::{self, Row};
 use crate::ledger::{load, next_id, resolve_path};
 use crate::report::{Destination, Report};
@@ -87,7 +87,7 @@ fn add_queue(args: &AddArgs) -> Result<Report> {
         patch: args.patch.clone(),
         plan: args.plan.clone(),
         links: args.links.clone(),
-        notes: args.note.clone(),
+        notes: Vec::new(),
     };
 
     let mut ids: Vec<String> = ledger.queue.iter().map(|task| task.id.clone()).collect();
@@ -119,7 +119,7 @@ fn add_queue(args: &AddArgs) -> Result<Report> {
     order::validate(&ordered)?;
 
     let mut document = read(&path)?;
-    document.append("queue", &yaml_serde::to_value(&row)?)?;
+    document.append("queue", &row, &args.note)?;
     if insertion < ids.len() {
         ids.insert(insertion, id.clone());
         document.reorder_rows("queue", &ids)?;
@@ -149,10 +149,10 @@ fn add_horizon(args: &AddArgs) -> Result<Report> {
         patch: args.patch.clone(),
         plan: args.plan.clone(),
         links: args.links.clone(),
-        notes: args.note.clone(),
+        notes: Vec::new(),
     };
     let mut document = read(&path)?;
-    document.append("horizon", &yaml_serde::to_value(&row)?)?;
+    document.append("horizon", &row, &args.note)?;
     write(&path, document)?;
     Ok(Report::Added {
         path: path.display().to_string(),
@@ -191,7 +191,7 @@ pub fn start(args: &crate::cli::IdArgs) -> Result<Report> {
 
     let mut document = read(&path)?;
     document.move_to_front("queue", &args.id)?;
-    document.set("active", yaml_serde::Value::from(args.id.as_str()))?;
+    document.set("active", args.id.as_str())?;
     write(&path, document)?;
     Ok(Report::Started {
         path: path.display().to_string(),
@@ -221,14 +221,15 @@ pub fn park(args: &ParkArgs) -> Result<Report> {
         "queue",
         "horizon",
         &args.id,
-        &["blocked_by", "acceptance"],
         &[
-            ("kind", yaml_serde::Value::from(args.kind.to_string())),
-            ("open", yaml_serde::Value::from(args.open.as_str())),
+            Change::unset("blocked_by"),
+            Change::unset("acceptance"),
+            Change::set("kind", args.kind.to_string()),
+            Change::set("open", args.open.as_str()),
         ],
     )?;
     if ledger.active.as_deref() == Some(args.id.as_str()) {
-        document.set("active", yaml_serde::Value::Null)?;
+        document.set("active", &None::<&str>)?;
     }
     write(&path, document)?;
     Ok(Report::Parked {
@@ -262,10 +263,11 @@ pub fn promote(args: &PromoteArgs) -> Result<Report> {
         "horizon",
         "queue",
         &args.id,
-        &["kind", "open"],
         &[
-            ("blocked_by", yaml_serde::to_value(&args.blocked_by)?),
-            ("acceptance", yaml_serde::to_value(&args.acceptance)?),
+            Change::unset("kind"),
+            Change::unset("open"),
+            Change::set("blocked_by", args.blocked_by.clone()),
+            Change::set("acceptance", args.acceptance.clone()),
         ],
     )?;
     write(&path, document)?;
@@ -300,14 +302,12 @@ fn archive_row(args: &ArchiveArgs) -> Result<String> {
         "queue",
         "archive",
         &args.id,
-        &["blocked_by", "acceptance"],
         &[
-            ("completed", yaml_serde::Value::from(now.as_str())),
-            ("evidence", yaml_serde::to_value(&args.evidence)?),
-            (
-                "disposition",
-                yaml_serde::Value::from(args.disposition.as_str()),
-            ),
+            Change::unset("blocked_by"),
+            Change::unset("acceptance"),
+            Change::set("completed", now.as_str()),
+            Change::set("evidence", args.evidence.clone()),
+            Change::set("disposition", args.disposition.as_str()),
         ],
     )?;
     // A blocker is only resolved against the queue, so a row still naming this
@@ -326,13 +326,8 @@ fn archive_row(args: &ArchiveArgs) -> Result<String> {
             .collect();
         document.rewrite_blockers("queue", &task.id, &kept)?;
     }
-    let next = document.ids("queue")?.first().cloned();
-    document.set(
-        "active",
-        next.map_or(yaml_serde::Value::Null, |id| {
-            yaml_serde::Value::from(id.as_str())
-        }),
-    )?;
+    let next = document.ids("queue").first().cloned();
+    document.set("active", &next)?;
     write(&path, document)?;
     Ok(path.display().to_string())
 }
@@ -395,7 +390,7 @@ fn now_in(zone: &str) -> Result<String> {
 
 pub(crate) fn read(path: &Path) -> Result<Document> {
     let source = fs::read_to_string(path).with_context(|| path.display().to_string())?;
-    Ok(Document::new(source))
+    Document::new(source)
 }
 
 /// Write only a document that still reads as the ledger it was, so a verb can

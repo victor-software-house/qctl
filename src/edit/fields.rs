@@ -1,7 +1,7 @@
 use crate::cli::{EditArgs, UnsetField};
+use crate::document::Change;
 use anyhow::{Result, bail, ensure};
 use std::path::Path;
-use yaml_serde::Value;
 
 pub(super) struct ListEdit<'a> {
     key: &'static str,
@@ -15,11 +15,7 @@ impl<'a> ListEdit<'a> {
     }
 }
 
-pub(super) fn changes(
-    args: &EditArgs,
-    path: &Path,
-    lists: &[ListEdit<'_>],
-) -> Result<Vec<(String, Option<Value>)>> {
+pub(super) fn changes(args: &EditArgs, path: &Path, lists: &[ListEdit<'_>]) -> Result<Vec<Change>> {
     if args.patch.is_some() && args.unset.contains(&UnsetField::Patch) {
         bail!("use --patch or --unset patch, not both");
     }
@@ -33,7 +29,7 @@ pub(super) fn changes(
     push_scalar(&mut changes, "scope", args.scope.as_deref())?;
     push_scalar(&mut changes, "outcome", args.outcome.as_deref())?;
     if let Some(kind) = args.kind {
-        changes.push(("kind".to_owned(), Some(Value::from(kind.to_string()))));
+        changes.push(Change::set("kind", kind.to_string()));
     }
     push_scalar(&mut changes, "open", args.open.as_deref())?;
     push_optional(
@@ -54,40 +50,35 @@ pub(super) fn changes(
     Ok(changes)
 }
 
-fn push_scalar(
-    changes: &mut Vec<(String, Option<Value>)>,
-    key: &str,
-    value: Option<&str>,
-) -> Result<()> {
+fn push_scalar(changes: &mut Vec<Change>, key: &str, value: Option<&str>) -> Result<()> {
     let Some(value) = value else {
         return Ok(());
     };
     ensure!(!value.is_empty(), "--{key} needs a value");
-    changes.push((key.to_owned(), Some(Value::from(value))));
+    changes.push(Change::set(key, value));
     Ok(())
 }
 
 fn push_optional(
-    changes: &mut Vec<(String, Option<Value>)>,
+    changes: &mut Vec<Change>,
     key: &str,
     value: Option<&str>,
     unset: bool,
 ) -> Result<()> {
     if unset {
-        changes.push((key.to_owned(), None));
+        changes.push(Change::unset(key));
         return Ok(());
     }
     push_scalar(changes, key, value)
 }
 
-fn push_list(changes: &mut Vec<(String, Option<Value>)>, list: &ListEdit<'_>) {
+fn push_list(changes: &mut Vec<Change>, list: &ListEdit<'_>) {
     if list.before == list.after.as_slice() {
         return;
     }
-    let value = if list.after.is_empty() {
-        None
-    } else {
-        Some(yaml_serde::to_value(&list.after).expect("strings"))
-    };
-    changes.push((list.key.to_owned(), value));
+    changes.push(Change::List {
+        key: list.key.to_owned(),
+        before: list.before.to_vec(),
+        after: list.after.clone(),
+    });
 }
