@@ -122,3 +122,33 @@ fn edit_uses_the_same_note_item_policy() {
         "{body}"
     );
 }
+
+/// A note that ends in two line breaks is written with keep chomping (`|+`),
+/// and a row whose last note is one still moves and formats like any other.
+#[test]
+fn a_row_whose_last_note_keeps_its_line_breaks_still_moves() {
+    let dir = LedgerDir::empty();
+    dir.write(common::MINIMAL);
+    let path = dir.path.to_string_lossy();
+    for title in ["first", "second"] {
+        let output = qctl(&[
+            "add", "-f", &path, "-t", title, "-s", "s", "-o", "o", "-a", "a", "-n", "ctx\n\n",
+        ]);
+        assert!(output.status.success(), "{}", stderr(&output));
+    }
+    for args in [
+        vec!["start", "QCTL-002"],
+        vec!["fmt"],
+        vec!["archive", "QCTL-002", "-e", "done"],
+    ] {
+        let mut argv = args.clone();
+        argv.extend(["-f", &path]);
+        let output = qctl(&argv);
+        assert!(output.status.success(), "{args:?}: {}", stderr(&output));
+    }
+    let ledger: serde_json::Value = Input::new("tasks.yaml", dir.read().as_str())
+        .parse()
+        .expect("parse output");
+    assert_eq!(ledger["queue"][0]["notes"][0], "ctx\n\n");
+    assert_eq!(ledger["archive"][0]["notes"][0], "ctx\n\n");
+}

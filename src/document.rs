@@ -72,16 +72,29 @@ impl Document {
 
     /// Put the lists in the order these names give, each with the comments it
     /// owns. A list the file does not have is skipped; everything that is not
-    /// a list stays in its slot.
+    /// a list stays in its slot. A file already in that order is left alone.
     pub fn reorder_sections(&mut self, order: &[&str]) -> Result<()> {
-        let present: Vec<Segment> = order
+        let wanted: Vec<&str> = order
             .iter()
+            .copied()
             .filter(|name| self.yaml.node(&section(name)).is_some())
-            .map(|name| Segment::Key((*name).to_owned()))
             .collect();
-        if present.len() < 2 {
+        let mut written: Vec<(usize, &str)> = wanted
+            .iter()
+            .filter_map(|name| Some((self.yaml.locate(&section(name))?.start, *name)))
+            .collect();
+        written.sort_unstable();
+        if written
+            .iter()
+            .map(|(_, name)| *name)
+            .eq(wanted.iter().copied())
+        {
             return Ok(());
         }
+        let present: Vec<Segment> = wanted
+            .iter()
+            .map(|name| Segment::Key((*name).to_owned()))
+            .collect();
         self.yaml
             .reorder(&Path::root(), &present)
             .context("reorder the lists")

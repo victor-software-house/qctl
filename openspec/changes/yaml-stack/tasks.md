@@ -35,4 +35,13 @@ one yamled. The port found a yamled defect, a note written as `|+` losing a
 line break when the next note was pushed, fixed in yamled 0.0.3
 ([yamled#8]).
 
+The review of the whole stack then found that a note ending in two line
+breaks, written as `|+`, left its row unmovable: yamled refused to take or
+reorder it, and `fmt` failed because `reorder_sections` had lost its early
+return. yamled 0.0.4 moves such an item with its kept lines ([yamled#10]),
+`reorder_sections` returns early again, and
+`a_row_whose_last_note_keeps_its_line_breaks_still_moves` in `tests/notes.rs`
+starts, formats, and archives such a row. It fails on yamled 0.0.3.
+
 [yamled#8]: https://github.com/victor-software-house/yamled/pull/8
+[yamled#10]: https://github.com/victor-software-house/yamled/pull/10
