@@ -1,5 +1,5 @@
 use crate::cli::CheckArgs;
-use crate::ledger::{graph_errors, load_value, read, resolve_path, schema_value};
+use crate::ledger::{Ledger, graph_errors, load_value, resolve_path, schema_value};
 use crate::report::Report;
 use crate::trailers;
 use anyhow::Result;
@@ -53,7 +53,7 @@ pub fn run(args: &CheckArgs) -> Result<Report> {
     // being judged and every rule reports in the same pass. The values are the
     // schema's business here — garde states the same rules for the verbs, and
     // repeating it would print each defect twice.
-    match read(&path) {
+    match input.parse::<Ledger>() {
         Ok(ledger) => {
             errors.extend(graph_errors(&ledger, &path));
             if !args.no_git {
