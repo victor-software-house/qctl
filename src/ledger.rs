@@ -4,10 +4,10 @@ pub(crate) mod order;
 use crate::cli::LedgerArgs;
 use crate::report::{Report, Task};
 use anyhow::{Context, Result, bail, ensure};
-use garde::Validate;
+use ctl_core::input::Input;
+use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::schema::ArchiveOrder;
@@ -27,40 +27,47 @@ pub fn resolve_path(args: &LedgerArgs) -> PathBuf {
 /// The ledger, refusing to hand back one whose values are wrong. This is what
 /// the verbs use: none of them should edit a file they cannot vouch for.
 pub fn load(path: &Path) -> Result<Ledger> {
-    let raw = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
-    if let Some(message) = stale_schema_message(&raw, path) {
+    let input = Input::read(path)?;
+    if let Some(message) = stale_schema_message(&input) {
         bail!("{message}");
     }
-    let ledger: Ledger =
-        serde_yml::from_str(&raw).with_context(|| format!("parse {}", path.display()))?;
-    let complaints = value_errors(&ledger);
-    ensure!(
-        complaints.is_empty(),
-        "validate {}: {}",
-        path.display(),
-        complaints.join("; ")
-    );
+    checked(&input)
+}
+
+/// A ledger parsed and validated through ctl-core's declared input, so every
+/// complaint names the file and the line it is on.
+pub fn checked(input: &Input) -> Result<Ledger> {
+    let ledger: Ledger = input.parse()?;
+    input.check(&ledger, &())?;
     Ok(ledger)
+}
+
+/// The version a file declares, read before its rows so a file written for
+/// another schema is named as such rather than refused field by field.
+#[must_use]
+pub fn schema_version(input: &Input) -> Option<u64> {
+    #[derive(Deserialize)]
+    struct Declared {
+        schema_version: Option<u64>,
+    }
+    input.parse::<Declared>().ok()?.schema_version
 }
 
 /// Schema 3 is rewritten by `qctl fmt`; any other version is not this binary's.
 #[must_use]
-pub fn stale_schema_message(raw: &str, path: &Path) -> Option<String> {
-    let version = serde_yml::from_str::<serde_yml::Value>(raw)
-        .ok()
-        .and_then(|value| value.get("schema_version")?.as_u64())?;
+pub fn stale_schema_message(input: &Input) -> Option<String> {
+    let version = schema_version(input)?;
+    let path = input.name();
     if version == u64::from(VERSION) {
         return None;
     }
     if version == 3 {
         return Some(format!(
-            "{}: schema_version 3; run qctl fmt to rewrite notes into a list and set schema_version 4",
-            path.display()
+            "{path}: schema_version 3; run qctl fmt to rewrite notes into a list and set schema_version 4"
         ));
     }
     Some(format!(
-        "{}: schema_version {version} must be {VERSION}",
-        path.display()
+        "{path}: schema_version {version} must be {VERSION}"
     ))
 }
 
@@ -70,27 +77,12 @@ pub fn stale_schema_message(raw: &str, path: &Path) -> Option<String> {
 /// when a value is wrong — a hard failure here would throw away the schema and
 /// graph findings it already has.
 pub fn read(path: &Path) -> Result<Ledger> {
-    let raw = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
-    serde_yml::from_str(&raw).with_context(|| format!("parse {}", path.display()))
+    Ok(Input::read(path)?.parse()?)
 }
 
-/// What the contract says is wrong with these values, field by field.
-#[must_use]
-pub fn value_errors(ledger: &Ledger) -> Vec<String> {
-    match ledger.validate() {
-        Ok(()) => Vec::new(),
-        Err(report) => report
-            .iter()
-            .map(|(field, error)| format!("{field}: {error}"))
-            .collect(),
-    }
-}
-
-pub fn load_value(path: &Path) -> Result<Value> {
-    let raw = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
-    let yaml: serde_yml::Value =
-        serde_yml::from_str(&raw).with_context(|| format!("parse {}", path.display()))?;
-    serde_json::to_value(yaml).context("convert ledger yaml to json")
+/// The ledger as JSON, for the JSON Schema check.
+pub fn load_value(input: &Input) -> Result<Value> {
+    Ok(input.parse()?)
 }
 
 pub fn schema_value() -> Result<Value> {

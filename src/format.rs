@@ -16,6 +16,7 @@ use crate::ledger::{Ledger, resolve_path};
 use crate::report::Report;
 use crate::schema::{ArchiveOrder, Section, VERSION};
 use anyhow::{Context, Result, bail};
+use ctl_core::input::Input;
 use std::fs;
 use yaml_serde::Value;
 
@@ -163,15 +164,7 @@ pub fn run(args: &FmtArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let original = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
     let source = upgrade_v3(&original)?;
-    let ledger: Ledger =
-        serde_yml::from_str(&source).with_context(|| format!("parse {}", path.display()))?;
-    let complaints = crate::ledger::value_errors(&ledger);
-    anyhow::ensure!(
-        complaints.is_empty(),
-        "validate {}: {}",
-        path.display(),
-        complaints.join("; ")
-    );
+    let ledger = crate::ledger::checked(&Input::new(path.display().to_string(), source.as_str()))?;
     let wanted = normalized(&source, &ledger)?;
 
     if original == wanted {
@@ -224,16 +217,14 @@ fn upgrade_v3(source: &str) -> Result<String> {
 }
 
 fn peek_schema_version(source: &str) -> Option<u64> {
-    let value: serde_yml::Value = serde_yml::from_str(source).ok()?;
-    value.get("schema_version")?.as_u64()
+    crate::ledger::schema_version(&Input::new("tasks.yaml", source))
 }
 
 fn rewrite_v3_notes(source: &str) -> Result<String> {
-    let parsed: serde_yml::Value =
-        serde_yml::from_str(source).context("parse a schema 3 ledger")?;
+    let parsed: serde_json::Value = Input::new("tasks.yaml", source).parse()?;
     let mut document = Document::new(source.to_owned());
     for section in ["queue", "archive", "horizon"] {
-        let Some(rows) = parsed.get(section).and_then(serde_yml::Value::as_sequence) else {
+        let Some(rows) = parsed.get(section).and_then(serde_json::Value::as_array) else {
             continue;
         };
         for (index, row) in rows.iter().enumerate() {

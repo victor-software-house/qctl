@@ -1,14 +1,16 @@
 use crate::cli::CheckArgs;
-use crate::ledger::{graph_errors, load_value, read, resolve_path, schema_value};
+use crate::ledger::{Ledger, graph_errors, load_value, resolve_path, schema_value};
 use crate::report::Report;
 use crate::trailers;
 use anyhow::Result;
+use ctl_core::input::Input;
 use std::collections::HashSet;
 
 pub fn run(args: &CheckArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let schema = schema_value()?;
-    let instance = load_value(&path)?;
+    let input = Input::read(&path)?;
+    let instance = load_value(&input)?;
     if instance
         .get("schema_version")
         .and_then(serde_json::Value::as_u64)
@@ -27,16 +29,31 @@ pub fn run(args: &CheckArgs) -> Result<Report> {
     let validator = jsonschema::options()
         .should_validate_formats(true)
         .build(&schema)?;
+    let placed = yamled::Document::parse(input.text()).ok();
     let mut errors: Vec<String> = validator
         .iter_errors(&instance)
-        .map(|error| format!("{}: {error}", error.instance_path()))
+        .map(|error| {
+            let pointer = error.instance_path().to_string();
+            let at = placed.as_ref().and_then(|document| {
+                document.locate_nearest(&yamled::Path::from_pointer(&pointer).ok()?)
+            });
+            match at {
+                Some(at) => format!(
+                    "{}:{}:{}: {pointer}: {error}",
+                    input.name(),
+                    at.line,
+                    at.column
+                ),
+                None => format!("{}: {pointer}: {error}", input.name()),
+            }
+        })
         .collect();
 
     // A wrong value must not hide a wrong graph, so the rows are read without
     // being judged and every rule reports in the same pass. The values are the
     // schema's business here — garde states the same rules for the verbs, and
     // repeating it would print each defect twice.
-    match read(&path) {
+    match input.parse::<Ledger>() {
         Ok(ledger) => {
             errors.extend(graph_errors(&ledger, &path));
             if !args.no_git {

@@ -1,6 +1,7 @@
 mod common;
 
 use common::{LedgerDir, qctl, stderr};
+use ctl_core::input::Input;
 use indoc::indoc;
 
 #[test]
@@ -37,10 +38,10 @@ fn repeated_notes_are_readable_distinct_list_items() {
         ),
         "{body}"
     );
-    let ledger: serde_yml::Value = serde_yml::from_str(&body).expect("parse output");
-    let notes = ledger["queue"][0]["notes"]
-        .as_sequence()
-        .expect("notes list");
+    let ledger: serde_json::Value = Input::new("tasks.yaml", body.as_str())
+        .parse()
+        .expect("parse output");
+    let notes = ledger["queue"][0]["notes"].as_array().expect("notes list");
     assert_eq!(notes.len(), 4);
     assert_eq!(
         notes[2].as_str(),
@@ -72,9 +73,11 @@ fn trailing_and_blank_lines_survive_fmt() {
 }
 
 fn parsed_notes(body: &str) -> Vec<String> {
-    let ledger: serde_yml::Value = serde_yml::from_str(body).expect("parse output");
+    let ledger: serde_json::Value = Input::new("tasks.yaml", body)
+        .parse()
+        .expect("parse output");
     ledger["queue"][0]["notes"]
-        .as_sequence()
+        .as_array()
         .expect("notes list")
         .iter()
         .map(|note| note.as_str().expect("note string").to_owned())

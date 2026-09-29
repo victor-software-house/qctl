@@ -302,7 +302,10 @@ pub fn revise_fields(row: &str, changes: &[(&str, Option<Value>)]) -> Result<Str
 
 /// Fail rather than write something the next verb cannot read.
 pub fn must_still_parse(source: &str) -> Result<()> {
-    if serde_yml::from_str::<serde_yml::Value>(source).is_err() {
+    if ctl_core::input::Input::new("tasks.yaml", source)
+        .parse::<serde_json::Value>()
+        .is_err()
+    {
         bail!("this edit would leave a file that is not valid YAML");
     }
     Ok(())

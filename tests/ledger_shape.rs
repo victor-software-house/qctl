@@ -222,7 +222,7 @@ fn accepts_a_ledger(#[case] ledger: &str) {
           - id: QCTL-001
            title: crooked
     "},
-    "parse"
+    "tasks.yaml:3:4:"
 )]
 fn refuses_a_ledger(#[case] ledger: &str, #[case] field: &str) {
     refused(ledger, field);

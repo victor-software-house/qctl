@@ -109,7 +109,9 @@ fn item(note: &str) -> Result<String> {
 }
 
 fn round_trips(rendered: &str, expected: &str) -> bool {
-    serde_yml::from_str::<Vec<String>>(rendered).is_ok_and(|notes| notes.as_slice() == [expected])
+    ctl_core::input::Input::new("note", rendered)
+        .parse::<Vec<String>>()
+        .is_ok_and(|notes| notes.as_slice() == [expected])
 }
 
 #[cfg(test)]
@@ -125,8 +127,10 @@ mod tests {
             Value::from("last"),
         ]);
         let rendered = sequence(&value).expect("render sequence");
-        let parsed: Value = serde_yml::from_str(&rendered).expect("parse sequence");
-        assert_eq!(parsed, value);
+        let parsed: serde_json::Value = ctl_core::input::Input::new("notes", rendered)
+            .parse()
+            .expect("parse sequence");
+        assert_eq!(parsed, serde_json::json!(["first", 7, "last"]));
     }
 
     #[test]
