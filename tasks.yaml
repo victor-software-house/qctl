@@ -257,6 +257,26 @@ horizon:
         rebuilt from the files costs nothing, because deleting it changes no
         answer.
 
+  - id: QCTL-041
+    title: Decide what an archived row keeps so its evidence can be checked
+    scope: qctl archive and park
+    kind: research
+    open: >-
+      `archive` and `park` drop `blocked_by` and `acceptance`. Evidence exists
+      to answer the acceptance criteria, and without them nobody can check it
+      later. Should an archived row keep `acceptance`? If the criteria changed
+      during the work, should the row keep what was accepted, what was
+      delivered, or both? What should `park` keep for a row that may return?
+    outcome: >-
+      A decision, written down, on which fields `archive` and `park` keep, and
+      whether `check` requires each evidence line to answer a criterion.
+    notes:
+      - >-
+        2026-09-29: raised by a review of an archived row that had lost its
+        criteria. `archive` has dropped both fields since the line-level
+        rewrite, before the move to yamled. Rows archived by hand keep them,
+        so a ledger such as yamled's now holds both shapes.
+
 archive:
   - id: QCTL-040
     title: Read ledgers through the ctl-core loader and edit them through yamled
