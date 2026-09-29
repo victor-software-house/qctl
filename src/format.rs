@@ -18,12 +18,11 @@ use crate::schema::{ArchiveOrder, Section, VERSION};
 use anyhow::{Context, Result, bail};
 use ctl_core::input::Input;
 use std::fs;
-use yaml_serde::Value;
 
 /// The ledger as its own style says it should be written.
 pub fn normalized(source: &str, ledger: &Ledger) -> Result<String> {
     let style = &ledger.style;
-    let mut document = Document::new(source.to_owned());
+    let mut document = Document::new(source.to_owned())?;
 
     if style.archive_order == ArchiveOrder::NewestFirst {
         document.reorder_rows("archive", &newest_first(ledger))?;
@@ -222,7 +221,7 @@ fn peek_schema_version(source: &str) -> Option<u64> {
 
 fn rewrite_v3_notes(source: &str) -> Result<String> {
     let parsed: serde_json::Value = Input::new("tasks.yaml", source).parse()?;
-    let mut document = Document::new(source.to_owned());
+    let mut document = Document::new(source.to_owned())?;
     for section in ["queue", "archive", "horizon"] {
         let Some(rows) = parsed.get(section).and_then(serde_json::Value::as_array) else {
             continue;
@@ -231,7 +230,7 @@ fn rewrite_v3_notes(source: &str) -> Result<String> {
             let Some(notes) = row.get("notes") else {
                 continue;
             };
-            if document.row_key_shape(section, index, "notes")? != Some(KeyShape::Scalar) {
+            if document.row_key_shape(section, index, "notes") != Some(KeyShape::Scalar) {
                 continue;
             }
             let Some(text) = notes.as_str() else {
@@ -241,16 +240,11 @@ fn rewrite_v3_notes(source: &str) -> Result<String> {
             if items.is_empty() {
                 document.remove_row_key(section, index, "notes")?;
             } else {
-                document.replace_row_value(
-                    section,
-                    index,
-                    "notes",
-                    &yaml_serde::to_value(&items)?,
-                )?;
+                document.replace_row_notes(section, index, &items)?;
             }
         }
     }
-    document.set("schema_version", Value::from(VERSION))?;
+    document.set("schema_version", &VERSION)?;
     Ok(document.into_source())
 }
 

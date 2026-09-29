@@ -16,11 +16,23 @@ moves to yamled 0.0.2.
 
 ## 2. Edits through yamled
 
-- [ ] 2.1 `src/document.rs` edits through yamled, and the comment-ownership,
+- [x] 2.1 `src/document.rs` edits through yamled, and the comment-ownership,
   list-rewrite, and empty-queue workarounds are gone. Proof: the 33 mutation
   snapshots pass on the build host, or each changed snapshot names the byte it
   now keeps.
-- [ ] 2.2 `yaml_serde`, `yamlpath`, and `yamlpatch` are gone. Proof:
+- [x] 2.2 `yaml_serde`, `yamlpath`, and `yamlpatch` are gone. Proof:
   `cargo tree -e normal` names none of them.
-- [ ] 2.3 AGENTS.md, `src/instructions.md`, and `skills/qctl/SKILL.md` say
+- [x] 2.3 AGENTS.md, `src/instructions.md`, and `skills/qctl/SKILL.md` say
   what is now true. Proof: review of the diff.
+
+2026-09-29 (-03:00): `mise run verify` passed on the build host with every
+edit on yamled 0.0.3 and ctl-core 0.6.7. 32 of the 33 mutation snapshots are
+unchanged. `edit-moves-a-row-before` changed: the list is written with no blank
+line between rows, and the moved row now keeps that spacing where the old
+splice added a blank line. `cargo tree -e normal` names none of `serde_yml`,
+`yaml_serde`, `yamlpath`, `yamlpatch`, or a `tree-sitter` crate, and resolves
+one yamled. The port found a yamled defect, a note written as `|+` losing a
+line break when the next note was pushed, fixed in yamled 0.0.3
+([yamled#8]).
+
+[yamled#8]: https://github.com/victor-software-house/yamled/pull/8

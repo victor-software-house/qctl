@@ -16,6 +16,22 @@
    change written bytes. Splitting them keeps each snapshot diff attributable
    to one cause.
 
+4. **Reorder around a loose comment instead of refusing.** yamled's `reorder`
+   keeps each loose comment and blank line in its slot while the lists trade
+   places, so the outcome is defined. The old refusal existed because the
+   hand-written splice could not place such a comment. Keeping the refusal
+   lost because it made `fmt` fail on a file it can now format without losing
+   a byte.
+5. **Note headers come from yamled.** A literal note is `|-` and a folded one
+   `>-`, with an indentation digit only when the first line starts with a
+   space. qctl still decides which of plain, folded, or literal a note gets.
+   Keeping `|2-` and `>2-` on every note lost because it needs a rendering
+   path of qctl's own beside yamled's.
+6. **Rows are spaced by a blank line; a row's own lists are not.** A list
+   whose rows already agree keeps its spacing. yamled falls back to one
+   document-wide spacing, so qctl switches to tight spacing for the pushes into
+   a row's lists.
+
 ## Overrides
 
 No automatic behaviour is added. A ledger that used a loose boolean or a

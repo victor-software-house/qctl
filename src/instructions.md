@@ -86,10 +86,11 @@ owns the procedure; `notes` carry context a reader cannot reconstruct.
 
 `notes` is an ordered list. Every repeated `-n/--note` is one item, so separate
 facts instead of building one unbounded paragraph. Intentional line breaks stay
-line breaks; blank lines stay paragraph separators. Qctl writes those as `|2-`
+line breaks; blank lines stay paragraph separators. Qctl writes those as `|-`
 literal block items. YAML-sensitive single-line prose, such as text containing
-`: `, uses `>2-` so it stays readable without quotes or escape sequences. Short
-safe notes stay plain. Qctl never inserts mechanical line breaks mid-sentence.
+`: `, uses `>-` so it stays readable without quotes or escape sequences. A
+block gets an indentation digit (`|2-`) only when its first line starts with a
+space. Short safe notes stay plain. Qctl never inserts mechanical line breaks mid-sentence.
 
 ## Style
 

@@ -253,11 +253,10 @@ fn fmt_check_names_the_line_and_writes_nothing() {
 }
 
 /// A comment directly above a key belongs to that list and moves with it. One
-/// with a blank line under it belongs to nothing, and reordering around it would
-/// either carry it to the wrong place or lose it. `fmt` refuses instead, and
-/// leaves the file exactly as it was.
+/// with a blank line under it belongs to no list, so the lists trade places
+/// around it and it stays where it was written.
 #[test]
-fn fmt_refuses_to_move_lists_around_a_comment_it_cannot_place() {
+fn fmt_moves_lists_around_a_comment_that_belongs_to_none() {
     let dir = LedgerDir::empty();
     let orphaned = indoc! {"
         schema_version: 4
@@ -274,13 +273,21 @@ fn fmt_refuses_to_move_lists_around_a_comment_it_cannot_place() {
     "};
     dir.write(orphaned);
     let output = qctl(&["fmt", "-f", dir.path.to_str().unwrap()]);
-    assert!(!output.status.success(), "reordered around a loose comment");
-    assert!(
-        stderr(&output).contains("belongs to neither"),
-        "{}",
-        stderr(&output)
-    );
-    assert_eq!(dir.read(), orphaned, "the file was written to anyway");
+    assert!(output.status.success(), "{}", stderr(&output));
+    let expected = indoc! {"
+        schema_version: 4
+        prefix: QCTL
+        style:
+          section_order: [queue, horizon, archive]
+        active: null
+        queue: []
+
+        # A note with a blank line under it, so it sits between the lists.
+
+        horizon: []
+        archive: []
+    "};
+    assert_eq!(dir.read(), expected);
 }
 
 #[test]

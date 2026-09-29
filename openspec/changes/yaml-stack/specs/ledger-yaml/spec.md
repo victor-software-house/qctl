@@ -43,6 +43,19 @@ nodes, comments included, stay as they were.
   position and the `active` value, and each comment stays with the row it was
   written above
 
+### Requirement: A comment that belongs to no list stays in its slot
+
+`qctl fmt` SHALL reorder the lists around a comment that has a blank line under
+it, leaving that comment where it was written, and SHALL move a comment written
+directly above a list key with that list.
+
+#### Scenario: Lists trade places around a loose comment
+
+- **WHEN** `tasks.yaml` declares `section_order: [queue, horizon, archive]`,
+  writes `queue`, a comment with a blank line under it, `archive`, then
+  `horizon`, and the operator runs `qctl fmt`
+- **THEN** the file lists `queue`, the comment, `horizon`, then `archive`
+
 ### Requirement: qctl carries no YAML crate of its own
 
 qctl SHALL depend on no YAML parser or editor other than ctl-core's `input`

@@ -34,7 +34,7 @@ fn repeated_notes_are_readable_distinct_list_items() {
     let body = dir.read();
     assert!(
         body.contains(
-            "    notes:\n      - Short context.\n      - >2-\n        Source: the colon stays readable.\n      - |2-\n        First intentional line.\n        Second intentional line.\n\n        Next paragraph.\n      - |2-\n          Indented first line.\n        Plain second line."
+            "    notes:\n      - Short context.\n      - >-\n        Source: the colon stays readable.\n      - |-\n        First intentional line.\n        Second intentional line.\n\n        Next paragraph.\n      - |2-\n          Indented first line.\n        Plain second line."
         ),
         "{body}"
     );
@@ -116,9 +116,9 @@ fn edit_uses_the_same_note_item_policy() {
     assert!(output.status.success(), "{}", stderr(&output));
     let body = dir.read();
     assert!(body.contains("- Existing."), "{body}");
-    assert!(body.contains("- >2-\n        Context: added."), "{body}");
+    assert!(body.contains("- >-\n        Context: added."), "{body}");
     assert!(
-        body.contains("- |2-\n        Line one.\n        Line two."),
+        body.contains("- |-\n        Line one.\n        Line two."),
         "{body}"
     );
 }

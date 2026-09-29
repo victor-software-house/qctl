@@ -6,7 +6,7 @@ mod policy;
 mod position;
 
 use crate::cli::{EditArgs, RemoveField};
-use crate::document::revise_fields;
+use crate::document::Change;
 use crate::ledger::{Ledger, load, resolve_path};
 use crate::report::Report;
 use anyhow::{Result, bail, ensure};
@@ -170,23 +170,14 @@ fn rewrite_row(
     section: &str,
     id: &str,
     destination: usize,
-    changes: &[(String, Option<yaml_serde::Value>)],
+    changes: &[Change],
 ) -> Result<()> {
     let mut document = crate::mutate::read(path)?;
     let current = document.position_of(section, id)?;
     if changes.is_empty() && current == destination {
         return Ok(());
     }
-    let row = document.cut(section, id)?;
-    let row = if changes.is_empty() {
-        row
-    } else {
-        let refs: Vec<(&str, Option<yaml_serde::Value>)> = changes
-            .iter()
-            .map(|(key, value)| (key.as_str(), value.clone()))
-            .collect();
-        revise_fields(&row, &refs)?
-    };
-    document.paste_at(section, destination, &row)?;
+    document.move_row(section, id, destination)?;
+    document.revise(section, destination, changes)?;
     crate::mutate::write(path, document)
 }
