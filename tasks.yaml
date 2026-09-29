@@ -192,20 +192,6 @@ queue:
       - >2-
         2026-09-28: src/document/notes.rs item() writes '- >2-' for every single-line note that yaml_serde would quote. Nearly every note starts with a date and a colon, which as a plain scalar would read as a mapping, so nearly every note takes this path. '>' and '-' are needed for an exact round trip; the '2' is needed only for a leading space.
 
-  - id: QCTL-040
-    title: Read ledgers through the ctl-core loader and edit them through yamled
-    scope: qctl reader and writer
-    outcome: qctl reads every YAML input through ctl-core's serde-saphyr loader and edits ledgers through yamled, and carries no YAML crate of its own.
-    blocked_by: []
-    acceptance:
-      - qctl depends on no serde_yml, yaml_serde, yamlpath, yamlpatch, or tree-sitter crate; cargo tree shows none.
-      - qctl check reports every schema error with its file and line, placed through the loader.
-      - Every mutation fixture keeps its accepted snapshot, or a changed snapshot names the byte it now keeps that it lost before.
-      - The comment-ownership, list-rewrite, and empty-queue workarounds in src/document.rs are gone, because yamled owns those rules.
-    notes:
-      - >2-
-        2026-09-28: Waits on ctl-core CTC-008 (the loader) and the first yamled release with the location index and edits (yamled YMD-001). QCTL-039's note style becomes TextStyle::Folded on push_text.
-
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
@@ -271,7 +257,46 @@ horizon:
         rebuilt from the files costs nothing, because deleting it changes no
         answer.
 
+  - id: QCTL-041
+    title: Decide what an archived row keeps so its evidence can be checked
+    scope: qctl archive and park
+    kind: research
+    open: >-
+      `archive` and `park` drop `blocked_by` and `acceptance`. Evidence exists
+      to answer the acceptance criteria, and without them nobody can check it
+      later. Should an archived row keep `acceptance`? If the criteria changed
+      during the work, should the row keep what was accepted, what was
+      delivered, or both? What should `park` keep for a row that may return?
+    outcome: >-
+      A decision, written down, on which fields `archive` and `park` keep, and
+      whether `check` requires each evidence line to answer a criterion.
+    notes:
+      - >-
+        2026-09-29: raised by a review of an archived row that had lost its
+        criteria. `archive` has dropped both fields since the line-level
+        rewrite, before the move to yamled. Rows archived by hand keep them,
+        so a ledger such as yamled's now holds both shapes.
+
 archive:
+  - id: QCTL-040
+    title: Read ledgers through the ctl-core loader and edit them through yamled
+    scope: qctl reader and writer
+    outcome: qctl reads every YAML input through ctl-core's serde-saphyr loader and edits ledgers through yamled, and carries no YAML crate of its own.
+    plan: openspec/changes/archive/2026-09-29-yaml-stack/proposal.md
+    links:
+      - https://github.com/victor-software-house/qctl/pull/81
+      - https://github.com/victor-software-house/qctl/pull/82
+    completed: 2026-09-29T01:34:18
+    evidence:
+      - 'Released as qctl 0.4.5 (https://github.com/victor-software-house/qctl/releases/tag/v0.4.5): verify on the build host and in CI, Kody review clean; cargo tree names no YAML crate but yamled 0.0.4, and ctl-core 0.6.8 resolves the same yamled.'
+      - One snapshot changed, edit-moves-a-row-before, because a moved row now keeps its list's tight spacing instead of gaining a blank line; the other 32 are unchanged.
+    disposition: completed
+    notes:
+      - >2-
+        2026-09-28: Waits on ctl-core CTC-008 (the loader) and the first yamled release with the location index and edits (yamled YMD-001). QCTL-039's note style becomes TextStyle::Folded on push_text.
+      - >2-
+        2026-09-29: The stack review found that a note ending in two line breaks, written as |+, left its row unmovable; yamled 0.0.4 moves such a row with its kept lines (https://github.com/victor-software-house/yamled/pull/10).
+
   - id: QCTL-038
     title: Archive the adopt-ctl-core-0-6 OpenSpec change
     scope: presentation
