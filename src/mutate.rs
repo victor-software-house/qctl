@@ -8,6 +8,7 @@ use crate::report::{Destination, Report};
 use crate::schema::{HorizonTask, QueuedTask};
 use crate::trailers;
 use anyhow::{Context, Result, bail, ensure};
+use ctl_core::input::Input;
 use indoc::formatdoc;
 use std::collections::HashSet;
 use std::fs;
@@ -406,8 +407,9 @@ pub(crate) fn read(path: &Path) -> Result<Document> {
 pub(crate) fn write(path: &Path, document: Document) -> Result<()> {
     let source = document.into_source();
     crate::document::must_still_parse(&source)?;
-    let edited: crate::ledger::Ledger =
-        serde_yml::from_str(&source).context("read back what this verb wrote")?;
+    let edited: crate::ledger::Ledger = Input::new(path.display().to_string(), source.as_str())
+        .parse()
+        .context("read back what this verb wrote")?;
     let source = if edited.style.normalize_on_write {
         crate::format::normalized(&source, &edited)?
     } else {

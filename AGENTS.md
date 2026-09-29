@@ -79,6 +79,9 @@ test fixtures and assertions.
 - `src/presentation.rs` maps reports onto ctl-core semantic documents. ctl-core
   alone owns help, pretty/colorless/JSON emission, stream selection, quiet
   behavior, terminal width, styling, and tables.
+- A ledger is parsed through ctl-core's declared input (`ctl_core::input`),
+  which reports every problem with its file and line. It is the one ctl-core
+  path a domain module may use; `tests/architecture.rs` refuses the rest.
 - `-f` remains qctl's ledger-file shorthand. The root composes ctl-core
   `FormatLong` with `ColorLong`, so shared `--format` never takes `-f` back.
 

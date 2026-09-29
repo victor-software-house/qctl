@@ -36,6 +36,57 @@ fn check_accepts_own_repo_shape() {
 }
 
 #[test]
+fn a_schema_error_from_check_names_its_line() {
+    let (ok, complaint) = common::check(&common::queued(indoc! {"
+        - id: Q-1
+          title: t
+          scope: s
+          outcome: o
+          blocked_by: []
+          acceptance: [a]
+    "}));
+    assert!(!ok, "{complaint}");
+    assert!(
+        complaint.contains("tasks.yaml:5:9: /queue/0/id:"),
+        "{complaint}"
+    );
+}
+
+#[test]
+fn a_value_error_from_a_verb_names_its_line() {
+    let dir = LedgerDir::empty();
+    dir.write(&MINIMAL.replace("prefix: QCTL", "prefix: q"));
+    let output = qctl(&["status", "-f", dir.path.to_str().unwrap()]);
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("tasks.yaml:2:9: prefix:"),
+        "{}",
+        stderr(&output)
+    );
+}
+
+#[test]
+fn a_duplicate_key_is_refused_on_its_line() {
+    let dir = LedgerDir::empty();
+    dir.write(&common::queued(indoc! {"
+        - id: QCTL-001
+          title: t
+          title: again
+          scope: s
+          outcome: o
+          blocked_by: []
+          acceptance: [a]
+    "}));
+    let output = qctl(&["status", "-f", dir.path.to_str().unwrap()]);
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("tasks.yaml:7:"),
+        "{}",
+        stderr(&output)
+    );
+}
+
+#[test]
 fn check_accepts_archive_notes() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"

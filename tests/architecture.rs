@@ -19,7 +19,7 @@ fn domain_modules_return_data_and_ctl_core_owns_presentation() {
             continue;
         }
         assert!(
-            !source.contains("ctl_core::"),
+            !source.replace("ctl_core::input", "").contains("ctl_core::"),
             "{} crosses the presentation boundary",
             path.display()
         );
