@@ -1,5 +1,9 @@
 # Changelog
 
+## qctl 0.4.6
+
+- Read ledgers through ctl-core 0.6.9 and edit them through yamled 0.0.5. A parse error in a value reached through an alias names where that value is defined, and an edit refused by a kept tag names the tag.
+
 ## qctl 0.4.5
 
 - Edit ledgers through yamled. `fmt` now reorders lists around a comment that belongs to none of them, leaving it in place, instead of refusing; a moved row keeps its list's own spacing; and literal and folded notes are written as `|-` and `>-`.
