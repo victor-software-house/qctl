@@ -1,5 +1,10 @@
 # Changelog
 
+## qctl 0.4.5
+
+- Edit ledgers through yamled. `fmt` now reorders lists around a comment that belongs to none of them, leaving it in place, instead of refusing; a moved row keeps its list's own spacing; and literal and folded notes are written as `|-` and `>-`.
+- Read every ledger through ctl-core's declared input: a value or parse problem, and each schema error from `qctl check`, now names its file and line.
+
 ## qctl 0.4.4
 
 - Let the environment pick each style the binary leaves open: `CTL_CORE_RECORD_STYLE`, `CTL_CORE_LIST_STYLE`, `CTL_CORE_ROW_SEPARATION`, and `CTL_CORE_JSON_LAYOUT`. An unaccepted value is ignored with a warning that names the accepted values.
