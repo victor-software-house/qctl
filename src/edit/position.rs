@@ -13,7 +13,7 @@ pub(super) fn destination(
     let current = ids
         .iter()
         .position(|queued| *queued == args.id)
-        .expect("located");
+        .context("queued row is not on the queue")?;
     let destination = index(&ids, current, args.position.as_ref())?;
 
     if destination == 0

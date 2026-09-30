@@ -72,6 +72,10 @@ fn trailing_and_blank_lines_survive_fmt() {
     assert_eq!(parsed_notes(&dir.read()), notes);
 }
 
+#[expect(
+    clippy::expect_used,
+    reason = "output that does not parse fails its test"
+)]
 fn parsed_notes(body: &str) -> Vec<String> {
     let ledger: serde_json::Value = Input::new("tasks.yaml", body)
         .parse()

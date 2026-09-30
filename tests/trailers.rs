@@ -8,6 +8,10 @@ use std::fs;
 use std::process::Command;
 use tempfile::TempDir;
 
+#[expect(
+    clippy::expect_used,
+    reason = "a helper that cannot run git fails its test"
+)]
 fn git(root: &std::path::Path, args: &[&str]) {
     let status = Command::new("git")
         .args(["-C", &root.display().to_string()])

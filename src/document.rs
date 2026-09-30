@@ -136,7 +136,15 @@ impl Document {
         let node = self.yaml.node(&section(name).index(index).key(key))?;
         Some(match node.style() {
             Style::BlockSequence | Style::FlowSequence => KeyShape::Sequence,
-            _ => KeyShape::Scalar,
+            Style::Plain
+            | Style::SingleQuoted
+            | Style::DoubleQuoted
+            | Style::Literal
+            | Style::Folded
+            | Style::Alias
+            | Style::BlockMapping
+            | Style::FlowMapping
+            | _ => KeyShape::Scalar,
         })
     }
 

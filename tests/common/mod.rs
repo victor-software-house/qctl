@@ -1,6 +1,13 @@
 //! Shared fixtures. Each integration binary compiles this module on its own,
 //! so anything one of them does not reach looks unused here.
-#![allow(dead_code)]
+#![allow(
+    dead_code,
+    reason = "each integration binary reaches only part of this module"
+)]
+#![expect(
+    clippy::expect_used,
+    reason = "a fixture that cannot be set up fails its test"
+)]
 
 use indoc::{formatdoc, indoc};
 use std::fs;
@@ -8,32 +15,32 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use tempfile::TempDir;
 
-pub struct LedgerDir {
+pub(crate) struct LedgerDir {
     _root: TempDir,
     pub path: PathBuf,
 }
 
 impl LedgerDir {
-    pub fn empty() -> Self {
+    pub(crate) fn empty() -> Self {
         let root = TempDir::new().expect("tempdir");
         let path = root.path().join("tasks.yaml");
         Self { _root: root, path }
     }
 
-    pub fn write(&self, body: &str) {
+    pub(crate) fn write(&self, body: &str) {
         fs::write(&self.path, body).expect("write ledger");
     }
 
-    pub fn parent(&self) -> &Path {
+    pub(crate) fn parent(&self) -> &Path {
         self.path.parent().expect("parent")
     }
 
-    pub fn read(&self) -> String {
+    pub(crate) fn read(&self) -> String {
         fs::read_to_string(&self.path).expect("read ledger")
     }
 
     /// Put a document beside the ledger, for the rows that point at one.
-    pub fn plant(&self, relative: &str, body: &str) {
+    pub(crate) fn plant(&self, relative: &str, body: &str) {
         let path = self.parent().join(relative);
         fs::create_dir_all(path.parent().expect("parent")).expect("create dirs");
         fs::write(path, body).expect("write document");
@@ -42,7 +49,7 @@ impl LedgerDir {
 
 /// Content checks run wide, so a message is matched whole rather than across
 /// the fallback width's line breaks.
-pub fn qctl(args: &[&str]) -> Output {
+pub(crate) fn qctl(args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_qctl"))
         .args(args)
         .env_remove("TASKS_LEDGER")
@@ -51,7 +58,7 @@ pub fn qctl(args: &[&str]) -> Output {
         .expect("spawn qctl")
 }
 
-pub fn qctl_in(dir: &Path, args: &[&str]) -> Output {
+pub(crate) fn qctl_in(dir: &Path, args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_qctl"))
         .current_dir(dir)
         .args(args)
@@ -61,15 +68,15 @@ pub fn qctl_in(dir: &Path, args: &[&str]) -> Output {
         .expect("spawn qctl")
 }
 
-pub fn stdout(output: &Output) -> String {
+pub(crate) fn stdout(output: &Output) -> String {
     String::from_utf8_lossy(&output.stdout).into_owned()
 }
 
-pub fn stderr(output: &Output) -> String {
+pub(crate) fn stderr(output: &Output) -> String {
     String::from_utf8_lossy(&output.stderr).into_owned()
 }
 
-pub const MINIMAL: &str = indoc! {"
+pub(crate) const MINIMAL: &str = indoc! {"
     schema_version: 4
     prefix: QCTL
     active: null
@@ -79,7 +86,7 @@ pub const MINIMAL: &str = indoc! {"
 "};
 
 /// A queued row on its own, in the smallest ledger that can hold one.
-pub fn queued(row: &str) -> String {
+pub(crate) fn queued(row: &str) -> String {
     formatdoc! {"
         schema_version: 4
         prefix: QCTL
@@ -91,7 +98,7 @@ pub fn queued(row: &str) -> String {
 }
 
 /// An archived row on its own.
-pub fn archived(row: &str) -> String {
+pub(crate) fn archived(row: &str) -> String {
     formatdoc! {"
         schema_version: 4
         prefix: QCTL
@@ -103,7 +110,7 @@ pub fn archived(row: &str) -> String {
 }
 
 /// A horizon row on its own.
-pub fn on_the_horizon(row: &str) -> String {
+pub(crate) fn on_the_horizon(row: &str) -> String {
     formatdoc! {"
         schema_version: 4
         prefix: QCTL
@@ -125,27 +132,27 @@ fn nested(row: &str) -> String {
 }
 
 /// Whether `qctl check` accepts this ledger, and what it said.
-pub fn check(body: &str) -> (bool, String) {
+pub(crate) fn check(body: &str) -> (bool, String) {
     check_in(&LedgerDir::empty(), body)
 }
 
 /// The same, in a directory a case has already prepared — a row naming a plan
 /// needs that document to be there.
-pub fn check_in(dir: &LedgerDir, body: &str) -> (bool, String) {
+pub(crate) fn check_in(dir: &LedgerDir, body: &str) -> (bool, String) {
     dir.write(body);
     let path = dir.path.to_string_lossy().into_owned();
     let output = qctl(&["check", "--file", &path, "--no-git"]);
     (output.status.success(), stderr(&output))
 }
 
-pub fn accepted(body: &str) {
+pub(crate) fn accepted(body: &str) {
     let (ok, complaint) = check(body);
     assert!(ok, "refused:\n{complaint}");
 }
 
 /// Refused, and the complaint names the field — "invalid" that does not say
 /// where is a bug report, not a message.
-pub fn refused(body: &str, field: &str) {
+pub(crate) fn refused(body: &str, field: &str) {
     let (ok, complaint) = check(body);
     assert!(!ok, "accepted, but should not have been:\n{body}");
     assert!(
