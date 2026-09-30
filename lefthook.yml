@@ -21,9 +21,24 @@ pre-push:
     lockfile:
       run: mise install --locked
     committed:
-      # Every commit on the branch, not only the tip. @{upstream} does not
-      # exist on a branch's first push.
-      run: mise run commits origin/main..HEAD
+      # Lint exactly the commits being pushed. Git passes one
+      # `<local ref> <local sha> <remote ref> <remote sha>` line per ref on
+      # stdin. A new branch, or a remote sha this clone never fetched, is
+      # linted against origin/main, or alone when origin/main is missing.
+      use_stdin: true
+      run: |
+        zero=0000000000000000000000000000000000000000
+        while read -r _ lsha _ rsha; do
+          [ "$lsha" = "$zero" ] && continue
+          if [ "$rsha" != "$zero" ] && git cat-file -e "$rsha^{commit}" 2>/dev/null; then
+            range="$rsha..$lsha"
+          elif git rev-parse -q --verify origin/main >/dev/null; then
+            range="origin/main..$lsha"
+          else
+            range="$lsha"
+          fi
+          mise run commits "$range" || exit 1
+        done
     verify:
       # Git exports GIT_DIR and friends to hooks. Tests that probe a scratch
       # directory with `git -C` would find this repository instead.
