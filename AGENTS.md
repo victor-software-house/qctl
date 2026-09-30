@@ -36,6 +36,11 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   env routes Cargo through mr-boxington (`mr_boxington = true` on the rust
   entry), locally and in CI, where `jdx/mr-boxington-action` restores its
   cache. Release jobs restore no compiler outputs.
+- Lefthook runs the gate before code leaves a machine: pre-commit checks
+  formatting, commit-msg lints the message with committed (`committed.toml`),
+  and pre-push runs `mise install --locked`, `mise run commits`, and
+  `mise run verify`. A fresh clone arms them with `mise x -- lefthook install`.
+  CI skips the hooks and runs `verify` itself.
 - This repo's release declarations live in `.ctl/ver.yaml`; `.ctl/` is the
   directory every ctl CLI shares, and qctl's own project config will land
   beside it as `.ctl/q.yaml`. There is no `verctl.toml`.
