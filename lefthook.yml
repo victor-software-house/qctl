@@ -23,4 +23,6 @@ pre-push:
     committed:
       run: mise run commits
     verify:
-      run: mise run verify
+      # Git exports GIT_DIR and friends to hooks. Tests that probe a scratch
+      # directory with `git -C` would find this repository instead.
+      run: unset $(git rev-parse --local-env-vars) && mise run verify
