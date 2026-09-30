@@ -9,6 +9,10 @@ use std::os::unix::fs::PermissionsExt;
 use std::process::Command;
 use tempfile::TempDir;
 
+#[expect(
+    clippy::expect_used,
+    reason = "a helper that cannot run git fails its test"
+)]
 fn git(root: &std::path::Path, args: &[&str]) {
     let status = Command::new("git")
         .args(["-C", &root.display().to_string()])
@@ -18,6 +22,10 @@ fn git(root: &std::path::Path, args: &[&str]) {
     assert!(status.success(), "git {args:?}");
 }
 
+#[expect(
+    clippy::expect_used,
+    reason = "a helper that cannot run git or parse its output fails its test"
+)]
 fn repo() -> TempDir {
     let root = TempDir::new().expect("tmp");
     git(root.path(), &["init"]);
@@ -44,6 +52,10 @@ fn repo() -> TempDir {
     root
 }
 
+#[expect(
+    clippy::expect_used,
+    reason = "a helper that cannot run git or parse its output fails its test"
+)]
 fn git_hook(root: &std::path::Path) -> std::path::PathBuf {
     let hook = String::from_utf8(
         Command::new("git")
@@ -68,6 +80,10 @@ fn git_hook(root: &std::path::Path) -> std::path::PathBuf {
     }
 }
 
+#[expect(
+    clippy::expect_used,
+    reason = "a helper that cannot run git or parse its output fails its test"
+)]
 fn sha(root: &std::path::Path) -> String {
     let out = Command::new("git")
         .args(["-C", &root.display().to_string(), "rev-parse", "HEAD"])

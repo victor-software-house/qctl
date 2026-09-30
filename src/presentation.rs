@@ -60,7 +60,21 @@ impl Present for Report {
                 outcome: HookOutcome::NeedsConfiguration | HookOutcome::ForceNotApplicable,
                 ..
             } => MessageKind::Error,
-            _ => MessageKind::Success,
+            Self::Status { .. }
+            | Self::Check { .. }
+            | Self::Show { .. }
+            | Self::Initialized { .. }
+            | Self::Added { .. }
+            | Self::Started { .. }
+            | Self::Archived { .. }
+            | Self::Parked { .. }
+            | Self::Edited { .. }
+            | Self::Promoted { .. }
+            | Self::ClosedFromGit { .. }
+            | Self::Formatted { .. }
+            | Self::HookInstalled { .. }
+            | Self::SchemaWritten { .. }
+            | Self::Instructions { .. } => MessageKind::Success,
         }
     }
 }

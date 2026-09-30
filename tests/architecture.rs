@@ -39,6 +39,10 @@ fn domain_modules_return_data_and_ctl_core_owns_presentation() {
     }
 }
 
+#[expect(
+    clippy::unwrap_used,
+    reason = "an unreadable source tree fails the architecture test"
+)]
 fn rust_files(directory: &Path) -> Vec<PathBuf> {
     let mut files = Vec::new();
     for entry in fs::read_dir(directory).unwrap() {

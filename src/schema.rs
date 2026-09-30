@@ -11,6 +11,11 @@
 //! in the queue, `active` is `queue[0]` — are not here. A JSON Schema cannot
 //! express them, so they stay Rust checks in [`crate::ledger::graph_errors`].
 
+#![expect(
+    clippy::disallowed_macros,
+    reason = "schemars' JsonSchema derive expands concat!; the ban is for hand-written strings"
+)]
+
 use garde::Validate;
 use regex::Regex;
 use schemars::{JsonSchema, schema_for};
@@ -46,7 +51,7 @@ macro_rules! pattern {
     ($name:ident = $source:literal, $what:literal) => {
         #[doc = $what]
         static $name: LazyLock<Regex> =
-            LazyLock::new(|| Regex::new($source).expect(concat!($source, " does not compile")));
+            LazyLock::new(|| Regex::new($source).expect("a pattern! literal compiles"));
     };
 }
 

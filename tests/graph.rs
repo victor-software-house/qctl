@@ -5,6 +5,10 @@ use qctl::ledger::{graph_errors, load, read};
 use std::fs;
 use tempfile::TempDir;
 
+#[expect(
+    clippy::expect_used,
+    reason = "a fixture that cannot be written or parsed fails its test"
+)]
 fn errors(body: &str) -> Vec<String> {
     let root = TempDir::new().expect("tempdir");
     let path = root.path().join("tasks.yaml");

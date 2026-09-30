@@ -1,0 +1,6 @@
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+disallowed-macros = [
+    { path = "core::concat", reason = "use formatdoc/indoc for multiline strings" },
+    { path = "std::concat", reason = "use formatdoc/indoc for multiline strings" },
+]
