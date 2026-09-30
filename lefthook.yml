@@ -21,7 +21,9 @@ pre-push:
     lockfile:
       run: mise install --locked
     committed:
-      run: mise run commits
+      # Every commit on the branch, not only the tip. @{upstream} does not
+      # exist on a branch's first push.
+      run: mise run commits origin/main..HEAD
     verify:
       # Git exports GIT_DIR and friends to hooks. Tests that probe a scratch
       # directory with `git -C` would find this repository instead.
