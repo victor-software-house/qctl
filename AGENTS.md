@@ -30,6 +30,12 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
 - `qctl fmt` applies the declared style; `qctl fmt --check` is the hook form.
   New style options are additive: a field with a default equal to today's
   behaviour is a minor change, not a migration.
+- `mise run verify` is the gate: rustfmt, clippy with the `Cargo.toml` lints
+  denied, `cargo test` (doc-tests included), and cargo-deny licenses, bans,
+  and sources. CI adds `deny:advisories`, which needs the network. The dev
+  env routes Cargo through mr-boxington (`mr_boxington = true` on the rust
+  entry), locally and in CI, where `jdx/mr-boxington-action` restores its
+  cache. Release jobs restore no compiler outputs.
 - This repo's release declarations live in `.ctl/ver.yaml`; `.ctl/` is the
   directory every ctl CLI shares, and qctl's own project config will land
   beside it as `.ctl/q.yaml`. There is no `verctl.toml`.

@@ -2,10 +2,17 @@
 # Compile this checkout. The Version PR loads it too, for the toolchain
 # `[prepare].after` uses to regenerate Cargo.lock.
 
+# mr_boxington on the rust entry needs mise 2026.9.2 or newer.
+min_version = "2026.9.2"
+
 [tools]
 # Components are explicit: a bare `rust = "1.97.1"` resolves without
 # rustfmt or clippy on a clean runner, which local rustup hides.
-rust = { version = "1.97.1", components = "rustfmt,clippy" }
+# mr_boxington routes Cargo through mr-boxington, locally and in CI, so
+# worktrees and runs share one build store and one CPU and memory budget.
+rust = { version = "1.97.1", components = "rustfmt,clippy", mr_boxington = true }
+mr-boxington = "1.20.0"
+"github:EmbarkStudios/cargo-deny" = "0.20.2"
 
 [tasks.format]
 description = "rustfmt check"
@@ -18,10 +25,21 @@ run = "cargo clippy --all-targets --all-features -- -D warnings"
 [tasks.test]
 description = "Test suite"
 run = "cargo test --all-features"
+# Stops a hung test run instead of holding the gate. The limit also counts
+# compile time and waits on the target/ lock, so it sits far above a cold build.
+timeout = "30m"
+
+[tasks.deny]
+description = "License, ban, and source policy (offline)"
+run = "cargo deny check licenses bans sources"
+
+[tasks."deny:advisories"]
+description = "RustSec advisories and yanked crates (network)"
+run = "cargo deny check advisories"
 
 [tasks.verify]
-description = "CI-safe gate: format, clippy, test"
-depends = ["format", "lint", "test"]
+description = "CI-safe gate: format, clippy, test, deny"
+depends = ["format", "lint", "test", "deny"]
 
 [tasks.build]
 description = "Build the release binary"
