@@ -1,5 +1,9 @@
 # Changelog
 
+## qctl 0.4.7
+
+- Trailer scans read the ledger's own repository when qctl runs inside another repository's git hook. Git exports the hook repository's `GIT_DIR` and related variables, and qctl's git calls inherited them.
+
 ## qctl 0.4.6
 
 - Read ledgers through ctl-core 0.6.9 and edit them through yamled 0.0.5. A parse error in a value reached through an alias names where that value is defined, and an edit refused by a kept tag names the tag.
