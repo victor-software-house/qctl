@@ -1,7 +1,8 @@
 use anyhow::{Context, Result, bail, ensure};
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
+use std::sync::OnceLock;
 
 /// IDs closed by commit trailers (`Closes CTC-001` / `Completes: PREFIX-NNN`).
 ///
@@ -67,8 +68,15 @@ fn head_exists(root: &Path) -> Result<bool> {
     }
 }
 
+/// Run git in `root`. A git hook exports its repository's `GIT_DIR` and related
+/// variables, which would make the child work on that repository instead of
+/// `root`, so they are removed.
 fn git_in(root: &Path, args: impl IntoIterator<Item = impl AsRef<OsStr>>) -> Result<Output> {
-    Command::new("git")
+    let mut command = Command::new("git");
+    for key in git_local_env_vars() {
+        command.env_remove(key);
+    }
+    command
         .env("LC_ALL", "C")
         .env("LANG", "C")
         .arg("-C")
@@ -76,6 +84,26 @@ fn git_in(root: &Path, args: impl IntoIterator<Item = impl AsRef<OsStr>>) -> Res
         .args(args)
         .output()
         .context("git")
+}
+
+/// The variables `git rev-parse --local-env-vars` names, read once. If git cannot
+/// list them, every later git call fails too, so an empty list is enough.
+fn git_local_env_vars() -> &'static [OsString] {
+    static VARS: OnceLock<Vec<OsString>> = OnceLock::new();
+    VARS.get_or_init(|| {
+        Command::new("git")
+            .args(["rev-parse", "--local-env-vars"])
+            .output()
+            .ok()
+            .filter(|output| output.status.success())
+            .map(|output| {
+                String::from_utf8_lossy(&output.stdout)
+                    .lines()
+                    .map(OsString::from)
+                    .collect()
+            })
+            .unwrap_or_default()
+    })
 }
 
 fn git_log(root: &Path, rev: &[&str]) -> Result<String> {
