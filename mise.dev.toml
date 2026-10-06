@@ -2,11 +2,11 @@
 # Compile this checkout. The Version PR loads it too, for the toolchain
 # `[prepare].after` uses to regenerate Cargo.lock.
 
-# mr_boxington on the rust entry needs mise 2026.9.2 or newer.
-min_version = "2026.9.2"
+# The latest stable mise is the floor; CI pins the same version.
+min_version = "2026.10.3"
 
 [tools]
-committed = "1.1.11"
+"github:crate-ci/committed" = "1.1.11"
 lefthook = "2.1.10"
 # Components are explicit: a bare `rust = "1.97.1"` resolves without
 # rustfmt or clippy on a clean runner, which local rustup hides.
