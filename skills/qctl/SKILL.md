@@ -43,10 +43,11 @@ completion bootstrap.
 | `add` | — | Add a task to the queue, or to the horizon |
 | `start` | — | Make one unblocked queued task active (moves it to queue head) |
 | `archive` | — | Move a queued task to the archive |
-| `park` | — | Write a horizon row |
+| `park` | — | Demote a queued task onto the horizon |
 | `promote` | — | Move a horizon row onto the queue |
+| `edit` | — | Rewrite fields or queue position of an existing row |
 | `show` | — | Print one queued, archived, or horizon task |
-| `fmt` | — | Rewrite a ledger into the style it declares |
+| `fmt` | — | Rewrite a ledger into the style it declares. Upgrades schema 3 to 4 |
 | `close-from-git` | — | Archive queued ids that commit-body trailers closed |
 | `hook` | — | Install git hooks for this ledger |
 | `schema` | — | Write schema/tasks.schema.json from the ledger types |
