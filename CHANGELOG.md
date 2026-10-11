@@ -1,5 +1,10 @@
 # Changelog
 
+## qctl 0.5.0
+
+- A ledger can declare `style: {row_spacing: blank_line}`, and `qctl fmt` then keeps exactly one blank line between rows: a lost separator is put back, and `fmt --check` reports it. The first row stays tight to its list's key, the blank line goes above a row's comments, and a row ending in a `|+` or `>+` block is left alone. The default, `as_written`, changes nothing.
+- Render the bundled skill and installed instructions from qctl's Clap-derived ctl-core Surface. The shared version, mounted invocation, no-`--` rule, and visible command inventory now fail byte-exact tests when the CLI grammar or committed documents drift.
+
 ## qctl 0.4.7
 
 - Trailer scans read the ledger's own repository when qctl runs inside another repository's git hook. Git exports the hook repository's `GIT_DIR` and related variables, and qctl's git calls inherited them.
