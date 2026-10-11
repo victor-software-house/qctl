@@ -18,8 +18,9 @@ assets:
   linux-x64: {}
 
 # tasks/q/q and examples/mise.toml are served from .ctl/templates, so they need
-# no entry here: a rendered file cannot drift. README and the bundled skill are
-# written by hand, so their version spellings are declared instead — named once,
+# no entry here: a rendered file cannot drift. README is written by hand, and
+# the bundled skill is rendered from .ctl/operator by a test against the
+# committed copy, so their version spellings are declared instead — named once,
 # listed by the file that carries them, and both too few and too many stop the
 # release.
 patterns:

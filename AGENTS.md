@@ -3,6 +3,7 @@
 Rust policy CLI for in-repo `tasks.yaml` work queues.
 
 - Operator contract: `qctl instructions` and `skills/qctl/SKILL.md`.
+- Templates under `.ctl/operator/` keep domain prose and import ctl-core's version, mounted invocation/no-`--`, and command-inventory fragments from the Clap-derived `Surface`. `operator_docs` byte-compares both committed renders; update them with `UPDATE_OPERATOR_DOCS=1 cargo test operator_docs`.
 - This repo's queue is [`tasks.yaml`](tasks.yaml) (`QCTL-###`).
 - `horizon` maps research/evaluations that are not startable. Do not put
   them on `queue` and do not set `active` to a horizon id.

@@ -62,8 +62,9 @@ time = { version = "0.3.44", features = ["formatting", "macros", "parsing"] }
 yamled = "0.0.5"
 
 [dev-dependencies]
-ctl-core = { version = "=0.6.9", default-features = false, features = ["surface-model"] }
+ctl-core = { version = "=0.6.9", default-features = false, features = ["surface"] }
 insta = { version = "1.48.0", features = ["filters"] }
+minijinja = { version = "=2.24.0", features = ["serde"] }
 rstest = "0.26.1"
 shlex = "2.0.1"
 similar = "3.2.0"

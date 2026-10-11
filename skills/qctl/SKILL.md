@@ -21,13 +21,7 @@ validation with a copied Ajv test. Do not vendor `tasks.schema.json`.
 `qctl instructions` and `--help` are the installed-version contract. This
 skill is the operator workflow; it does not duplicate the flag grammar.
 
-## Establish the contract
-
-1. Find `tasks.yaml`. Read `active`, then `queue`, then `horizon` if the
-   ask is research, evaluation, or "not now".
-2. Invoke `mise run q <args>` when the repo mounts the catalog.
-   Otherwise `qctl`. Never invent commands. Never `mise run q --`.
-3. Run `status`, then `check`, before mutation.
+## Invocation
 
 ```sh
 mise run q status
@@ -35,6 +29,37 @@ mise run q check
 mise run q check --no-git
 mise run q instructions
 ```
+
+Never `mise run q --`. The `--` in `#USAGE mount` is mise's
+completion bootstrap.
+
+## Commands
+
+| Command | Aliases | Purpose |
+|:--|:--|:--|
+| `init` | — | Write a tasks.yaml for a prefix. Does not copy a schema file |
+| `status` | — | Print the active task and the priority-ordered queue |
+| `check` | — | Validate schema, graph, and git trailers that closed still-queued ids |
+| `add` | — | Add a task to the queue, or to the horizon |
+| `start` | — | Make one unblocked queued task active (moves it to queue head) |
+| `archive` | — | Move a queued task to the archive |
+| `park` | — | Demote a queued task onto the horizon |
+| `promote` | — | Move a horizon row onto the queue |
+| `edit` | — | Rewrite fields or queue position of an existing row |
+| `show` | — | Print one queued, archived, or horizon task |
+| `fmt` | — | Rewrite a ledger into the style it declares. Upgrades schema 3 to 4 |
+| `close-from-git` | — | Archive queued ids that commit-body trailers closed |
+| `hook` | — | Install git hooks for this ledger |
+| `schema` | — | Write schema/tasks.schema.json from the ledger types |
+| `instructions` | — | Print the installed-version operator contract |
+
+## Establish the contract
+
+1. Find `tasks.yaml`. Read `active`, then `queue`, then `horizon` if the
+   ask is research, evaluation, or "not now".
+2. Use the mounted invocation above when the repository provides it. Otherwise
+   call `qctl` directly. Never invent commands.
+3. Run `status`, then `check`, before mutation.
 
 ## Read output
 

@@ -5,20 +5,38 @@ Session todos, chat recap, and GitHub issues are not.
 
 ## Invocation
 
-Prefer the consumer's mise-provisioned task when it exists. Do not invent
-aliases for rejected commands.
-
-```
+```sh
 mise run q status
 mise run q check
 mise run q instructions
 ```
 
-The `--` in `#USAGE mount` is mise's completion bootstrap. Do not put
-it in front of verbs.
+Never `mise run q --`. The `--` in `#USAGE mount` is mise's
+completion bootstrap.
 
-Until a tagged GitHub Release exists, `mise github:` cannot install a
-binary. Use a local or `cargo install --git` build, then `qctl`.
+## Commands
+
+| Command | Aliases | Purpose |
+|:--|:--|:--|
+| `init` | — | Write a tasks.yaml for a prefix. Does not copy a schema file |
+| `status` | — | Print the active task and the priority-ordered queue |
+| `check` | — | Validate schema, graph, and git trailers that closed still-queued ids |
+| `add` | — | Add a task to the queue, or to the horizon |
+| `start` | — | Make one unblocked queued task active (moves it to queue head) |
+| `archive` | — | Move a queued task to the archive |
+| `park` | — | Demote a queued task onto the horizon |
+| `promote` | — | Move a horizon row onto the queue |
+| `edit` | — | Rewrite fields or queue position of an existing row |
+| `show` | — | Print one queued, archived, or horizon task |
+| `fmt` | — | Rewrite a ledger into the style it declares. Upgrades schema 3 to 4 |
+| `close-from-git` | — | Archive queued ids that commit-body trailers closed |
+| `hook` | — | Install git hooks for this ledger |
+| `schema` | — | Write schema/tasks.schema.json from the ledger types |
+| `instructions` | — | Print the installed-version operator contract |
+
+Use the consumer's mise-provisioned task when it exists. Call `qctl` directly
+only when the repository has no mounted task. Do not invent aliases for
+rejected commands.
 
 ## Sources of truth
 
