@@ -216,6 +216,18 @@ fn accepts_a_ledger(#[case] ledger: &str) {
     "#},
     "does not match"
 )]
+#[case::a_row_spacing_qctl_does_not_know(
+    indoc! {"
+        schema_version: 4
+        prefix: QCTL
+        style:
+          row_spacing: double
+        active: null
+        queue: []
+        archive: []
+    "},
+    "row_spacing"
+)]
 #[case::a_file_that_does_not_parse(
     indoc! {"
         queue:

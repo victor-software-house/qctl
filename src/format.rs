@@ -6,15 +6,19 @@
 //!
 //! What it does not do is add anything nobody asked for. It removes whitespace
 //! no one chose — a space at the end of a line, a second blank line, a file that
-//! does not end in exactly one newline — and it never inserts a blank line, a
-//! comment, or a key. Row key order and quote style are the obvious next
-//! options, and are deliberately not decided here yet.
+//! does not end in exactly one newline — and it never inserts a comment or a
+//! key. It inserts a blank line only between rows, and only when
+//! [`Style::row_spacing`] asks for one. Row key order and quote style are the
+//! obvious next options, and are deliberately not decided here yet.
+//!
+//! [`Style`]: crate::schema::Style
+//! [`Style::row_spacing`]: crate::schema::Style::row_spacing
 
 use crate::cli::FmtArgs;
 use crate::document::{Document, KeyShape, must_still_parse};
 use crate::ledger::{Ledger, resolve_path};
 use crate::report::Report;
-use crate::schema::{ArchiveOrder, Section, VERSION};
+use crate::schema::{ArchiveOrder, RowSpacing, Section, VERSION};
 use anyhow::{Context, Result, bail};
 use ctl_core::input::Input;
 use std::fs;
@@ -33,9 +37,64 @@ pub fn normalized(source: &str, ledger: &Ledger) -> Result<String> {
     let order: Vec<&str> = style.section_order.iter().map(Section::key).collect();
     document.reorder_sections(&order)?;
 
-    let source = tidied(&document.into_source());
+    let mut source = document.into_source();
+    if style.row_spacing == RowSpacing::BlankLine {
+        source = separated(&source)?;
+    }
+    let source = tidied(&source);
     must_still_parse(&source)?;
     Ok(source)
+}
+
+/// A blank line put between every two rows of a list that follow each other
+/// directly. A run of blank lines is left for [`tidied`] to collapse, and a
+/// gap holding anything else is left alone. A row ending in a block scalar
+/// that keeps its trailing lines is skipped: the blank line would join it.
+fn separated(source: &str) -> Result<String> {
+    let document = Document::new(source.to_owned())?;
+    let mut gaps: Vec<usize> = Section::ALL
+        .iter()
+        .flat_map(|section| {
+            document
+                .row_lines(section.key())
+                .windows(2)
+                .filter(|pair| {
+                    pair[0].end == pair[1].start && !ends_in_kept_block(&source[pair[0].clone()])
+                })
+                .map(|pair| pair[1].start)
+                .collect::<Vec<_>>()
+        })
+        .collect();
+    gaps.sort_unstable();
+
+    let mut out = String::with_capacity(source.len() + gaps.len());
+    let mut copied = 0;
+    for gap in gaps {
+        out.push_str(&source[copied..gap]);
+        out.push('\n');
+        copied = gap;
+    }
+    out.push_str(&source[copied..]);
+    Ok(out)
+}
+
+/// Whether a row's last value is a `|+` or `>+` block still open at its end.
+fn ends_in_kept_block(row: &str) -> bool {
+    let mut block: Option<BlockScalar> = None;
+    for line in row.lines() {
+        if let Some(scalar) = block {
+            let indent = line.len() - line.trim_start().len();
+            if line.trim().is_empty() || indent > scalar.indent {
+                continue;
+            }
+        }
+        block = if line.trim_start().starts_with('#') {
+            None
+        } else {
+            block_scalar(line.trim_end())
+        };
+    }
+    block.is_some_and(|scalar| scalar.keep_trailing)
 }
 
 /// The archive's ids, most recently completed first. Stamps share one zone and

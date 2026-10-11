@@ -97,6 +97,7 @@ valid.
 | `section_order` | `[queue, archive, horizon]` | The order the three lists appear in. |
 | `indent` | `2` | How far a row sits under its list's key. |
 | `archive_order` | `newest_first` | Whether `fmt` sorts the archive or leaves it as written. |
+| `row_spacing` | `as_written` | Whether `fmt` keeps exactly one blank line between rows (`blank_line`) or leaves the spacing as written. |
 | `normalize_on_write` | `false` | Whether every verb normalizes the whole file, or only the lines it changes. |
 
 `qctl fmt` writes a ledger in its declared style. `qctl fmt --check` writes
@@ -105,9 +106,11 @@ for a hook.
 
 `fmt` does not guess. On a current-version file it changes what an option
 names, sorts the archive when asked, and removes whitespace nobody chose. It
-never adds a blank line, a comment, or a key, and it never rewrites a
-value. Schema 3 is the exception: scalar `notes` become a list, then the
-style rules run.
+never adds a comment or a key, and it never rewrites a value. It adds a blank
+line only between rows, when `row_spacing: blank_line` asks for one, and never
+after a row whose last value is a `|+` or `>+` block, which would absorb it.
+Schema 3 is the exception: scalar `notes` become a list, then the style
+rules run.
 
 Changing `timezone` does not move the stamps already written: nothing records
 which zone an old stamp was taken in. Change it deliberately.

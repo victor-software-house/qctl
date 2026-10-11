@@ -252,6 +252,49 @@ fn fmt_check_names_the_line_and_writes_nothing() {
     );
 }
 
+/// A lost separator is a style difference like any other: `--check` refuses
+/// it and leaves the file alone, and `fmt` puts it back.
+#[test]
+fn fmt_check_refuses_a_lost_row_separator() {
+    let dir = LedgerDir::empty();
+    let tight = indoc! {"
+        schema_version: 4
+        prefix: QCTL
+        style:
+          row_spacing: blank_line
+        active: null
+        queue:
+          - id: QCTL-001
+            title: First
+            scope: qctl
+            outcome: o
+            blocked_by: []
+            acceptance: [a]
+          - id: QCTL-002
+            title: Second
+            scope: qctl
+            outcome: o
+            blocked_by: []
+            acceptance: [a]
+        archive: []
+        horizon: []
+    "};
+    dir.write(tight);
+    let path = dir.path.to_str().unwrap();
+    let output = qctl(&["fmt", "--check", "-f", path]);
+    assert!(!output.status.success(), "accepted a lost separator");
+    assert_eq!(dir.read(), tight, "--check wrote to the file");
+
+    let fixed = qctl(&["fmt", "-f", path]);
+    assert!(fixed.status.success(), "{}", stderr(&fixed));
+    assert!(
+        dir.read().contains("acceptance: [a]\n\n  - id: QCTL-002"),
+        "{}",
+        dir.read()
+    );
+    assert!(qctl(&["fmt", "--check", "-f", path]).status.success());
+}
+
 /// A comment directly above a key belongs to that list and moves with it. One
 /// with a blank line under it belongs to no list, so the lists trade places
 /// around it and it stays where it was written.

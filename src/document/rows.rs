@@ -7,6 +7,7 @@
 use super::{Change, Document, NO_ITEMS, section};
 use anyhow::{Context, Result};
 use serde::Serialize;
+use std::ops::Range;
 use yamled::{Path, Position, Segment};
 
 impl Document {
@@ -19,6 +20,21 @@ impl Document {
             .filter_map(|index| {
                 let id = self.yaml.node(&path.clone().index(index).key("id"))?;
                 Some(id.text().trim_matches(['"', '\'']).to_owned())
+            })
+            .collect()
+    }
+
+    /// The lines each of a section's rows owns, in file order: the comments
+    /// above it, its entry, and its value. Each range starts and ends at a
+    /// line start.
+    #[must_use]
+    pub fn row_lines(&self, name: &str) -> Vec<Range<usize>> {
+        let path = section(name);
+        let count = self.yaml.node(&path).map_or(0, |list| list.len());
+        (0..count)
+            .filter_map(|index| {
+                let owned = self.yaml.node(&path.clone().index(index))?.owned();
+                Some(owned.start..owned.end)
             })
             .collect()
     }
