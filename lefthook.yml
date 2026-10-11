@@ -21,18 +21,18 @@ pre-push:
     lockfile:
       run: mise install --locked
     committed:
-      # Lint exactly the commits being pushed. Git passes one
-      # `<local ref> <local sha> <remote ref> <remote sha>` line per ref on
-      # stdin. A new branch, or a remote sha this clone never fetched, is
-      # linted against origin/main, or alone when origin/main is missing.
+      # Lint the commits each pushed ref carries that main lacks. Git
+      # passes one `<local ref> <local sha> <remote ref> <remote sha>` line
+      # per ref on stdin. A branch that merged main carries main's
+      # commits, and squash merges land there without this hook, so a
+      # range from the old remote sha would lint them too. Without
+      # origin/main, the pushed commit is linted alone.
       use_stdin: true
       run: |
         zero=0000000000000000000000000000000000000000
-        while read -r _ lsha _ rsha; do
+        while read -r _ lsha _ _; do
           [ "$lsha" = "$zero" ] && continue
-          if [ "$rsha" != "$zero" ] && git cat-file -e "$rsha^{commit}" 2>/dev/null; then
-            range="$rsha..$lsha"
-          elif git rev-parse -q --verify origin/main >/dev/null; then
+          if git rev-parse -q --verify origin/main >/dev/null; then
             range="origin/main..$lsha"
           else
             range="$lsha"
