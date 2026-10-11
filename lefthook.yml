@@ -21,23 +21,33 @@ pre-push:
     lockfile:
       run: mise install --locked
     committed:
-      # Lint exactly the commits being pushed. Git passes one
+      # Lint each pushed commit that neither origin/main nor the remote
+      # branch already has. Git passes one
       # `<local ref> <local sha> <remote ref> <remote sha>` line per ref on
-      # stdin. A new branch, or a remote sha this clone never fetched, is
-      # linted against origin/main, or alone when origin/main is missing.
+      # stdin. A branch that merged main carries main's commits, and squash
+      # merges land on main without this hook, so either base alone can
+      # let those through: a stale origin/main misses what the remote
+      # branch merged, and the remote sha misses what a local merge
+      # brought. With neither base, the pushed commit is linted alone.
       use_stdin: true
       run: |
         zero=0000000000000000000000000000000000000000
         while read -r _ lsha _ rsha; do
           [ "$lsha" = "$zero" ] && continue
-          if [ "$rsha" != "$zero" ] && git cat-file -e "$rsha^{commit}" 2>/dev/null; then
-            range="$rsha..$lsha"
-          elif git rev-parse -q --verify origin/main >/dev/null; then
-            range="origin/main..$lsha"
-          else
-            range="$lsha"
+          bases=""
+          if git rev-parse -q --verify origin/main >/dev/null; then
+            bases="origin/main"
           fi
-          mise run commits "$range" </dev/null || exit 1
+          if [ "$rsha" != "$zero" ] && git cat-file -e "$rsha^{commit}" 2>/dev/null; then
+            bases="$bases $rsha"
+          fi
+          if [ -n "$bases" ]; then
+            commits=$(git rev-list "$lsha" --not $bases)
+          else
+            commits=$lsha
+          fi
+          [ -n "$commits" ] || continue
+          mise run commits $commits </dev/null || exit 1
         done
     verify:
       # Git exports GIT_DIR and friends to hooks. Tests that probe a scratch
