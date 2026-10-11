@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=./schema/tasks.schema.json
+schema_version: 4
+prefix: DEMO
+active: DEMO-003
+queue:
+  - id: DEMO-003
+    title: First row, already tight to its key
+    scope: demo
+    outcome: Something is true.
+    blocked_by: []
+    acceptance: [It holds.]
+  - id: DEMO-004
+    title: Lost its separator
+    scope: demo
+    outcome: Something else is true.
+    blocked_by: []
+    acceptance: [It holds too.]
+archive:
+  - id: DEMO-002
+    title: Newest
+    scope: demo
+    completed: 2026-08-15T12:30:00
+    outcome: A third thing is true.
+    evidence: [It shipped.]
+    disposition: completed
+
+
+  - id: DEMO-001
+    title: Oldest, under a doubled separator
+    scope: demo
+    completed: 2026-08-14T09:00:00
+    outcome: A fourth thing is true.
+    evidence: [It shipped too.]
+    disposition: completed
+horizon: []

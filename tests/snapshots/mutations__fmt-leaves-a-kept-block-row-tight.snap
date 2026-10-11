@@ -1,0 +1,29 @@
+---
+source: tests/mutations.rs
+description: qctl fmt
+---
+# -0 +0
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 4
+ prefix: DEMO
+ style:
+   row_spacing: blank_line
+ active: DEMO-001
+ queue:
+   - id: DEMO-001
+     title: Ends in a block that keeps its trailing lines
+     scope: demo
+     outcome: Something is true.
+     blocked_by: []
+     acceptance: [It holds.]
+     notes:
+       - |+
+         A note whose final line break is part of its value.
+   - id: DEMO-002
+     title: Directly after it
+     scope: demo
+     outcome: Something else is true.
+     blocked_by: []
+     acceptance: [It holds too.]
+ archive: []
+ horizon: []

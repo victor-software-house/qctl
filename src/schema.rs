@@ -333,6 +333,11 @@ pub struct Style {
     #[garde(skip)]
     pub archive_order: ArchiveOrder,
 
+    /// Whether `fmt` keeps one blank line between rows or leaves the spacing
+    /// as written.
+    #[garde(skip)]
+    pub row_spacing: RowSpacing,
+
     /// Whether a verb normalizes the whole file on the way out.
     ///
     /// False, and a verb rewrites only the lines it changes — so a diff shows
@@ -349,6 +354,7 @@ impl Default for Style {
             section_order: vec![Section::Queue, Section::Archive, Section::Horizon],
             indent: 2,
             archive_order: ArchiveOrder::NewestFirst,
+            row_spacing: RowSpacing::AsWritten,
             normalize_on_write: false,
         }
     }
@@ -398,6 +404,17 @@ pub enum ArchiveOrder {
     NewestFirst,
     /// However the file has them. `fmt` will not reorder rows.
     AsWritten,
+}
+
+/// How rows in a list are set apart.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum RowSpacing {
+    /// However the file has them. `fmt` still collapses a run of blank lines.
+    #[default]
+    AsWritten,
+    /// Exactly one blank line between consecutive rows, none above the first.
+    BlankLine,
 }
 
 /// Every list, once. A ledger has exactly three, and an order that named two of

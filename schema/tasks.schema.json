@@ -311,6 +311,21 @@
 			],
 			"type": "object"
 		},
+		"RowSpacing": {
+			"description": "How rows in a list are set apart.",
+			"oneOf": [
+				{
+					"const": "as_written",
+					"description": "However the file has them. `fmt` still collapses a run of blank lines.",
+					"type": "string"
+				},
+				{
+					"const": "blank_line",
+					"description": "Exactly one blank line between consecutive rows, none above the first.",
+					"type": "string"
+				}
+			]
+		},
 		"Section": {
 			"description": "One of a ledger's three lists.",
 			"enum": [
@@ -341,6 +356,11 @@
 					"default": false,
 					"description": "Whether a verb normalizes the whole file on the way out.\n\nFalse, and a verb rewrites only the lines it changes — so a diff shows\nthe work and nothing else. True, and every verb leaves the file fully\nnormalized, at the price of touching lines nobody asked about.",
 					"type": "boolean"
+				},
+				"row_spacing": {
+					"$ref": "#/$defs/RowSpacing",
+					"default": "as_written",
+					"description": "Whether `fmt` keeps one blank line between rows or leaves the spacing\nas written."
 				},
 				"section_order": {
 					"default": [
@@ -419,6 +439,7 @@
 				"archive_order": "newest_first",
 				"indent": 2,
 				"normalize_on_write": false,
+				"row_spacing": "as_written",
 				"section_order": [
 					"queue",
 					"archive",
