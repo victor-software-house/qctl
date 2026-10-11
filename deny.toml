@@ -1,0 +1,34 @@
+# Without this, a dependency behind a non-default feature escapes the bans.
+[graph]
+all-features = true
+
+[advisories]
+yanked = "deny"
+unmaintained = "all"
+# Each entry: the RUSTSEC id, a reason, and the condition for removing it.
+ignore = []
+
+[licenses]
+# Permissive licenses only. MIT-0 comes through jsonschema, BSD-3-Clause
+# through encoding_rs, and Zlib through foldhash.
+allow = [
+    "MIT",
+    "MIT-0",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-3-Clause",
+    "Unicode-3.0",
+    "Zlib",
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+deny = [
+    { crate = "openssl", reason = "TLS is rustls" },
+    { crate = "native-tls", reason = "TLS is rustls" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

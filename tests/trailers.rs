@@ -8,6 +8,10 @@ use std::fs;
 use std::process::Command;
 use tempfile::TempDir;
 
+#[expect(
+    clippy::expect_used,
+    reason = "a helper that cannot run git fails its test"
+)]
 fn git(root: &std::path::Path, args: &[&str]) {
     let status = Command::new("git")
         .args(["-C", &root.display().to_string()])
@@ -27,8 +31,12 @@ fn parse_log_needs_body_trailer() {
     );
 }
 
-#[test]
-fn check_fails_when_trailer_closes_queued_id() {
+/// A repository whose last commit closes `CTC-001`, which its ledger still queues.
+#[expect(
+    clippy::expect_used,
+    reason = "a helper that cannot build its repository fails its test"
+)]
+fn repo_closing_a_queued_id() -> TempDir {
     let root = TempDir::new().expect("tmp");
     git(root.path(), &["init"]);
     git(root.path(), &["config", "user.email", "t@example.com"]);
@@ -36,7 +44,7 @@ fn check_fails_when_trailer_closes_queued_id() {
     fs::write(
         root.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 3
+            schema_version: 4
             prefix: CTC
             active: CTC-001
             queue:
@@ -57,8 +65,36 @@ fn check_fails_when_trailer_closes_queued_id() {
         root.path(),
         &["commit", "-m", "feat: chassis", "-m", "Closes CTC-001"],
     );
+    root
+}
+
+#[test]
+fn check_fails_when_trailer_closes_queued_id() {
+    let root = repo_closing_a_queued_id();
     let path = root.path().join("tasks.yaml");
     let output = qctl_in(root.path(), &["check", "-f", path.to_str().expect("utf-8")]);
+    assert!(!output.status.success());
+    let err = stderr(&output);
+    assert!(err.contains("CTC-001"), "{err}");
+    assert!(err.contains("still queued"), "{err}");
+}
+
+/// A git hook exports its repository's `GIT_DIR`. `check` must still read the
+/// ledger's own repository.
+#[test]
+fn check_reads_the_ledger_repo_when_git_dir_points_elsewhere() {
+    let other = TempDir::new().expect("tmp");
+    git(other.path(), &["init"]);
+    let root = repo_closing_a_queued_id();
+    let path = root.path().join("tasks.yaml");
+    let output = Command::new(env!("CARGO_BIN_EXE_qctl"))
+        .current_dir(root.path())
+        .args(["check", "-f", path.to_str().expect("utf-8")])
+        .env_remove("TASKS_LEDGER")
+        .env("COLUMNS", "1000")
+        .env("GIT_DIR", other.path().join(".git"))
+        .output()
+        .expect("spawn qctl");
     assert!(!output.status.success());
     let err = stderr(&output);
     assert!(err.contains("CTC-001"), "{err}");
@@ -71,7 +107,7 @@ fn check_ok_with_no_git() {
     fs::write(
         root.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 3
+            schema_version: 4
             prefix: CTC
             active: null
             queue: []
@@ -100,7 +136,7 @@ fn check_reports_when_the_ledger_is_outside_the_cwd_repo() {
     fs::write(
         ledger_repo.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 3
+            schema_version: 4
             prefix: CTC
             active: null
             queue: []
@@ -130,7 +166,7 @@ fn check_without_no_git_does_not_pass_a_scratch_ledger() {
     fs::write(
         dir.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 3
+            schema_version: 4
             prefix: CTC
             active: null
             queue: []
@@ -152,7 +188,7 @@ fn check_accepts_an_unborn_head() {
     fs::write(
         root.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 3
+            schema_version: 4
             prefix: CTC
             active: null
             queue: []
@@ -172,7 +208,7 @@ fn check_reports_when_git_cannot_run() {
     fs::write(
         root.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 3
+            schema_version: 4
             prefix: CTC
             active: null
             queue: []
@@ -187,6 +223,7 @@ fn check_reports_when_git_cannot_run() {
         .args(["check", "-f", path.to_str().expect("utf-8")])
         .env("PATH", empty.path())
         .env_remove("TASKS_LEDGER")
+        .env("COLUMNS", "1000")
         .output()
         .expect("spawn qctl");
     assert!(!output.status.success(), "missing git must not pass");
@@ -202,7 +239,7 @@ fn check_default_path_scans_the_cwd_repo() {
     fs::write(
         root.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 3
+            schema_version: 4
             prefix: CTC
             active: null
             queue: []

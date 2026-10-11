@@ -1,5 +1,39 @@
 # Changelog
 
+## qctl 0.4.7
+
+- Trailer scans read the ledger's own repository when qctl runs inside another repository's git hook. Git exports the hook repository's `GIT_DIR` and related variables, and qctl's git calls inherited them.
+
+## qctl 0.4.6
+
+- Read ledgers through ctl-core 0.6.9 and edit them through yamled 0.0.5. A parse error in a value reached through an alias names where that value is defined, and an edit refused by a kept tag names the tag.
+
+## qctl 0.4.5
+
+- Edit ledgers through yamled. `fmt` now reorders lists around a comment that belongs to none of them, leaving it in place, instead of refusing; a moved row keeps its list's own spacing; and literal and folded notes are written as `|-` and `>-`.
+- Read every ledger through ctl-core's declared input: a value or parse problem, and each schema error from `qctl check`, now names its file and line.
+
+## qctl 0.4.4
+
+- Let the environment pick each style the binary leaves open: `CTL_CORE_RECORD_STYLE`, `CTL_CORE_LIST_STYLE`, `CTL_CORE_ROW_SEPARATION`, and `CTL_CORE_JSON_LAYOUT`. An unaccepted value is ignored with a warning that names the accepted values.
+
+## qctl 0.4.3
+
+- Adopt ctl-core 0.6.3: borderless records, bold row ids, indented JSON, and an 80-column fallback width in piped output.
+
+## qctl 0.4.2
+
+- Adopt ctl-core's isolated Surface model feature so short-option contract tests no longer enable the MiniJinja template engine.
+- Remove disposable Cargo package staging before rust-cache cleanup so successful publish runs no longer emit false missing-directory annotations.
+
+## qctl 0.4.1
+
+- Adopt ctl-core 0.5.1 so automatically sized output reserves its configurable nested-shell margin, while the shared surface contract prevents new long-only flags.
+- Make `qctl check` treat queue, horizon, and archive as one task corpus, reporting missing id numbers, duplicate rows, and ids claimed by more than one status.
+- Existing rows can now be revised without splicing YAML: `edit ID` updates fields, list items, and dependency-safe queue position, while `park ID` demotes queued work to the horizon. Notes are ordered list items in schema 4, and `fmt` upgrades schema 3 scalar notes without rewriting unrelated rows.
+- Clarify that acceptance criteria are observable end conditions that must be demonstrably true before a task closes, while plans and notes describe how the work is done.
+- Write each repeated note as a distinct ordered list item, preserving intentional line and paragraph breaks while using readable block scalars for YAML-sensitive prose.
+
 ## qctl 0.4.0
 
 - Route every command through ctl-core's typed App and semantic Document presentation. Add shared pretty, colorless, JSON, quiet, stream, and error behavior; `status --format json` exposes ledger state and `check --format json` exposes its problem array.

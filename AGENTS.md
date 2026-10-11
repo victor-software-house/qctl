@@ -7,10 +7,21 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
 - This repo's queue is [`tasks.yaml`](tasks.yaml) (`QCTL-###`).
 - `horizon` maps research/evaluations that are not startable. Do not put
   them on `queue` and do not set `active` to a horizon id.
+- Queue, horizon, and archive partition one global task corpus. IDs are
+  continuous from `PREFIX-001` through the maximum and appear exactly once;
+  status changes move one row rather than copying it between lists.
+- Acceptance states observable, demonstrably true end conditions for closing a
+  row. It does not carry implementation instructions or procedural steps;
+  `plan` and `notes` own how the work is done.
+- `notes` is an ordered list, and each `-n/--note` is one item. Preserve
+  intentional line breaks and blank-line paragraph separators with literal YAML
+  blocks; use folded blocks for YAML-sensitive single-line prose. Never insert
+  mechanical sentence wraps or encode readable prose as escape sequences.
 - Schema is types + schemars (QCTL-001). Generated JSON lives only here.
-  Consumers pin a `$schema` URL and run `qctl check`. `schema_version` is 3:
-  a ledger declares its `style`, and `completed` is a moment in the zone that
-  block names. A rule that both `check` and the verbs must agree on is stated
+  Consumers pin a `$schema` URL and run `qctl check`. `schema_version` is 4:
+  `notes` is a list, a ledger declares its `style`, and `completed` is a moment
+  in the zone that block names. A schema 3 file is rewritten by `qctl fmt`.
+  A rule that both `check` and the verbs must agree on is stated
   once, as a `#[garde(...)]` attribute — schemars reads those, so a second
   `#[schemars(...)]` copy is drift waiting to happen.
 - Mutations rewrite only the lines they change (QCTL-002). Each scenario in
@@ -20,6 +31,17 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
 - `qctl fmt` applies the declared style; `qctl fmt --check` is the hook form.
   New style options are additive: a field with a default equal to today's
   behaviour is a minor change, not a migration.
+- `mise run verify` is the gate: rustfmt, clippy with the `Cargo.toml` lints
+  denied, `cargo test` (doc-tests included), and cargo-deny licenses, bans,
+  and sources. CI adds `deny:advisories`, which needs the network. The dev
+  env routes Cargo through mr-boxington (`mr_boxington = true` on the rust
+  entry), locally and in CI, where `jdx/mr-boxington-action` restores its
+  cache. Release jobs restore no compiler outputs.
+- Lefthook runs the gate before code leaves a machine: pre-commit checks
+  formatting, commit-msg lints the message with committed (`committed.toml`),
+  and pre-push runs `mise install --locked`, `mise run commits`, and
+  `mise run verify`. A fresh clone arms them with `mise x -- lefthook install`.
+  CI skips the hooks and runs `verify` itself.
 - This repo's release declarations live in `.ctl/ver.yaml`; `.ctl/` is the
   directory every ctl CLI shares, and qctl's own project config will land
   beside it as `.ctl/q.yaml`. There is no `verctl.toml`.
@@ -59,8 +81,25 @@ test fixtures and assertions.
 
 - `src/cli.rs` is the Clap grammar. `src/report.rs` owns serializable command
   results. Domain modules return those results and never print.
+- Growing domain features use nested module trees, not flat helper files.
+  `src/edit.rs` is the row-edit entry point; its field, list, policy, and
+  position mechanics live under `src/edit/`. Document rendering helpers live
+  under `src/document/`, and dependency ordering under `src/ledger/`.
+  Cross-feature APIs use the narrowest visibility that works.
+- Queue dependency validation builds one id-to-position index and is shared by
+  `add` and `edit`; do not restore per-blocker queue scans.
 - `src/presentation.rs` maps reports onto ctl-core semantic documents. ctl-core
   alone owns help, pretty/colorless/JSON emission, stream selection, quiet
   behavior, terminal width, styling, and tables.
+- A ledger is parsed through ctl-core's declared input (`ctl_core::input`),
+  which reports every problem with its file and line. It is the one ctl-core
+  path a domain module may use; `tests/architecture.rs` refuses the rest.
 - `-f` remains qctl's ledger-file shorthand. The root composes ctl-core
   `FormatLong` with `ColorLong`, so shared `--format` never takes `-f` back.
+
+## Changes
+
+Plan a behaviour or contract change as an OpenSpec change in
+`openspec/changes/<name>/` before writing code. `openspec/config.yaml` holds
+this repository's context and rules, and `openspec validate <name>` checks the
+change. One change maps to one `tasks.yaml` row.

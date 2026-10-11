@@ -47,7 +47,7 @@
 				},
 				"id": {
 					"description": "The id it held on the queue, never reused after this.",
-					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
+					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",
 					"type": "string"
 				},
 				"links": {
@@ -60,12 +60,13 @@
 					"uniqueItems": true
 				},
 				"notes": {
-					"description": "What a later reader will want to know and cannot reconstruct.",
-					"minLength": 1,
-					"type": [
-						"string",
-						"null"
-					]
+					"description": "Ordered context items a later reader will want to know and cannot\nreconstruct. Intentional line and paragraph breaks are preserved.",
+					"items": {
+						"minLength": 1,
+						"type": "string"
+					},
+					"type": "array",
+					"uniqueItems": true
 				},
 				"outcome": {
 					"description": "What became true.",
@@ -130,7 +131,7 @@
 			"properties": {
 				"id": {
 					"description": "Its id, drawn from the same sequence as the queue's.",
-					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
+					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",
 					"type": "string"
 				},
 				"kind": {
@@ -147,12 +148,13 @@
 					"uniqueItems": true
 				},
 				"notes": {
-					"description": "Context a reader needs and the row cannot carry in its other fields.",
-					"minLength": 1,
-					"type": [
-						"string",
-						"null"
-					]
+					"description": "Ordered context items a reader needs and the row cannot carry in its\nother fields. Intentional line and paragraph breaks are preserved.",
+					"items": {
+						"minLength": 1,
+						"type": "string"
+					},
+					"type": "array",
+					"uniqueItems": true
 				},
 				"open": {
 					"description": "The missing start condition, or the question that keeps it off the\nqueue.",
@@ -226,7 +228,7 @@
 			"description": "A task on the queue.",
 			"properties": {
 				"acceptance": {
-					"description": "What has to be demonstrably true to close it.",
+					"description": "Observable end conditions that must be demonstrably true to close it.\nImplementation instructions and procedural steps belong in `plan` or `notes`.",
 					"items": {
 						"minLength": 1,
 						"type": "string"
@@ -238,7 +240,7 @@
 				"blocked_by": {
 					"description": "Ids that must ship first. Each has to sit earlier in this queue.",
 					"items": {
-						"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
+						"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",
 						"type": "string"
 					},
 					"type": "array",
@@ -246,7 +248,7 @@
 				},
 				"id": {
 					"description": "This task's id, unique for the life of the repository.",
-					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
+					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",
 					"type": "string"
 				},
 				"links": {
@@ -259,12 +261,13 @@
 					"uniqueItems": true
 				},
 				"notes": {
-					"description": "Context a reader needs and the row cannot carry in its other fields.",
-					"minLength": 1,
-					"type": [
-						"string",
-						"null"
-					]
+					"description": "Ordered context items a reader needs and the row cannot carry in its\nother fields. Intentional line and paragraph breaks are preserved.",
+					"items": {
+						"minLength": 1,
+						"type": "string"
+					},
+					"type": "array",
+					"uniqueItems": true
 				},
 				"outcome": {
 					"description": "What is true once this is done.",
@@ -371,21 +374,21 @@
 	"properties": {
 		"active": {
 			"description": "The one task currently being executed, or null when work is\nintentionally paused.",
-			"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,}$",
+			"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",
 			"type": [
 				"string",
 				"null"
 			]
 		},
 		"archive": {
-			"description": "Completed or deliberately dropped work, newest first. Archived ids are\nnever reused.",
+			"description": "Completed or deliberately dropped work, newest first. Archived ids are\nnever reused and remain part of the global task corpus.",
 			"items": {
 				"$ref": "#/$defs/ArchivedTask"
 			},
 			"type": "array"
 		},
 		"horizon": {
-			"description": "Mapped work that is not on the short-term queue: research, evaluations,\nor deferred items without a start condition. File order is not\npriority, and `active` must never name a horizon id.",
+			"description": "Mapped work that is not on the short-term queue: research, evaluations,\nor deferred items without a start condition. File order is not priority,\n`active` must never name a horizon id, and each id still belongs to the\nsame global task corpus.",
 			"items": {
 				"$ref": "#/$defs/HorizonTask"
 			},
@@ -397,14 +400,14 @@
 			"type": "string"
 		},
 		"queue": {
-			"description": "Pending work in priority order. The order is the priority.",
+			"description": "Pending work in priority order. The order is the priority. Queue,\narchive, and horizon partition one globally unique, continuous id corpus.",
 			"items": {
 				"$ref": "#/$defs/QueuedTask"
 			},
 			"type": "array"
 		},
 		"schema_version": {
-			"const": 3,
+			"const": 4,
 			"description": "Ledger schema version, the one this qctl writes and accepts. Increment\nonly with a coordinated schema and ledger migration.",
 			"format": "uint32",
 			"minimum": 0,

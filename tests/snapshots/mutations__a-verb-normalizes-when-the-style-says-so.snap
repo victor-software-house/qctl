@@ -4,7 +4,7 @@ description: qctl start DEMO-002
 ---
 # -18 +15
  # yaml-language-server: $schema=./schema/tasks.schema.json
- schema_version: 3
+ schema_version: 4
  prefix: DEMO
  
  style:
@@ -34,9 +34,9 @@ description: qctl start DEMO-002
 -    blocked_by: []
 -    acceptance: [It also holds.]
  archive:
--  - id: DEMO-000
+-  - id: DEMO-003
 -    title: Oldest
-+  - id: DEMO-100
++  - id: DEMO-004
 +    title: Newer, and written second
      scope: demo
 -    completed: 2026-08-14T09:00:00
@@ -46,9 +46,9 @@ description: qctl start DEMO-002
      evidence: [The tag exists.]
      disposition: completed
  
--  - id: DEMO-100
+-  - id: DEMO-004
 -    title: Newer, and written second
-+  - id: DEMO-000
++  - id: DEMO-003
 +    title: Oldest
      scope: demo
 -    completed: 2026-08-16T23:08:28

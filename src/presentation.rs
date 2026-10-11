@@ -9,15 +9,21 @@ impl Present for Report {
             Self::Check { path, problems } => check(path, problems),
             Self::Show { task, .. } => show(task),
             Self::Initialized { path, .. } | Self::SchemaWritten { path } => wrote(path),
-            Self::Added { id, .. } => Document::new().paragraph(Text::new().token(id)),
+            Self::Added { id, .. } => Document::new().paragraph(Text::new().id(id)),
             Self::Started { id, .. } => {
-                Document::new().paragraph(Text::new().success("active").then("  ").token(id))
+                Document::new().paragraph(Text::new().success("active").then("  ").id(id))
             }
             Self::Archived { id, .. } => {
-                Document::new().paragraph(Text::new().success("archived").then("  ").token(id))
+                Document::new().paragraph(Text::new().success("archived").then("  ").id(id))
+            }
+            Self::Parked { id, .. } => {
+                Document::new().paragraph(Text::new().success("parked").then("  ").id(id))
+            }
+            Self::Edited { id, .. } => {
+                Document::new().paragraph(Text::new().success("edited").then("  ").id(id))
             }
             Self::Promoted { id, .. } => {
-                Document::new().paragraph(Text::new().success("queued").then("  ").token(id))
+                Document::new().paragraph(Text::new().success("queued").then("  ").id(id))
             }
             Self::ClosedFromGit {
                 path,
@@ -54,7 +60,21 @@ impl Present for Report {
                 outcome: HookOutcome::NeedsConfiguration | HookOutcome::ForceNotApplicable,
                 ..
             } => MessageKind::Error,
-            _ => MessageKind::Success,
+            Self::Status { .. }
+            | Self::Check { .. }
+            | Self::Show { .. }
+            | Self::Initialized { .. }
+            | Self::Added { .. }
+            | Self::Started { .. }
+            | Self::Archived { .. }
+            | Self::Parked { .. }
+            | Self::Edited { .. }
+            | Self::Promoted { .. }
+            | Self::ClosedFromGit { .. }
+            | Self::Formatted { .. }
+            | Self::HookInstalled { .. }
+            | Self::SchemaWritten { .. }
+            | Self::Instructions { .. } => MessageKind::Success,
         }
     }
 }
@@ -64,11 +84,11 @@ fn status(path: &str, ledger: &crate::schema::Ledger) -> Document {
     let mut document = Document::new().fields(
         Fields::new()
             .row("ledger", path)
-            .row("active", Text::new().token(active)),
+            .row("active", Text::new().id(active)),
     );
 
     let mut queue = Table::new(["priority", "id", "title"])
-        .token_column(1)
+        .id_column(1)
         .stacked_below(80, 2);
     for (index, task) in ledger.queue.iter().enumerate() {
         let priority = if ledger.active.as_deref() == Some(task.id.as_str()) {
@@ -87,7 +107,7 @@ fn status(path: &str, ledger: &crate::schema::Ledger) -> Document {
 
     if !ledger.horizon.is_empty() {
         let mut horizon = Table::new(["id", "kind", "title"])
-            .token_column(0)
+            .id_column(0)
             .stacked_below(80, 2);
         for task in &ledger.horizon {
             let kind = task.kind.to_string();
@@ -128,27 +148,27 @@ fn show(task: &Task) -> Document {
                 fields = fields.row("patch", patch.as_str());
             }
             Document::new()
-                .heading(Text::new().token(&task.id).then("  ").then(&task.title))
+                .heading(Text::new().id(&task.id).then("  ").then(&task.title))
                 .fields(fields)
         }
         Task::Archived { task } => {
             let completed = task.completed.replacen('T', " ", 1);
             let mut document = Document::new().heading(
                 Text::new()
-                    .token(&task.id)
+                    .id(&task.id)
                     .then("  ")
                     .then(&task.title)
                     .muted(format!("  (archived {completed})")),
             );
-            if let Some(notes) = &task.notes {
-                document = document.fields(Fields::new().row("notes", notes.as_str()));
+            if !task.notes.is_empty() {
+                document = document.fields(Fields::new().row("notes", task.notes.join(" · ")));
             }
             document
         }
         Task::Horizon { task } => Document::new()
             .heading(
                 Text::new()
-                    .token(&task.id)
+                    .id(&task.id)
                     .then("  ")
                     .then(&task.title)
                     .muted(format!("  (horizon {})", task.kind)),
@@ -170,7 +190,7 @@ fn closed_from_git(path: &str, archived: &[String], retry_push: bool) -> Documen
     if archived.is_empty() {
         return Document::new();
     }
-    let mut table = Table::new(["archived"]).token_column(0);
+    let mut table = Table::new(["archived"]).id_column(0);
     for id in archived {
         table = table.row([id.as_str()]);
     }
