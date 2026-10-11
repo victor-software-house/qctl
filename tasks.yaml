@@ -5,20 +5,9 @@ prefix: QCTL
 style:
   timezone: "-03:00"
   section_order: [queue, horizon, archive]
-active: QCTL-014
+active: QCTL-015
 
 queue:
-  - id: QCTL-014
-    title: Let a ledger declare whether rows are blank-separated
-    scope: qctl
-    outcome: fmt keeps one blank line between rows when the style asks for it, so a lost separator is repaired rather than found by eye.
-    blocked_by: []
-    acceptance:
-      - A style option decides whether rows in a list are separated by exactly one blank line, defaulting to leaving them as written.
-      - With it on, fmt inserts a missing separator and removes a doubled one; the first row of a list never gets one above it.
-      - The two separators repaired by hand in QCTL-013 would have been fixed by running fmt.
-    patch: blank-between-rows
-
   - id: QCTL-015
     title: Write a ledger atomically so a crash cannot truncate it
     scope: qctl
@@ -297,6 +286,17 @@ horizon:
         so a ledger such as yamled's now holds both shapes.
 
 archive:
+  - id: QCTL-014
+    title: Let a ledger declare whether rows are blank-separated
+    scope: qctl
+    outcome: fmt keeps one blank line between rows when the style asks for it, so a lost separator is repaired rather than found by eye.
+    patch: blank-between-rows
+    plan: openspec/changes/archive/2026-10-11-blank-between-rows/proposal.md
+    completed: 2026-10-11T18:08:59
+    evidence:
+      - "qctl PR #96, squashed bfbad35: style.row_spacing: blank_line makes fmt insert a lost row separator; four fmt mutation scenarios, verify on a build runner and in CI."
+    disposition: completed
+
   - id: QCTL-040
     title: Read ledgers through the ctl-core loader and edit them through yamled
     scope: qctl reader and writer
