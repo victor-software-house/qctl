@@ -46,8 +46,8 @@ run = 'committed --commit-file "${usage_file}"'
 
 [tasks.commits]
 description = "Lint commit messages with committed"
-usage = 'arg "[commits]" default="HEAD" help="Commit or range"'
-run = 'committed "${usage_commits}"'
+usage = 'arg "[commits]..." var=#true default="HEAD" help="Commits or ranges"'
+run = 'eval "set -- $usage_commits"; for c; do committed "$c" || exit 1; done'
 
 [tasks.verify]
 description = "CI-safe gate: format, clippy, test, deny"

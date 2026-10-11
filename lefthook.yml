@@ -46,9 +46,8 @@ pre-push:
           else
             commits=$lsha
           fi
-          for commit in $commits; do
-            mise run commits "$commit" </dev/null || exit 1
-          done
+          [ -n "$commits" ] || continue
+          mise run commits $commits </dev/null || exit 1
         done
     verify:
       # Git exports GIT_DIR and friends to hooks. Tests that probe a scratch
