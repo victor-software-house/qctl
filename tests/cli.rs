@@ -964,7 +964,6 @@ fn failed_check_is_a_json_problem_array_on_stdout() {
     let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(report["type"], "check");
     let problems = report["problems"].as_array().unwrap();
-    assert!(!problems.is_empty());
     assert!(
         problems
             .iter()

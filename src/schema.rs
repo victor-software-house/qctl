@@ -378,6 +378,10 @@ impl Section {
 
     /// The key this list is written under.
     #[must_use]
+    #[expect(
+        clippy::trivially_copy_pass_by_ref,
+        reason = "public API: a by-value receiver breaks iter().map(Self::key) callers"
+    )]
     pub fn key(&self) -> &'static str {
         match self {
             Self::Queue => "queue",
@@ -390,6 +394,10 @@ impl Section {
 impl ArchiveOrder {
     /// The value this order is written as.
     #[must_use]
+    #[expect(
+        clippy::trivially_copy_pass_by_ref,
+        reason = "public API: a by-value receiver breaks iter().map(Self::key) callers"
+    )]
     pub fn key(&self) -> &'static str {
         match self {
             Self::NewestFirst => "newest_first",
