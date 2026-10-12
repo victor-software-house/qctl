@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-#MISE description="Lint the commit messages in one or more commits or ranges with committed"
+#MISE description="Lint the commit messages of one or more commits or ranges with committed"
 #USAGE arg "[commits]..." var=#true default="HEAD" help="Commits or ranges"
 set -euo pipefail
-# Local edit: pre-push passes every pushed commit, so this takes several.
 eval "set -- ${usage_commits}"
 for commit in "$@"; do
   committed "${commit}"
