@@ -1,10 +1,12 @@
+use std::collections::HashSet;
+
+use anyhow::Result;
+use ctl_core::input::Input;
+
 use crate::cli::CheckArgs;
 use crate::ledger::{Ledger, graph_errors, load_value, resolve_path, schema_value};
 use crate::report::Report;
 use crate::trailers;
-use anyhow::Result;
-use ctl_core::input::Input;
-use std::collections::HashSet;
 
 pub fn run(args: &CheckArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);

@@ -1,5 +1,6 @@
-use crate::cli::{EditArgs, RemoveField, UnsetField};
 use anyhow::{Result, bail};
+
+use crate::cli::{EditArgs, RemoveField, UnsetField};
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub(super) enum RowKind {

@@ -1,11 +1,12 @@
 mod common;
 
+use std::fs;
+use std::process::Command;
+
 use common::{qctl, qctl_in, stderr};
 use indoc::indoc;
 use qctl::cli::CheckArgs;
 use qctl::trailers;
-use std::fs;
-use std::process::Command;
 use tempfile::TempDir;
 
 #[expect(
@@ -31,7 +32,8 @@ fn parse_log_needs_body_trailer() {
     );
 }
 
-/// A repository whose last commit closes `CTC-001`, which its ledger still queues.
+/// A repository whose last commit closes `CTC-001`, which its ledger still
+/// queues.
 #[expect(
     clippy::expect_used,
     reason = "a helper that cannot build its repository fails its test"

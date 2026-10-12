@@ -1,7 +1,9 @@
-use crate::schema::Kind;
+use std::path::PathBuf;
+
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use ctl_core::{ColorLong, FormatLong};
-use std::path::PathBuf;
+
+use crate::schema::Kind;
 
 #[derive(Parser)]
 #[command(
@@ -59,7 +61,8 @@ pub struct FmtArgs {
     #[command(flatten)]
     pub ledger: LedgerArgs,
 
-    /// Say what is not in the declared style and exit non-zero, writing nothing.
+    /// Say what is not in the declared style and exit non-zero, writing
+    /// nothing.
     #[arg(short = 'c', long)]
     pub check: bool,
 }
@@ -85,10 +88,12 @@ pub struct CheckArgs {
 pub struct CloseFromGitArgs {
     #[command(flatten)]
     pub ledger: LedgerArgs,
-    /// Read pre-push stdin (`<local-ref> <local-sha> <remote-ref> <remote-sha>`).
+    /// Read pre-push stdin (`<local-ref> <local-sha> <remote-ref>
+    /// <remote-sha>`).
     #[arg(short = 'u', long)]
     pub pre_push: bool,
-    /// `git log` revision range, such as `main..HEAD`. Default: the whole history, same as `check`.
+    /// `git log` revision range, such as `main..HEAD`. Default: the whole
+    /// history, same as `check`.
     #[arg(short = 'r', long, conflicts_with = "pre_push")]
     pub range: Option<String>,
 }
@@ -144,12 +149,14 @@ pub struct AddArgs {
     pub scope: String,
     #[arg(short = 'o', long)]
     pub outcome: String,
-    /// Repeatable end condition that must be demonstrably true to close the row. Required on the queue; not used on the horizon.
+    /// Repeatable end condition that must be demonstrably true to close the
+    /// row. Required on the queue; not used on the horizon.
     #[arg(short = 'a', long = "acceptance", required_unless_present = "horizon")]
     pub acceptance: Vec<String>,
     #[arg(short = 'P', long)]
     pub patch: Option<String>,
-    /// Repeatable note item. Intentional line and paragraph breaks are preserved.
+    /// Repeatable note item. Intentional line and paragraph breaks are
+    /// preserved.
     #[arg(short = 'n', long = "note")]
     pub note: Vec<String>,
     /// Repeatable blocker id. Each must sit earlier than the new row.
@@ -223,7 +230,8 @@ pub struct PromoteArgs {
     pub id: String,
     #[command(flatten)]
     pub ledger: LedgerArgs,
-    /// Repeatable end condition that must be demonstrably true to close the promoted row.
+    /// Repeatable end condition that must be demonstrably true to close the
+    /// promoted row.
     #[arg(short = 'a', long = "acceptance", required = true)]
     pub acceptance: Vec<String>,
     /// Repeatable blocker id. Each must already sit on the queue.
@@ -253,10 +261,12 @@ pub struct EditArgs {
     /// Drop `patch` or `plan`.
     #[arg(short = 'U', long, value_enum)]
     pub unset: Vec<UnsetField>,
-    /// Repeatable end condition that must be demonstrably true to close the row.
+    /// Repeatable end condition that must be demonstrably true to close the
+    /// row.
     #[arg(short = 'a', long = "acceptance")]
     pub acceptance: Vec<String>,
-    /// Repeatable note item to append. Intentional line and paragraph breaks are preserved.
+    /// Repeatable note item to append. Intentional line and paragraph breaks
+    /// are preserved.
     #[arg(short = 'n', long = "note")]
     pub note: Vec<String>,
     /// Repeatable URI to append.

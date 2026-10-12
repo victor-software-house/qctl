@@ -1,7 +1,8 @@
+use anyhow::{Context, Result, bail};
+
 use crate::cli::{EditArgs, EditPosition};
 use crate::ledger::Ledger;
 use crate::ledger::order::{self, Row};
-use anyhow::{Context, Result, bail};
 
 pub(super) fn destination(
     ledger: &Ledger,

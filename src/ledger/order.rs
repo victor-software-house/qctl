@@ -1,5 +1,6 @@
-use anyhow::{Result, bail};
 use std::collections::HashMap;
+
+use anyhow::{Result, bail};
 
 pub(crate) struct Row<'a> {
     pub id: &'a str,

@@ -5,14 +5,16 @@
 //! exists, install prints the `mise run q` snippet to add. Otherwise it
 //! writes a git `pre-push`.
 
-use crate::cli::HookInstallArgs;
-use crate::ledger::resolve_path;
-use crate::report::{HookOutcome, Report};
-use anyhow::{Context, Result, ensure};
-use indoc::formatdoc;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+
+use anyhow::{Context, Result, ensure};
+use indoc::formatdoc;
+
+use crate::cli::HookInstallArgs;
+use crate::ledger::resolve_path;
+use crate::report::{HookOutcome, Report};
 
 pub fn install(args: &HookInstallArgs) -> Result<Report> {
     let ledger = resolve_path(&args.ledger);
@@ -174,9 +176,11 @@ fn install_git_hook(root: &Path, rel: &str, force: bool) -> Result<Report> {
 
 #[cfg(test)]
 mod tests {
-    use super::{canonicalize_ledger, git_hook_body, ledger_rel, lefthook_snippet};
-    use indoc::indoc;
     use std::path::Path;
+
+    use indoc::indoc;
+
+    use super::{canonicalize_ledger, git_hook_body, ledger_rel, lefthook_snippet};
 
     #[test]
     fn lefthook_snippet_is_the_command_to_paste() {

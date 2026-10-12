@@ -2,11 +2,12 @@
 
 mod common;
 
-use common::{qctl, qctl_in, stderr, stdout};
-use indoc::indoc;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::process::Command;
+
+use common::{qctl, qctl_in, stderr, stdout};
+use indoc::indoc;
 use tempfile::TempDir;
 
 #[expect(

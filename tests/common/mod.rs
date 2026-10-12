@@ -9,10 +9,11 @@
     reason = "a fixture that cannot be set up fails its test"
 )]
 
-use indoc::{formatdoc, indoc};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
+
+use indoc::{formatdoc, indoc};
 use tempfile::TempDir;
 
 pub(crate) struct LedgerDir {

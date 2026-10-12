@@ -1,8 +1,9 @@
 //! Graph rules that JSON Schema cannot express.
 
+use std::fs;
+
 use indoc::indoc;
 use qctl::ledger::{graph_errors, load, read};
-use std::fs;
 use tempfile::TempDir;
 
 #[expect(

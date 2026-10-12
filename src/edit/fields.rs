@@ -1,7 +1,9 @@
+use std::path::Path;
+
+use anyhow::{Result, bail, ensure};
+
 use crate::cli::{EditArgs, UnsetField};
 use crate::document::Change;
-use anyhow::{Result, bail, ensure};
-use std::path::Path;
 
 pub(super) struct ListEdit<'a> {
     key: &'static str,

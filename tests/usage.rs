@@ -2,9 +2,10 @@
 
 mod common;
 
-use common::{qctl, stderr, stdout};
 use std::fs;
 use std::path::Path;
+
+use common::{qctl, stderr, stdout};
 
 fn crate_file(relative: &str) -> String {
     fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(relative))

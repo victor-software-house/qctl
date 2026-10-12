@@ -16,13 +16,14 @@
     reason = "schemars' JsonSchema derive expands concat!; the ban is for hand-written strings"
 )]
 
+use std::path::{Component, Path};
+use std::sync::LazyLock;
+
 use garde::Validate;
 use regex::Regex;
 use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use std::path::{Component, Path};
-use std::sync::LazyLock;
 
 /// The one version of this shape a ledger may declare. 3 gave a ledger a
 /// `style` block and moved the zone out of every `completed` stamp into it.
@@ -107,7 +108,8 @@ pub struct Ledger {
     pub active: Option<String>,
 
     /// Pending work in priority order. The order is the priority. Queue,
-    /// archive, and horizon partition one globally unique, continuous id corpus.
+    /// archive, and horizon partition one globally unique, continuous id
+    /// corpus.
     #[garde(dive)]
     pub queue: Vec<QueuedTask>,
 
@@ -151,7 +153,8 @@ pub struct QueuedTask {
     pub blocked_by: Vec<String>,
 
     /// Observable end conditions that must be demonstrably true to close it.
-    /// Implementation instructions and procedural steps belong in `plan` or `notes`.
+    /// Implementation instructions and procedural steps belong in `plan` or
+    /// `notes`.
     #[garde(length(min = 1), inner(length(min = 1)))]
     #[schemars(extend("uniqueItems" = true))]
     pub acceptance: Vec<String>,
@@ -300,10 +303,10 @@ pub struct HorizonTask {
 
 /// How a ledger is written, declared by the ledger itself.
 ///
-/// Every option has a default that is what qctl already wrote, so a file with no
-/// `style` block keeps the shape it has. `qctl fmt` applies these; a verb writes
-/// any new text in them and, unless [`Style::normalize_on_write`] says otherwise,
-/// leaves the rest of the file alone.
+/// Every option has a default that is what qctl already wrote, so a file with
+/// no `style` block keeps the shape it has. `qctl fmt` applies these; a verb
+/// writes any new text in them and, unless [`Style::normalize_on_write`] says
+/// otherwise, leaves the rest of the file alone.
 ///
 /// This is meant to grow. A new option is a new field with a default equal to
 /// today's behaviour, which is a minor change rather than a migration.
@@ -319,8 +322,8 @@ pub struct Style {
     #[garde(pattern(*ZONE))]
     pub timezone: String,
 
-    /// The order the lists appear in the file. All three, once each, in whatever
-    /// order reads best here.
+    /// The order the lists appear in the file. All three, once each, in
+    /// whatever order reads best here.
     #[garde(custom(all_three_lists))]
     #[schemars(extend("uniqueItems" = true, "minItems" = 3, "maxItems" = 3))]
     pub section_order: Vec<Section>,
@@ -501,12 +504,13 @@ fn the_one_version<C>(value: &u32, _: &C) -> garde::Result {
 /// A moment that exists. [`INSTANT`] states the shape once: garde validates
 /// against it and schemars writes it into the schema, so `check` and the verbs
 /// cannot disagree about what a stamp looks like. This adds what a regex cannot
-/// know — that the calendar agrees — so `2026-02-31T00:00:00` never lands in the
-/// archive.
+/// know — that the calendar agrees — so `2026-02-31T00:00:00` never lands in
+/// the archive.
 ///
 /// A stamp carries no offset now that the ledger declares one, and no JSON
 /// Schema `format` describes a moment without a zone. `check` therefore calls
-/// [`unreal_instants`] for the same rule rather than getting it from the schema.
+/// [`unreal_instants`] for the same rule rather than getting it from the
+/// schema.
 pub fn a_real_instant<C>(value: &str, _: &C) -> garde::Result {
     if is_a_real_instant(value) {
         return Ok(());

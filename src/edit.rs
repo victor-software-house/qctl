@@ -5,14 +5,16 @@ mod lists;
 mod policy;
 mod position;
 
+use std::path::Path;
+
+use anyhow::{Result, bail, ensure};
+use fields::ListEdit;
+use policy::RowKind;
+
 use crate::cli::{EditArgs, RemoveField};
 use crate::document::Change;
 use crate::ledger::{Ledger, load, resolve_path};
 use crate::report::Report;
-use anyhow::{Result, bail, ensure};
-use fields::ListEdit;
-use policy::RowKind;
-use std::path::Path;
 
 pub fn run(args: &EditArgs) -> Result<Report> {
     let requested = policy::requested(args);
