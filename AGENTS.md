@@ -34,11 +34,12 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
 - The repository setup comes from the shared Copier template (kind
   `rust-crate`, layout `crate`): `.copier-answers.yml` records its tag and
   answers. Take a new tag with `copier update --defaults` and check
-  `git diff --check` before committing. The CI job `Template` fails when a
-  newer tag exists. Three local edits survive updates: `Cargo.toml` leaves
-  `missing_docs` and `missing_debug_implementations` off until QCTL-044,
-  `lefthook.yml` keeps the push-range commit lint and the git-env unset
-  before `verify`, and `mise-tasks/commits` takes several commits.
+  `git diff --check` before committing. The CI job `Template` fails when the
+  newest tag would change a file. Three local edits survive updates:
+  `Cargo.toml` leaves `missing_docs` and `missing_debug_implementations` off
+  until QCTL-044, `lefthook.yml` keeps the push-range commit lint and the
+  git-env unset before `verify`, and `mise-tasks/commits` takes several
+  commits.
 - `mise run verify` is the gate, from ctl-core's `tasks/rust.toml` (included
   by `git::` URL): toolchain pins, rustfmt on the dated nightly, clippy with
   the `Cargo.toml` lints denied, `check:features`, `cargo test`, doc-tests,
