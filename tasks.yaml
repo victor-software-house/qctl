@@ -200,6 +200,27 @@ queue:
       - >-
         2026-10-11: ctl-core's declared-input archive moved its proposal the same way. That row was still queued, so edit could repoint it.
 
+  - id: QCTL-043
+    title: Take the shared Rust setup from the Copier template
+    scope: '.copier-answers.yml at templates v0.0.5, the files the template renders, mise.toml, mise-tasks/, the workflows, and every mise lock'
+    outcome: qctl renders its repository setup from the shared template, builds on the pinned stable 1.99.0, runs the shared task catalog, and arms its git hooks on mise install.
+    blocked_by: []
+    acceptance:
+      - .copier-answers.yml records v0.0.5, and the rendered files come from the template.
+      - mise.toml pins stable 1.99.0 with the formatting nightly; rust-version and rust-toolchain.toml match; src/ is formatted under the template's rustfmt.toml in its own commit.
+      - verify runs ctl-core's catalog with check:features and check:repo; lefthook.yml keeps qctl's push-range commit lint and the git-env unset before verify as local edits.
+      - On a fresh clone, mise install arms the hooks and leaves every lock unchanged; a commit passes pre-commit and commit-msg; verify, semver, and pre-push pass.
+  - id: QCTL-044
+    title: Deny missing_docs and missing_debug_implementations
+    scope: src/
+    outcome: qctl takes the template's full lint set; every public item has a doc and a Debug implementation.
+    blocked_by: [QCTL-043]
+    acceptance:
+      - Cargo.toml drops the local edit that leaves missing_docs and missing_debug_implementations off.
+      - mise run verify passes with both denied.
+    notes:
+      - >2-
+        2026-10-12: with both on, the lib reported 173 missing docs and 24 types without Debug. Obvious items get one short line; types used only inside the crate may become pub(crate) instead.
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it

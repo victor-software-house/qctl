@@ -31,17 +31,30 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
 - `qctl fmt` applies the declared style; `qctl fmt --check` is the hook form.
   New style options are additive: a field with a default equal to today's
   behaviour is a minor change, not a migration.
-- `mise run verify` is the gate: rustfmt, clippy with the `Cargo.toml` lints
-  denied, `cargo test` (doc-tests included), and cargo-deny licenses, bans,
-  and sources. CI adds `deny:advisories`, which needs the network. The dev
-  env routes Cargo through mr-boxington (`mr_boxington = true` on the rust
-  entry), locally and in CI, where `jdx/mr-boxington-action` restores its
-  cache. Release jobs restore no compiler outputs.
+- The repository setup comes from the shared Copier template (kind
+  `rust-crate`, layout `crate`): `.copier-answers.yml` records its tag and
+  answers. Take a new tag with `copier update --defaults` and check
+  `git diff --check` before committing. The CI job `Template` fails when a
+  newer tag exists. Three local edits survive updates: `Cargo.toml` leaves
+  `missing_docs` and `missing_debug_implementations` off until QCTL-044,
+  `lefthook.yml` keeps the push-range commit lint and the git-env unset
+  before `verify`, and `mise-tasks/commits` takes several commits.
+- `mise run verify` is the gate, from ctl-core's `tasks/rust.toml` (included
+  by `git::` URL): toolchain pins, rustfmt on the dated nightly, clippy with
+  the `Cargo.toml` lints denied, `check:features`, `cargo test`, doc-tests,
+  cargo-deny licenses, bans, and sources, cargo-machete, and `check:repo`.
+  qctl's own tasks live in `mise-tasks/`. CI adds `deny:advisories` and
+  `semver`, which need the network. `mise.toml` pins stable 1.99.0 with
+  `mr_boxington = true`, locally and in CI, where `jdx/mr-boxington-action`
+  restores its cache; `rust-toolchain.toml` and `rust-version` match.
 - Lefthook runs the gate before code leaves a machine: pre-commit checks
-  formatting, commit-msg lints the message with committed (`committed.toml`),
-  and pre-push runs `mise install --locked`, `mise run commits`, and
-  `mise run verify`. A fresh clone arms them with `mise x -- lefthook install`.
-  CI skips the hooks and runs `verify` itself.
+  formatting and scans the staged diff for credentials, commit-msg lints the
+  message with committed (`committed.toml`), and pre-push runs
+  `mise install --locked`, the commit lint over every pushed commit,
+  `mise run verify`, and a full-history credential scan. Every hook runs with
+  `MISE_ENV=dev,hooks`. A fresh clone arms them with `mise install`, through
+  `mise.dev.toml`'s postinstall hook; CI never loads `dev`, so no runner gets
+  them.
 - This repo's release declarations live in `.ctl/ver.yaml`; `.ctl/` is the
   directory every ctl CLI shares, and qctl's own project config will land
   beside it as `.ctl/q.yaml`. There is no `verctl.toml`.
