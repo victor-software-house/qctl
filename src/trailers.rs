@@ -1,8 +1,9 @@
-use anyhow::{Context, Result, bail, ensure};
 use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::sync::OnceLock;
+
+use anyhow::{Context, Result, bail, ensure};
 
 /// IDs closed by commit trailers (`Closes CTC-001` / `Completes: PREFIX-NNN`).
 ///
@@ -86,8 +87,9 @@ fn git_in(root: &Path, args: impl IntoIterator<Item = impl AsRef<OsStr>>) -> Res
         .context("git")
 }
 
-/// The variables `git rev-parse --local-env-vars` names, read once. If git cannot
-/// list them, every later git call fails too, so an empty list is enough.
+/// The variables `git rev-parse --local-env-vars` names, read once. If git
+/// cannot list them, every later git call fails too, so an empty list is
+/// enough.
 fn git_local_env_vars() -> &'static [OsString] {
     static VARS: OnceLock<Vec<OsString>> = OnceLock::new();
     VARS.get_or_init(|| {
@@ -223,8 +225,9 @@ fn not_a_work_tree(stderr: &[u8]) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_log;
     use indoc::indoc;
+
+    use super::parse_log;
 
     #[test]
     fn reads_closes_and_completes() {

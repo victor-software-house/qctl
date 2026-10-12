@@ -1,3 +1,13 @@
+use std::collections::HashSet;
+use std::fs;
+use std::path::Path;
+
+use anyhow::{Context, Result, bail, ensure};
+use ctl_core::input::Input;
+use indoc::formatdoc;
+use time::macros::format_description;
+use time::{OffsetDateTime, UtcOffset};
+
 use crate::cli::{
     AddArgs, ArchiveArgs, CloseFromGitArgs, Disposition, InitArgs, ParkArgs, PromoteArgs,
 };
@@ -7,14 +17,6 @@ use crate::ledger::{load, next_id, resolve_path};
 use crate::report::{Destination, Report};
 use crate::schema::{HorizonTask, QueuedTask};
 use crate::trailers;
-use anyhow::{Context, Result, bail, ensure};
-use ctl_core::input::Input;
-use indoc::formatdoc;
-use std::collections::HashSet;
-use std::fs;
-use std::path::Path;
-use time::macros::format_description;
-use time::{OffsetDateTime, UtcOffset};
 
 pub fn init(args: &InitArgs) -> Result<Report> {
     let prefix = args.prefix.to_ascii_uppercase();
@@ -397,8 +399,8 @@ pub(crate) fn read(path: &Path) -> Result<Document> {
 /// never leave a file behind that the next one cannot open.
 ///
 /// A ledger whose style asks for it is normalized on the way out. Off by
-/// default, because normalizing touches lines the verb had no business in, and a
-/// diff that shows only the work is worth more than one that is always tidy.
+/// default, because normalizing touches lines the verb had no business in, and
+/// a diff that shows only the work is worth more than one that is always tidy.
 pub(crate) fn write(path: &Path, document: Document) -> Result<()> {
     let source = document.into_source();
     crate::document::must_still_parse(&source)?;

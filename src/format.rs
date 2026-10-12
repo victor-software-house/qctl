@@ -5,23 +5,25 @@
 //! ledger says how it wants to be written, and this makes it so.
 //!
 //! What it does not do is add anything nobody asked for. It removes whitespace
-//! no one chose — a space at the end of a line, a second blank line, a file that
-//! does not end in exactly one newline — and it never inserts a comment or a
-//! key. It inserts a blank line only between rows, and only when
+//! no one chose — a space at the end of a line, a second blank line, a file
+//! that does not end in exactly one newline — and it never inserts a comment or
+//! a key. It inserts a blank line only between rows, and only when
 //! [`Style::row_spacing`] asks for one. Row key order and quote style are the
 //! obvious next options, and are deliberately not decided here yet.
 //!
 //! [`Style`]: crate::schema::Style
 //! [`Style::row_spacing`]: crate::schema::Style::row_spacing
 
+use std::fs;
+
+use anyhow::{Context, Result, bail};
+use ctl_core::input::Input;
+
 use crate::cli::FmtArgs;
 use crate::document::{Document, KeyShape, must_still_parse};
 use crate::ledger::{Ledger, resolve_path};
 use crate::report::Report;
 use crate::schema::{ArchiveOrder, RowSpacing, Section, VERSION};
-use anyhow::{Context, Result, bail};
-use ctl_core::input::Input;
-use std::fs;
 
 /// The ledger as its own style says it should be written.
 pub fn normalized(source: &str, ledger: &Ledger) -> Result<String> {
@@ -105,9 +107,9 @@ fn newest_first(ledger: &Ledger) -> Vec<String> {
     rows.into_iter().map(|row| row.id.clone()).collect()
 }
 
-/// Whitespace nobody chose: a space at the end of a line, a second blank line, a
-/// blank line between a list's key and its first row, and a file that does not
-/// end in exactly one newline.
+/// Whitespace nobody chose: a space at the end of a line, a second blank line,
+/// a blank line between a list's key and its first row, and a file that does
+/// not end in exactly one newline.
 fn tidied(source: &str) -> String {
     let mut out = String::with_capacity(source.len());
     let mut blank_run = 0;
@@ -318,8 +320,9 @@ fn paragraphs(notes: &str) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{block_scalar, tidied};
     use indoc::indoc;
+
+    use super::{block_scalar, tidied};
 
     #[test]
     fn tidied_keeps_block_scalar_contents_opaque() {

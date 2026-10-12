@@ -228,7 +228,7 @@
 			"description": "A task on the queue.",
 			"properties": {
 				"acceptance": {
-					"description": "Observable end conditions that must be demonstrably true to close it.\nImplementation instructions and procedural steps belong in `plan` or `notes`.",
+					"description": "Observable end conditions that must be demonstrably true to close it.\nImplementation instructions and procedural steps belong in `plan` or\n`notes`.",
 					"items": {
 						"minLength": 1,
 						"type": "string"
@@ -337,7 +337,7 @@
 		},
 		"Style": {
 			"additionalProperties": false,
-			"description": "How a ledger is written, declared by the ledger itself.\n\nEvery option has a default that is what qctl already wrote, so a file with no\n`style` block keeps the shape it has. `qctl fmt` applies these; a verb writes\nany new text in them and, unless [`Style::normalize_on_write`] says otherwise,\nleaves the rest of the file alone.\n\nThis is meant to grow. A new option is a new field with a default equal to\ntoday's behaviour, which is a minor change rather than a migration.",
+			"description": "How a ledger is written, declared by the ledger itself.\n\nEvery option has a default that is what qctl already wrote, so a file with\nno `style` block keeps the shape it has. `qctl fmt` applies these; a verb\nwrites any new text in them and, unless [`Style::normalize_on_write`] says\notherwise, leaves the rest of the file alone.\n\nThis is meant to grow. A new option is a new field with a default equal to\ntoday's behaviour, which is a minor change rather than a migration.",
 			"properties": {
 				"archive_order": {
 					"$ref": "#/$defs/ArchiveOrder",
@@ -368,7 +368,7 @@
 						"archive",
 						"horizon"
 					],
-					"description": "The order the lists appear in the file. All three, once each, in whatever\norder reads best here.",
+					"description": "The order the lists appear in the file. All three, once each, in\nwhatever order reads best here.",
 					"items": {
 						"$ref": "#/$defs/Section"
 					},
@@ -420,7 +420,7 @@
 			"type": "string"
 		},
 		"queue": {
-			"description": "Pending work in priority order. The order is the priority. Queue,\narchive, and horizon partition one globally unique, continuous id corpus.",
+			"description": "Pending work in priority order. The order is the priority. Queue,\narchive, and horizon partition one globally unique, continuous id\ncorpus.",
 			"items": {
 				"$ref": "#/$defs/QueuedTask"
 			},

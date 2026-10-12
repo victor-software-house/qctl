@@ -1,6 +1,7 @@
-use crate::schema::Ledger;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
+
+use crate::schema::Ledger;
 
 pub(super) const MAX_TASK_NUMBER: u32 = 999_999;
 

@@ -12,9 +12,9 @@ env:
   GIT_CONFIG_COUNT: "1"
   GIT_CONFIG_KEY_0: init.defaultBranch
   GIT_CONFIG_VALUE_0: main
-  # `dev` for the toolchain prepare.after needs, `release` for the verctl
-  # tarball that runs it. Not `dev` alone: verctl is not built from this repo.
-  MISE_ENV: dev,release
+  # The toolchain prepare.after needs is in mise.toml; `release` adds the
+  # verctl tarball that runs it.
+  MISE_ENV: ci,release
 
 concurrency:
   group: version-pr-${{ github.ref }}

@@ -1,9 +1,8 @@
 use anyhow::Result;
 use ctl_core::prelude::{App, ExitCode};
 use qctl::cli::{Cli, Command, HookCommand};
-use qctl::ledger;
-use qctl::mutate;
 use qctl::report::Report;
+use qctl::{ledger, mutate};
 
 const INSTRUCTIONS: &str = include_str!("instructions.md");
 

@@ -1,6 +1,8 @@
-use crate::cli::{EditArgs, RemoveField};
-use anyhow::{Context, Result, ensure};
 use std::collections::HashSet;
+
+use anyhow::{Context, Result, ensure};
+
+use crate::cli::{EditArgs, RemoveField};
 
 pub(super) struct Removals<'a> {
     note: Vec<&'a str>,

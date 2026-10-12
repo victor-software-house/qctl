@@ -1,34 +1,51 @@
-# CI already runs `mise run verify`. Do not arm hooks on runners.
+# Hooks call mise tasks, so a hook runs the same command as CI. mise.dev.toml
+# installs them through its postinstall hook; CI never loads that file, so no
+# runner has them and no hook needs a CI skip.
+#
+# Every command runs with MISE_ENV=dev,hooks, from the hookenv anchor on the
+# first command. MISE_ENV replaces the .miserc.toml default, so dev is named
+# again; a mise.hooks.toml, where a repository has one, disables auto deps
+# providers inside hooks.
 pre-commit:
-  skip:
-    - run: test -n "$CI"
   commands:
     format:
-      glob: "**/*.rs"
+      # *.rs matches every depth; **/*.rs misses files at the root.
+      glob: "*.rs"
+      env: &hookenv { MISE_ENV: "dev,hooks" }
       run: mise run format
+    # TODO(TPL-002): remove once a mise release includes jdx/mise#14316.
+    warm-remote-tasks:
+      priority: 1
+      env: *hookenv
+      run: env -u GIT_INDEX_FILE mise tasks ls >/dev/null
+    staged-secrets:
+      env: *hookenv
+      run: mise run hooks:secrets:staged
 
 commit-msg:
-  skip:
-    - run: test -n "$CI"
   commands:
+    # TODO(TPL-002): remove once a mise release includes jdx/mise#14316.
+    warm-remote-tasks:
+      priority: 1
+      env: *hookenv
+      run: env -u GIT_INDEX_FILE mise tasks ls >/dev/null
     committed:
+      env: *hookenv
       run: mise run commit-msg {1}
 
 pre-push:
-  skip:
-    - run: test -n "$CI"
   commands:
     lockfile:
+      env: *hookenv
       run: mise install --locked
-    committed:
-      # Lint each pushed commit that neither origin/main nor the remote
-      # branch already has. Git passes one
-      # `<local ref> <local sha> <remote ref> <remote sha>` line per ref on
-      # stdin. A branch that merged main carries main's commits, and squash
-      # merges land on main without this hook, so either base alone can
-      # let those through: a stale origin/main misses what the remote
-      # branch merged, and the remote sha misses what a local merge
-      # brought. With neither base, the pushed commit is linted alone.
+    # Local edit: lint each pushed commit that neither origin/main nor the
+    # remote branch already has. Git passes one
+    # `<local ref> <local sha> <remote ref> <remote sha>` line per ref on
+    # stdin. A branch that merged main carries main's commits, and squash
+    # merges land on main without this hook, so either base alone can let
+    # those through. With neither base, the pushed commit is linted alone.
+    commits:
+      env: *hookenv
       use_stdin: true
       run: |
         zero=0000000000000000000000000000000000000000
@@ -50,6 +67,10 @@ pre-push:
           mise run commits $commits </dev/null || exit 1
         done
     verify:
-      # Git exports GIT_DIR and friends to hooks. Tests that probe a scratch
-      # directory with `git -C` would find this repository instead.
+      env: *hookenv
+      # Local edit: git exports GIT_DIR and friends to hooks, and tests that
+      # probe a scratch directory with `git -C` would find this repository.
       run: unset $(git rev-parse --local-env-vars) && mise run verify
+    full-history-secrets:
+      env: *hookenv
+      run: mise run hooks:secrets:history

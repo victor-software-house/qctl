@@ -25,8 +25,9 @@ fn reads_back_plain(note: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::style;
     use yamled::TextStyle;
+
+    use super::style;
 
     #[test]
     fn a_note_is_plain_folded_or_literal() {

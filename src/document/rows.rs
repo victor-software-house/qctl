@@ -4,11 +4,13 @@
 //! its last row becomes `[]`, and a row put into `[]` opens it as a block list.
 //! yamled owns all three rules.
 
-use super::{Change, Document, NO_ITEMS, section};
+use std::ops::Range;
+
 use anyhow::{Context, Result};
 use serde::Serialize;
-use std::ops::Range;
 use yamled::{Path, Position, Segment};
+
+use super::{Change, Document, NO_ITEMS, section};
 
 impl Document {
     /// Every id a section's rows carry, in file order.

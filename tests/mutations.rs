@@ -13,11 +13,12 @@
 
 mod common;
 
+use std::fs;
+use std::path::{Path, PathBuf};
+
 use common::{LedgerDir, qctl, stderr};
 use rstest::rstest;
 use similar::{ChangeTag, TextDiff};
-use std::fs;
-use std::path::{Path, PathBuf};
 
 #[rstest]
 fn a_verb_changes_only_what_it_must(

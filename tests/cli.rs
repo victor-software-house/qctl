@@ -108,10 +108,10 @@ fn check_accepts_archive_notes() {
     assert!(output.status.success(), "{}", stderr(&output));
 }
 
-/// The ledger declares its zone, so a stamp is already local and `show` must not
-/// shift it — only separate the day from the time. This stamp sits late in the
-/// evening on purpose: a version that converted it, in either direction, would
-/// name a different day and not merely a different hour.
+/// The ledger declares its zone, so a stamp is already local and `show` must
+/// not shift it — only separate the day from the time. This stamp sits late in
+/// the evening on purpose: a version that converted it, in either direction,
+/// would name a different day and not merely a different hour.
 #[test]
 fn show_reads_a_stamp_without_moving_it() {
     let dir = LedgerDir::empty();
@@ -138,8 +138,8 @@ fn show_reads_a_stamp_without_moving_it() {
     );
 }
 
-/// Agent and CI captures pipe every stream and set no `COLUMNS`, so the fallback
-/// width is what keeps `show` inside a readable line there.
+/// Agent and CI captures pipe every stream and set no `COLUMNS`, so the
+/// fallback width is what keeps `show` inside a readable line there.
 #[test]
 fn piped_show_without_columns_stays_within_80_columns() {
     let dir = LedgerDir::empty();
@@ -168,9 +168,9 @@ fn piped_show_without_columns_stays_within_80_columns() {
     assert!(out.lines().all(|line| line.chars().count() <= 80), "{out}");
 }
 
-/// The zone a stamp is written in comes from the ledger, and the only way to see
-/// that is to read the stamp back as the declared zone and land on now. Written
-/// in UTC instead, it would be three hours out.
+/// The zone a stamp is written in comes from the ledger, and the only way to
+/// see that is to read the stamp back as the declared zone and land on now.
+/// Written in UTC instead, it would be three hours out.
 #[test]
 fn archive_stamps_in_the_zone_the_ledger_declares() {
     let dir = LedgerDir::empty();
@@ -964,7 +964,6 @@ fn failed_check_is_a_json_problem_array_on_stdout() {
     let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(report["type"], "check");
     let problems = report["problems"].as_array().unwrap();
-    assert!(!problems.is_empty());
     assert!(
         problems
             .iter()
