@@ -89,10 +89,9 @@ fn check_reads_the_ledger_repo_when_git_dir_points_elsewhere() {
     git(other.path(), &["init"]);
     let root = repo_closing_a_queued_id();
     let path = root.path().join("tasks.yaml");
-    let output = Command::new(env!("CARGO_BIN_EXE_qctl"))
+    let output = common::binary()
         .current_dir(root.path())
         .args(["check", "-f", path.to_str().expect("utf-8")])
-        .env_remove("TASKS_LEDGER")
         .env("COLUMNS", "1000")
         .env("GIT_DIR", other.path().join(".git"))
         .output()
@@ -220,11 +219,10 @@ fn check_reports_when_git_cannot_run() {
     .expect("ledger");
     let path = root.path().join("tasks.yaml");
     let empty = TempDir::new().expect("empty path");
-    let output = Command::new(env!("CARGO_BIN_EXE_qctl"))
+    let output = common::binary()
         .current_dir(root.path())
         .args(["check", "-f", path.to_str().expect("utf-8")])
         .env("PATH", empty.path())
-        .env_remove("TASKS_LEDGER")
         .env("COLUMNS", "1000")
         .output()
         .expect("spawn qctl");
