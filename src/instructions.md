@@ -64,8 +64,10 @@ rejected commands.
 Every command returns one typed report. Human output is pretty by default.
 `--color never` and `--no-color` render the same document without ANSI.
 `--format json` serializes the report directly as one JSON line on stdout;
-failures remain machine-readable on stdout and exit non-zero. `--quiet`
-suppresses successful human output only, never JSON or failures. `-f` remains
+failures remain machine-readable on stdout and exit non-zero. JSON is never
+coloured, whatever `CLICOLOR_FORCE` or `FORCE_COLOR` say, and a parse error
+under `--format json` is a JSON error even when the bad argument comes first.
+`--quiet` suppresses successful human output only, never JSON or failures. `-f` remains
 `--file`; format has no `-f` shorthand. `--color` has no `-c` shorthand;
 `fmt -c` is `--check`.
 

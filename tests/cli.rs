@@ -1080,3 +1080,41 @@ fn park_refuses_when_a_queued_row_still_names_it() {
         stderr(&output)
     );
 }
+
+/// Agent shells force colour through `CLICOLOR_FORCE`, `FORCE_COLOR`, and
+/// `COLORTERM`. JSON output, a JSON error, and a parse error under
+/// `--format json` stay plain whatever they say, so `jq` never sees an ESC.
+#[test]
+fn json_output_holds_no_escape_byte_under_forced_colour() {
+    let good = LedgerDir::empty();
+    good.write(MINIMAL);
+    let bad = LedgerDir::empty();
+    bad.write("nope: [\n");
+    let good = good.path.to_str().expect("UTF-8 path").to_owned();
+    let bad_path = bad.path.to_str().expect("UTF-8 path").to_owned();
+    let cases: [&[&str]; 4] = [
+        &["status", "--format", "json", "--file", &good],
+        &["check", "--no-git", "--format", "json", "--file", &bad_path],
+        &["status", "--bogus", "--format", "json"],
+        &["--format=json", "nosuchverb"],
+    ];
+    for args in cases {
+        let output = std::process::Command::new(env!("CARGO_BIN_EXE_qctl"))
+            .args(args)
+            .env_remove("TASKS_LEDGER")
+            .env_remove("NO_COLOR")
+            .env("CLICOLOR_FORCE", "1")
+            .env("FORCE_COLOR", "3")
+            .env("COLORTERM", "truecolor")
+            .output()
+            .expect("spawn qctl");
+        assert!(
+            !output.stdout.contains(&0x1b) && !output.stderr.contains(&0x1b),
+            "{args:?}: {}{}",
+            stdout(&output),
+            stderr(&output)
+        );
+        serde_json::from_slice::<serde_json::Value>(&output.stdout)
+            .unwrap_or_else(|error| panic!("{args:?}: stdout is not JSON: {error}"));
+    }
+}

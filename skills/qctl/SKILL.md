@@ -9,7 +9,7 @@ description: >-
   row instead of editing tasks.yaml by hand.
   Do not use the vault ompex/task-ledger plugin.
 license: MIT
-version: 0.5.1
+version: 0.5.2
 compatibility: Requires a qctl binary. A repository-mounted mise `q` task may provision an exact version after a GitHub Release exists.
 ---
 
@@ -65,7 +65,7 @@ completion bootstrap.
 
 Human output is pretty by default. Use `--color never` or `--no-color` for
 the same layout without ANSI. Use `--format json` for one typed JSON report
-on stdout; `status` includes the ledger state, and `check` carries a
+on stdout, never coloured whatever `CLICOLOR_FORCE` or `FORCE_COLOR` say; `status` includes the ledger state, and `check` carries a
 `problems` array and exits non-zero when it is not empty. `--quiet`
 suppresses successful human output only. `-f` remains `--file`; format has
 no short `-f`.
