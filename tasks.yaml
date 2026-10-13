@@ -297,6 +297,19 @@ horizon:
         so a ledger such as yamled's now holds both shapes.
 
 archive:
+  - id: QCTL-047
+    title: Serve the q task raw
+    scope: tasks
+    outcome: >-
+      mise run q output piped to jq is byte for byte what qctl wrote, whatever the
+      colour environment says.
+    completed: 2026-10-13T07:39:35
+    evidence:
+      - >-
+        q.jinja carries mount_directives (raw=true);
+        the_served_task_pipes_json_without_an_escape_byte passes on ctl-core 0.6.17.
+    disposition: completed
+
   - id: QCTL-046
     title: CLI tests ignore the caller's color settings
     scope: tests
