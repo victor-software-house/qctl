@@ -181,25 +181,6 @@ queue:
       - >2-
         2026-09-28: src/document/notes.rs item() writes '- >2-' for every single-line note that yaml_serde would quote. Nearly every note starts with a date and a colon, which as a plain scalar would read as a mapping, so nearly every note takes this path. '>' and '-' are needed for an exact round trip; the '2' is needed only for a leading space.
 
-  - id: QCTL-042
-    title: Let edit repoint an archived row's plan
-    scope: qctl edit
-    outcome: >-
-      Archiving an OpenSpec change and repointing its row at the moved proposal needs
-      no hand edit of tasks.yaml.
-    blocked_by: []
-    acceptance:
-      - "`qctl edit ID -l PATH` changes the plan of an archived row, and `-U plan` removes it."
-      - >-
-        An archived row still refuses title, scope, outcome, acceptance, and blocker
-        edits.
-      - "`check` still requires an archived row's plan to name an existing file next to the ledger."
-    notes:
-      - >-
-        2026-09-29: found while archiving five OpenSpec changes in forkctl. Archiving moves each proposal.md under openspec/changes/archive/. check requires an archived row's plan file to exist, and edit refuses plan on an archived row (archive rows accept only note, evidence, and link operations), so the five plan lines were edited by hand.
-      - >-
-        2026-10-11: ctl-core's declared-input archive moved its proposal the same way. That row was still queued, so edit could repoint it.
-
   - id: QCTL-044
     title: Deny missing_docs and missing_debug_implementations
     scope: src/
@@ -297,6 +278,23 @@ horizon:
         so a ledger such as yamled's now holds both shapes.
 
 archive:
+  - id: QCTL-042
+    title: Let edit repoint an archived row's plan
+    scope: qctl edit
+    outcome: >-
+      Archiving an OpenSpec change and repointing its row at the moved proposal needs
+      no hand edit of tasks.yaml.
+    notes:
+      - >-
+        2026-09-29: found while archiving five OpenSpec changes in forkctl. Archiving moves each proposal.md under openspec/changes/archive/. check requires an archived row's plan file to exist, and edit refuses plan on an archived row (archive rows accept only note, evidence, and link operations), so the five plan lines were edited by hand.
+      - >-
+        2026-10-11: ctl-core's declared-input archive moved its proposal the same way. That row was still queued, so edit could repoint it.
+    completed: 2026-10-13T12:41:14
+    evidence:
+      - "an_archived_row_follows_its_moved_plan in tests/edit.rs: edit -l repoints an archived row's plan, -U plan removes it, title, scope, outcome, acceptance, and blocker edits stay refused, and check refuses the stale plan before the edit and accepts the moved one after it."
+      - mise run verify passed on a linux/amd64:16x32 Namespace instance at 63fae76.
+    disposition: completed
+
   - id: QCTL-047
     title: Serve the q task raw
     scope: tasks
