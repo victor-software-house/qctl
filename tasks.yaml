@@ -192,6 +192,22 @@ queue:
     notes:
       - >2-
         2026-10-12: with both on, the lib reported 173 missing docs and 24 types without Debug. Obvious items get one short line; types used only inside the crate may become pub(crate) instead.
+
+  - id: QCTL-048
+    title: Take the shared template at v0.0.18
+    scope: qctl template
+    outcome: qctl records template v0.0.18, and the CI Template job passes again.
+    blocked_by: []
+    acceptance:
+      - .copier-answers.yml records v0.0.18, and the Template job passes on main.
+      - >-
+        The commit-lint behaviour AGENTS.md keeps as a local edit (the push-range lint,
+        and mise-tasks/commits taking several commits) still holds, or AGENTS.md records
+        why it changed.
+    notes:
+      - >-
+        Found on 2026-10-13 in qctl #112: the Template job fails on every branch because v0.0.18 changes files qctl kept at v0.0.7. The tag deletes mise-tasks/commit-msg and mise-tasks/commits and raises mise min_version from 2026.10.3 to 2026.10.9.
+      - The deleted commit-lint tasks are among the local edits AGENTS.md says survive template updates, so this row needs its own review, possibly with the session that owns the Copier templates.
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
