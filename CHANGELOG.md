@@ -1,5 +1,11 @@
 # Changelog
 
+## qctl 0.5.2
+
+### Fixed
+
+- A parse error under `--format json` is now a JSON error even when the bad argument comes before the flag, as in `qctl status --bogus --format json`. It printed as text, coloured when `CLICOLOR_FORCE` or `FORCE_COLOR` was set, to a caller that asked for JSON. JSON output stays plain whatever the colour environment says ([#106](https://github.com/victor-software-house/qctl/pull/106)).
+
 ## qctl 0.5.1
 
 - Raise `rust-version` to 1.99.0, the pinned stable the shared template builds, lints, and tests on. A build with an older compiler stays on the previous release.
