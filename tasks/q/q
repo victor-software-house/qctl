@@ -4,8 +4,9 @@
 # template, never this file.
 #MISE description="Run the qctl work-queue CLI"
 #MISE dir="{{cwd}}"
+#MISE tools = { "github:victor-software-house/qctl" = "0.5.3" }
+#MISE raw=true
 #MISE raw_args=true
-#MISE tools = { "github:victor-software-house/qctl" = "0.5.2" }
 #USAGE mount "mise run --quiet q -- --usage-spec=q"
 
 set -euo pipefail

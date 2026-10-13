@@ -1,5 +1,11 @@
 # Changelog
 
+## qctl 0.5.3
+
+### Fixed
+
+- The served `q` mise task now runs `raw`. mise relayed its output and appended an SGR reset to every line whenever mise's own colour was on, as under `CLICOLOR_FORCE=1`, so `mise run q status --format json | jq` received an ESC byte qctl never wrote ([#110](https://github.com/victor-software-house/qctl/pull/110)).
+
 ## qctl 0.5.2
 
 ### Fixed
