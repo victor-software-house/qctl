@@ -64,7 +64,8 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   `version:` are declared under `patterns` in `.ctl/ver.yaml` (QCTL-009,
   QCTL-022). Edit the template or the pattern, never the rendered file; the
   Version PR rewrites every site onto the commit the tag names. A template git does not track renders nowhere.
-  The `q` task's `#USAGE mount` line is `ctl_core::mount_line("q")`.
+  The `q` task carries `ctl_core::mount_directives("q")`: `raw`, `raw_args`,
+  and the `#USAGE mount` line, so piped output stays what qctl wrote.
   Put it in the template. Do not copy it onto `tasks/q/q` while that
   file still pins a release that lacks `--usage-spec`. The Version PR
   writes the mount and the new pin together. Operators run
