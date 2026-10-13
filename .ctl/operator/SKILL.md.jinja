@@ -102,6 +102,10 @@ qctl hook install
 `front`, `back`, `before:ID`, or `after:ID`; every dependency must still point
 to an earlier queued row.
 
+An archived row takes only notes, evidence, links, and its plan. After its
+OpenSpec change is archived, `edit ID -l PATH` points the row at the moved
+proposal, and `-U plan` removes the plan.
+
 `--plan` must be a file next to the ledger. `add --horizon` and `park`
 write `horizon:` if the ledger omitted it. `close-from-git` archives
 queued ids closed by `Closes PREFIX-NNN` / `Completes: PREFIX-NNN` in
