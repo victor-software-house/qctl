@@ -212,7 +212,7 @@ queue:
       - >2-
         2026-10-12: with both on, the lib reported 173 missing docs and 24 types without Debug. Obvious items get one short line; types used only inside the crate may become pub(crate) instead.
 
-  - id: QCTL-045
+  - id: QCTL-046
     title: CLI tests ignore the caller's color settings
     scope: tests
     outcome: >-
