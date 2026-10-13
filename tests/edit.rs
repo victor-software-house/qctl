@@ -1,6 +1,6 @@
 mod common;
 
-use common::{LedgerDir, qctl, stderr};
+use common::{LedgerDir, qctl, stderr, stdout};
 use indoc::indoc;
 
 #[test]
@@ -180,6 +180,76 @@ fn row_kind_policy_is_explicit() {
     let horizon_position = qctl(&["edit", "QCTL-002", "-f", &path, "-p", "front"]);
     assert!(!horizon_position.status.success());
     assert!(stderr(&horizon_position).contains("horizon rows do not accept --position"));
+}
+
+#[test]
+fn an_archived_row_follows_its_moved_plan() {
+    let dir = LedgerDir::empty();
+    dir.plant(
+        "openspec/changes/archive/2026-08-01-done/proposal.md",
+        "# Done",
+    );
+    dir.write(indoc! {"
+        schema_version: 4
+        prefix: QCTL
+        active: null
+        queue: []
+        archive:
+          - id: QCTL-001
+            title: Done
+            scope: core
+            completed: 2026-08-01T09:12:00
+            outcome: Done.
+            evidence: [landed]
+            plan: openspec/changes/done/proposal.md
+        horizon: []
+    "});
+    let path = dir.path.to_string_lossy();
+    let moved = "openspec/changes/archive/2026-08-01-done/proposal.md";
+
+    let stale = qctl(&["check", "--no-git", "-f", &path]);
+    assert!(!stale.status.success());
+    let said = format!("{}{}", stdout(&stale), stderr(&stale));
+    assert!(
+        said.contains("missing plan openspec/changes/done/proposal.md"),
+        "{said}"
+    );
+
+    let repoint = qctl(&["edit", "QCTL-001", "-f", &path, "-l", moved]);
+    assert!(repoint.status.success(), "{}", stderr(&repoint));
+    assert!(
+        dir.read().contains(&format!("plan: {moved}")),
+        "{}",
+        dir.read()
+    );
+    let check = qctl(&["check", "--no-git", "-f", &path]);
+    assert!(check.status.success(), "{}", stderr(&check));
+
+    let missing = qctl(&["edit", "QCTL-001", "-f", &path, "-l", "nope.md"]);
+    assert!(!missing.status.success());
+    assert!(stderr(&missing).contains("missing plan nope.md"));
+
+    for refused in [
+        ["-t", "Nope"],
+        ["-s", "other"],
+        ["-o", "Other."],
+        ["-a", "It holds."],
+        ["-b", "QCTL-002"],
+    ] {
+        let mut args = vec!["edit", "QCTL-001", "-f", &path];
+        args.extend(refused);
+        let output = qctl(&args);
+        assert!(!output.status.success(), "{refused:?} was accepted");
+        assert!(
+            stderr(&output).contains("archive rows accept only plan, note, evidence, and link ops"),
+            "{}",
+            stderr(&output)
+        );
+    }
+
+    let unset = qctl(&["edit", "QCTL-001", "-f", &path, "-U", "plan"]);
+    assert!(unset.status.success(), "{}", stderr(&unset));
+    assert!(!dir.read().contains("plan:"), "{}", dir.read());
 }
 
 #[test]

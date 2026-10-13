@@ -181,25 +181,6 @@ queue:
       - >2-
         2026-09-28: src/document/notes.rs item() writes '- >2-' for every single-line note that yaml_serde would quote. Nearly every note starts with a date and a colon, which as a plain scalar would read as a mapping, so nearly every note takes this path. '>' and '-' are needed for an exact round trip; the '2' is needed only for a leading space.
 
-  - id: QCTL-042
-    title: Let edit repoint an archived row's plan
-    scope: qctl edit
-    outcome: >-
-      Archiving an OpenSpec change and repointing its row at the moved proposal needs
-      no hand edit of tasks.yaml.
-    blocked_by: []
-    acceptance:
-      - "`qctl edit ID -l PATH` changes the plan of an archived row, and `-U plan` removes it."
-      - >-
-        An archived row still refuses title, scope, outcome, acceptance, and blocker
-        edits.
-      - "`check` still requires an archived row's plan to name an existing file next to the ledger."
-    notes:
-      - >-
-        2026-09-29: found while archiving five OpenSpec changes in forkctl. Archiving moves each proposal.md under openspec/changes/archive/. check requires an archived row's plan file to exist, and edit refuses plan on an archived row (archive rows accept only note, evidence, and link operations), so the five plan lines were edited by hand.
-      - >-
-        2026-10-11: ctl-core's declared-input archive moved its proposal the same way. That row was still queued, so edit could repoint it.
-
   - id: QCTL-044
     title: Deny missing_docs and missing_debug_implementations
     scope: src/
@@ -211,6 +192,22 @@ queue:
     notes:
       - >2-
         2026-10-12: with both on, the lib reported 173 missing docs and 24 types without Debug. Obvious items get one short line; types used only inside the crate may become pub(crate) instead.
+
+  - id: QCTL-048
+    title: Take the shared template at v0.0.18
+    scope: qctl template
+    outcome: qctl records template v0.0.18, and the CI Template job passes again.
+    blocked_by: []
+    acceptance:
+      - .copier-answers.yml records v0.0.18, and the Template job passes on main.
+      - >-
+        The commit-lint behaviour AGENTS.md keeps as a local edit (the push-range lint,
+        and mise-tasks/commits taking several commits) still holds, or AGENTS.md records
+        why it changed.
+    notes:
+      - >-
+        Found on 2026-10-13 in qctl #112: the Template job fails on every branch because v0.0.18 changes files qctl kept at v0.0.7. The tag deletes mise-tasks/commit-msg and mise-tasks/commits and raises mise min_version from 2026.10.3 to 2026.10.9.
+      - The deleted commit-lint tasks are among the local edits AGENTS.md says survive template updates, so this row needs its own review, possibly with the session that owns the Copier templates.
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
@@ -297,6 +294,23 @@ horizon:
         so a ledger such as yamled's now holds both shapes.
 
 archive:
+  - id: QCTL-042
+    title: Let edit repoint an archived row's plan
+    scope: qctl edit
+    outcome: >-
+      Archiving an OpenSpec change and repointing its row at the moved proposal needs
+      no hand edit of tasks.yaml.
+    notes:
+      - >-
+        2026-09-29: found while archiving five OpenSpec changes in forkctl. Archiving moves each proposal.md under openspec/changes/archive/. check requires an archived row's plan file to exist, and edit refuses plan on an archived row (archive rows accept only note, evidence, and link operations), so the five plan lines were edited by hand.
+      - >-
+        2026-10-11: ctl-core's declared-input archive moved its proposal the same way. That row was still queued, so edit could repoint it.
+    completed: 2026-10-13T12:41:14
+    evidence:
+      - "an_archived_row_follows_its_moved_plan in tests/edit.rs: edit -l repoints an archived row's plan, -U plan removes it, title, scope, outcome, acceptance, and blocker edits stay refused, and check refuses the stale plan before the edit and accepts the moved one after it."
+      - mise run verify passed on a linux/amd64:16x32 Namespace instance at 63fae76.
+    disposition: completed
+
   - id: QCTL-047
     title: Serve the q task raw
     scope: tasks

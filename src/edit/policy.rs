@@ -43,7 +43,7 @@ impl RowKind {
                 Field::Note,
                 Field::Link,
             ],
-            Self::Archive => &[Field::Note, Field::Link, Field::Evidence],
+            Self::Archive => &[Field::Plan, Field::Note, Field::Link, Field::Evidence],
         }
     }
 }
@@ -93,7 +93,7 @@ pub(super) fn validate(requested: &[Field], kind: RowKind) -> Result<()> {
         return Ok(());
     };
     if kind == RowKind::Archive {
-        bail!("archive rows accept only note, evidence, and link ops");
+        bail!("archive rows accept only plan, note, evidence, and link ops");
     }
     bail!("{} rows do not accept {}", kind.section(), invalid.option())
 }
