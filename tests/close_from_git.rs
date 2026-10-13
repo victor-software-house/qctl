@@ -181,14 +181,13 @@ fn close_from_git_pre_push_refuses_to_amend() {
     let zeros = "0".repeat(40);
     let stdin = format!("refs/heads/main {sha} refs/heads/main {zeros}\n");
     let path = root.path().join("tasks.yaml");
-    let output = Command::new(env!("CARGO_BIN_EXE_qctl"))
+    let output = common::binary()
         .args([
             "close-from-git",
             "--pre-push",
             "-f",
             path.to_str().expect("utf-8"),
         ])
-        .env_remove("TASKS_LEDGER")
         .env("COLUMNS", "1000")
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())

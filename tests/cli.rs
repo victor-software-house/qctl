@@ -156,9 +156,8 @@ fn piped_show_without_columns_stays_within_80_columns() {
             outcome: It shipped.
             evidence: [The tag exists.]
     "});
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_qctl"))
+    let output = common::binary()
         .args(["show", "QCTL-001", "-f", dir.path.to_str().unwrap()])
-        .env_remove("TASKS_LEDGER")
         .env_remove("COLUMNS")
         .output()
         .expect("spawn qctl");
@@ -1099,10 +1098,8 @@ fn json_output_holds_no_escape_byte_under_forced_colour() {
         &["--format=json", "nosuchverb"],
     ];
     for args in cases {
-        let output = std::process::Command::new(env!("CARGO_BIN_EXE_qctl"))
+        let output = common::binary()
             .args(args)
-            .env_remove("TASKS_LEDGER")
-            .env_remove("NO_COLOR")
             .env("CLICOLOR_FORCE", "1")
             .env("FORCE_COLOR", "3")
             .env("COLORTERM", "truecolor")

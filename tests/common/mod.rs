@@ -48,22 +48,43 @@ impl LedgerDir {
     }
 }
 
+/// The variables a caller's shell may set that change what qctl prints or
+/// which ledger it reads. Agent shells export `CLICOLOR_FORCE=1` and
+/// `FORCE_COLOR=3`, which colour piped output and break every content check.
+const CALLER_ENV: [&str; 6] = [
+    "TASKS_LEDGER",
+    "CLICOLOR",
+    "CLICOLOR_FORCE",
+    "FORCE_COLOR",
+    "NO_COLOR",
+    "COLORTERM",
+];
+
+/// The qctl binary with none of [`CALLER_ENV`], so a test sees the same
+/// output in an agent shell, a plain terminal, and CI. Every test that starts
+/// qctl goes through it; a test about colour sets its variables back on top.
+pub(crate) fn binary() -> Command {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_qctl"));
+    for name in CALLER_ENV {
+        command.env_remove(name);
+    }
+    command
+}
+
 /// Content checks run wide, so a message is matched whole rather than across
 /// the fallback width's line breaks.
 pub(crate) fn qctl(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_qctl"))
+    binary()
         .args(args)
-        .env_remove("TASKS_LEDGER")
         .env("COLUMNS", "1000")
         .output()
         .expect("spawn qctl")
 }
 
 pub(crate) fn qctl_in(dir: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_qctl"))
+    binary()
         .current_dir(dir)
         .args(args)
-        .env_remove("TASKS_LEDGER")
         .env("COLUMNS", "1000")
         .output()
         .expect("spawn qctl")
