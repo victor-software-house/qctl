@@ -211,6 +211,21 @@ queue:
     notes:
       - >2-
         2026-10-12: with both on, the lib reported 173 missing docs and 24 types without Debug. Obvious items get one short line; types used only inside the crate may become pub(crate) instead.
+
+  - id: QCTL-045
+    title: Keep JSON output plain under forced colour
+    scope: output
+    outcome: >-
+      A caller that pipes qctl JSON to jq never receives an ESC byte, whatever the
+      colour environment says.
+    blocked_by: []
+    acceptance:
+      - >-
+        With CLICOLOR_FORCE=1, FORCE_COLOR=3, and COLORTERM=truecolor, JSON output, a
+        JSON error, a parse error under --format json, and an unknown verb hold no ESC
+        byte.
+    notes:
+      - The parse-error case needs ctl-core 0.6.16, which reads a --format json after the bad argument.
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
