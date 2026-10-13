@@ -1,5 +1,11 @@
 # Changelog
 
+## qctl 0.5.4
+
+### Fixed
+
+- `qctl edit ID -l PATH` now changes the plan of an archived row, and `-U plan` removes it, so archiving an OpenSpec change after its row needs no hand edit of `tasks.yaml`. An archived row still refuses every other field but notes, evidence, and links ([#112](https://github.com/victor-software-house/qctl/pull/112)).
+
 ## qctl 0.5.3
 
 ### Fixed
