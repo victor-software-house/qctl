@@ -211,6 +211,24 @@ queue:
     notes:
       - >2-
         2026-10-12: with both on, the lib reported 173 missing docs and 24 types without Debug. Obvious items get one short line; types used only inside the crate may become pub(crate) instead.
+
+  - id: QCTL-046
+    title: CLI tests ignore the caller's color settings
+    scope: tests
+    outcome: >-
+      The CLI tests pass whatever color variables the caller's shell sets, because
+      each child process runs without them.
+    blocked_by: []
+    acceptance:
+      - >-
+        tests/cli.rs removes CLICOLOR_FORCE, FORCE_COLOR, and NO_COLOR from every child
+        process it starts.
+      - >-
+        mise run test passes with CLICOLOR_FORCE=1 and with FORCE_COLOR=1 set in the
+        calling environment.
+    notes:
+      - >-
+        Found 2026-10-12: a pre-push verify run from a shell with CLICOLOR_FORCE=1 failed add_start_archive_round_trip, piped_show_without_columns_stays_within_80_columns, and show_reads_a_stamp_without_moving_it, because piped output carried ANSI codes.
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
