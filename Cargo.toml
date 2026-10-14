@@ -56,7 +56,11 @@ multiple_crate_versions = "allow"
 [dependencies]
 anyhow = "1.0.100"
 clap = { version = "4.6.6", features = ["derive", "env"] }
-ctl-core = { version = "=0.6.17", default-features = false, features = ["app", "input", "usage"] }
+ctl-core = { version = "=0.6.17", default-features = false, features = [
+  "app",
+  "input",
+  "usage",
+] }
 garde = { version = "0.23.0", features = ["derive", "regex"] }
 indoc = "2.0.7"
 jsonschema = { version = "0.49.9", default-features = false }
@@ -68,7 +72,9 @@ time = { version = "0.3.44", features = ["formatting", "macros", "parsing"] }
 yamled = "0.0.5"
 
 [dev-dependencies]
-ctl-core = { version = "=0.6.17", default-features = false, features = ["surface"] }
+ctl-core = { version = "=0.6.17", default-features = false, features = [
+  "surface",
+] }
 insta = { version = "1.48.0", features = ["filters"] }
 minijinja = { version = "=2.24.0", features = ["serde"] }
 rstest = "0.26.1"
