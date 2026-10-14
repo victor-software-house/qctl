@@ -15,7 +15,6 @@
 3. **Two pull requests, reads first.** Reads change error text only; edits
    change written bytes. Splitting them keeps each snapshot diff attributable
    to one cause.
-
 4. **Reorder around a loose comment instead of refusing.** yamled's `reorder`
    keeps each loose comment and blank line in its slot while the lists trade
    places, so the outcome is defined. The old refusal existed because the

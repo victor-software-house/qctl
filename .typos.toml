@@ -1,0 +1,7 @@
+# Spelling, checked by `mise run lint:typos`.
+[files]
+extend-exclude = ["*.lock"]
+
+[default]
+# Commit hashes cited in prose, such as `ba09083`, split into short fake words.
+extend-ignore-re = ["\\b[0-9a-f]{7,40}\\b"]

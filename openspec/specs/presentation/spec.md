@@ -1,6 +1,7 @@
 # presentation Specification
 
 ## Purpose
+
 How qctl presents ledger rows on top of the ctl-core presentation kernel: which values take the identifier role, and how piped output is laid out.
 
 ## Requirements
