@@ -35,15 +35,19 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   `rust-crate`, layout `crate`): `.copier-answers.yml` records its tag and
   answers. Take a new tag with `copier update --defaults` and check
   `git diff --check` before committing. The CI job `Template` fails when the
-  newest tag would change a file. Three local edits survive updates:
+  newest tag would change a file. These local edits survive updates:
   `Cargo.toml` leaves `missing_docs` and `missing_debug_implementations` off
   until QCTL-044, `lefthook.yml` keeps the push-range commit lint and the
-  git-env unset before `verify`, and `mise-tasks/commits` takes several
-  commits.
+  git-env unset before `verify`, `mise-tasks/commits` takes several
+  commits, `ci.yml` sets git's default branch to `main` for the tests that
+  run `git init`, `.rumdl.toml` allows the README banner's HTML, and
+  `.typos.toml` ignores commit hashes cited in prose.
 - `mise run verify` is the gate, from ctl-core's `tasks/rust.toml` (included
   by `git::` URL): toolchain pins, rustfmt on the dated nightly, clippy with
   the `Cargo.toml` lints denied, `check:features`, `cargo test`, doc-tests,
-  cargo-deny licenses, bans, and sources, cargo-machete, and `check:repo`.
+  cargo-deny licenses, bans, and sources, cargo-machete, and `check:repo`
+  (taplo, rumdl, typos, actionlint, OpenSpec validation, then `check:local`,
+  which holds this repository's own checks).
   qctl's own tasks live in `mise-tasks/`. CI adds `deny:advisories` and
   `semver`, which need the network. `mise.toml` pins stable 1.99.0 with
   `mr_boxington = true`, locally and in CI, where `jdx/mr-boxington-action`
