@@ -1,6 +1,7 @@
 # ledger-style Specification
 
 ## Purpose
+
 How `fmt` applies the style a ledger declares, beyond the whitespace nobody chose.
 
 ## Requirements
