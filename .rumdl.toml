@@ -10,3 +10,5 @@ disable = ["MD013"]
 "CLAUDE.md" = ["MD041"]
 # OpenSpec delta specs start with their operation heading, not a title.
 "openspec/changes/*/specs/**/spec.md" = ["MD041"]
+# The banner is an HTML picture element, which Markdown cannot express.
+"README.md" = ["MD033"]
