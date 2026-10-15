@@ -1,3 +1,5 @@
+//! Notes as list items, through `add`, `edit`, and `fmt`.
+
 mod common;
 
 use common::{LedgerDir, qctl, stderr};

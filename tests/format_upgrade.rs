@@ -1,3 +1,5 @@
+//! Schema 3 ledgers: `fmt` upgrades them, and every other verb refuses them.
+
 mod common;
 
 use common::{LedgerDir, qctl, stderr};

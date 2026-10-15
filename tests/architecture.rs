@@ -1,3 +1,6 @@
+//! Module boundaries: domain modules return data, and ctl-core owns
+//! presentation.
+
 use std::fs;
 use std::path::{Path, PathBuf};
 
