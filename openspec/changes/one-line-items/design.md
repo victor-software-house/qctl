@@ -92,4 +92,4 @@ A ledger that must keep a block item cannot run `fmt`; none is known.
 1. yamled releases YMD-011 as a patch; qctl bumps it.
 2. qctl ships this change in its next release. The bump level is the operator's call: patch follows the house rule, minor would mark the `fmt --check` break.
 3. Each ledger repository bumps its qctl pin and runs `qctl fmt` once, in its own pull request, made by its owner.
-4. Rollback: revert the qctl release pin; the one-line items stay valid YAML and read back as the same strings.
+4. Rollback: revert the qctl release pin. A single-line item `fmt` rewrote stays valid YAML and reads back as the same string. A multi-line note `fmt` split stays split: the older qctl reads it as several notes, and joining them again is a hand edit.

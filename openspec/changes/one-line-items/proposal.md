@@ -36,7 +36,7 @@ Queue row: QCTL-039.
 
 ### Modified Capabilities
 
-None. `ledger-style` keeps its requirements; its spacing rules apply to the one-line items as they do today.
+1. `ledger-style`: the scenario for "A kept block scalar is never extended" moves from a `|+` note, which `fmt` now writes on one line, to a `|+` outcome.
 
 ## Impact
 

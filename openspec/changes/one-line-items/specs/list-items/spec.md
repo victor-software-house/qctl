@@ -12,7 +12,7 @@ Every verb that writes an item of a row's list field SHALL write it on one line,
 The item SHALL be plain when plain text reads back as the same string, and quoted otherwise.
 When it is quoted and the text holds an apostrophe and no double quote, it SHALL be double-quoted; otherwise it SHALL be single-quoted when that reads back, and double-quoted when it does not.
 No verb SHALL write a list item as a folded or literal block.
-Items a verb does not change SHALL keep their bytes.
+Items a verb does not change SHALL keep their bytes, unless the ledger declares `normalize_on_write: true`, which runs the `fmt` rewrite below on every write.
 
 #### Scenario: A dated note is quoted on one line
 
@@ -60,7 +60,7 @@ The error SHALL say that a note is one line and that each line is passed as its 
 ### Requirement: fmt writes block list items on one line
 
 `qctl fmt` SHALL rewrite every list item of every row that is written as a folded or literal block scalar, in `notes`, `acceptance`, `evidence`, `links`, and `blocked_by`, into the one-line form above, and SHALL NOT change the text the item reads as.
-A note whose text holds line breaks SHALL become one item per line, in order, in its place; a line that is empty or holds only spaces SHALL be dropped.
+A note whose text holds line breaks SHALL become one item per line, in order, in its place; a line that is empty or holds only spaces SHALL be dropped, and so are the trailing line breaks a kept block (`|+`) carried.
 An item of another field whose text holds a line break SHALL stay one item, double-quoted with `\n` escapes.
 Comments owned by a rewritten item SHALL stay above it.
 `qctl fmt --check` SHALL name each such item's lines and write nothing.
@@ -109,7 +109,7 @@ A verb that rewrites a row's whole `notes` list, such as `qctl edit -x note:N` o
 
 ### Requirement: The instructions say how to date a note
 
-`qctl instructions` SHALL tell the operator to write a note's date followed by a comma, never a colon, because `: ` and ` #` inside a line force YAML quoting, and never to rewrite existing note text to achieve it.
+`qctl instructions` SHALL tell the operator to write a note's date followed by a comma, never a colon, because a colon followed by a space, or a space followed by `#`, inside a line forces YAML quoting, and never to rewrite existing note text to achieve it.
 
 #### Scenario: The instructions carry the date rule
 
