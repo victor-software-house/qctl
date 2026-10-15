@@ -27,6 +27,12 @@ pub fn resolve_path(args: &LedgerArgs) -> PathBuf {
 
 /// The ledger, refusing to hand back one whose values are wrong. This is what
 /// the verbs use: none of them should edit a file they cannot vouch for.
+///
+/// # Errors
+///
+/// Fails when the file cannot be read or is not YAML, when it declares a
+/// schema version other than [`VERSION`], or when a value breaks a schema
+/// rule. Each message names the file and the line.
 pub fn load(path: &Path) -> Result<Ledger> {
     let input = Input::read(path)?;
     if let Some(message) = stale_schema_message(&input) {
@@ -37,6 +43,11 @@ pub fn load(path: &Path) -> Result<Ledger> {
 
 /// A ledger parsed and validated through ctl-core's declared input, so every
 /// complaint names the file and the line it is on.
+///
+/// # Errors
+///
+/// Fails when the text does not parse as a ledger or a value breaks a schema
+/// rule.
 pub fn checked(input: &Input) -> Result<Ledger> {
     let ledger: Ledger = input.parse()?;
     input.check(&ledger, &())?;
@@ -77,19 +88,38 @@ pub fn stale_schema_message(input: &Input) -> Option<String> {
 /// `check` reports every problem in one run, so it needs the parsed rows even
 /// when a value is wrong — a hard failure here would throw away the schema and
 /// graph findings it already has.
+///
+/// # Errors
+///
+/// Fails when the file cannot be read or does not parse as a ledger.
 pub fn read(path: &Path) -> Result<Ledger> {
     Ok(Input::read(path)?.parse()?)
 }
 
 /// The ledger as JSON, for the JSON Schema check.
+///
+/// # Errors
+///
+/// Fails when the text is not YAML.
 pub fn load_value(input: &Input) -> Result<Value> {
     Ok(input.parse()?)
 }
 
+/// [`CANONICAL_SCHEMA`] as JSON.
+///
+/// # Errors
+///
+/// Fails when the embedded schema is not JSON, which the generated file
+/// never is.
 pub fn schema_value() -> Result<Value> {
     serde_json::from_str(CANONICAL_SCHEMA).context("embedded tasks.schema.json")
 }
 
+/// `qctl status`: the whole ledger, for the active row and the queue.
+///
+/// # Errors
+///
+/// Fails when the ledger does not [`load`].
 pub fn status(args: &LedgerArgs) -> Result<Report> {
     let path = resolve_path(args);
     let ledger = load(&path)?;
@@ -99,6 +129,11 @@ pub fn status(args: &LedgerArgs) -> Result<Report> {
     })
 }
 
+/// `qctl show`: one row, from whichever list holds it.
+///
+/// # Errors
+///
+/// Fails when the ledger does not [`load`] or no list holds the id.
 pub fn show(args: &crate::cli::IdArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
@@ -228,6 +263,12 @@ fn id_matches_prefix(id: &str, prefix: &str) -> bool {
     (3..=6).contains(&number.len()) && number.bytes().all(|byte| byte.is_ascii_digit())
 }
 
+/// The id after the highest one any list holds.
+///
+/// # Errors
+///
+/// Fails when the highest number is already the largest an id can carry,
+/// `999999`.
 pub fn next_id(ledger: &Ledger) -> Result<String> {
     let highest = corpus::highest_number(ledger);
     ensure!(highest < corpus::MAX_TASK_NUMBER, "id space exhausted");

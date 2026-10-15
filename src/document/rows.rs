@@ -41,6 +41,11 @@ impl Document {
             .collect()
     }
 
+    /// Where the row carrying `id` sits in its section.
+    ///
+    /// # Errors
+    ///
+    /// Fails when no row in the section carries `id`.
     pub fn position_of(&self, name: &str, id: &str) -> Result<usize> {
         self.ids(name)
             .iter()
@@ -48,11 +53,21 @@ impl Document {
             .with_context(|| format!("{id} is not in {name}"))
     }
 
+    /// Move a row to the front of its section.
+    ///
+    /// # Errors
+    ///
+    /// Fails as [`Self::move_row`] does.
     pub fn move_to_front(&mut self, name: &str, id: &str) -> Result<()> {
         self.move_row(name, id, 0)
     }
 
     /// Move a row within its section so it ends up at `destination`.
+    ///
+    /// # Errors
+    ///
+    /// Fails when no row in the section carries `id`, or the row cannot be
+    /// moved.
     pub fn move_row(&mut self, name: &str, id: &str, destination: usize) -> Result<()> {
         let from = self.position_of(name, id)?;
         if from == destination {
@@ -63,6 +78,11 @@ impl Document {
     }
 
     /// Move a row to the front of another section, then change its fields.
+    ///
+    /// # Errors
+    ///
+    /// Fails when no row in `from` carries `id`, or the row cannot be moved
+    /// or changed.
     pub fn move_between(
         &mut self,
         from: &str,
@@ -74,6 +94,11 @@ impl Document {
     }
 
     /// Move a row to the end of another section, then change its fields.
+    ///
+    /// # Errors
+    ///
+    /// Fails when no row in `from` carries `id`, or the row cannot be moved
+    /// or changed.
     pub fn move_to_end(
         &mut self,
         from: &str,
@@ -101,6 +126,10 @@ impl Document {
 
     /// Add a row at the end of a section, then its notes, written one by one
     /// in the style each note gets. `row` carries no notes of its own.
+    ///
+    /// # Errors
+    ///
+    /// Fails when the row does not serialize or a note cannot be written.
     pub fn append<T: Serialize>(&mut self, name: &str, row: &T, notes: &[String]) -> Result<()> {
         self.ensure_section(name)?;
         let list = section(name);
@@ -116,6 +145,10 @@ impl Document {
     }
 
     /// Put a section's rows in the order these ids give.
+    ///
+    /// # Errors
+    ///
+    /// Fails when an id is not in the section.
     pub fn reorder_rows(&mut self, name: &str, ids: &[String]) -> Result<()> {
         let current = self.ids(name);
         if current == ids {
@@ -131,6 +164,10 @@ impl Document {
     }
 
     /// Leave only `kept` in a row's `blocked_by`.
+    ///
+    /// # Errors
+    ///
+    /// Fails when no row in the section carries `row`.
     pub fn rewrite_blockers(&mut self, name: &str, row: &str, kept: &[String]) -> Result<()> {
         let path = section(name)
             .index(self.position_of(name, row)?)

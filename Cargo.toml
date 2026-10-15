@@ -11,6 +11,10 @@ readme = "README.md"
 keywords = ["tasks", "ledger", "yaml", "cli"]
 categories = ["command-line-utilities", "development-tools"]
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cap-lints", "warn"]
+
 # Line tables keep backtraces readable at a fraction of full debug info.
 [profile.dev]
 debug = "line-tables-only"

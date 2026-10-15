@@ -26,6 +26,11 @@ use crate::report::Report;
 use crate::schema::{ArchiveOrder, RowSpacing, Section, VERSION};
 
 /// The ledger as its own style says it should be written.
+///
+/// # Errors
+///
+/// Fails when the source is not YAML qctl can edit, when a style step cannot
+/// be applied, or when the result would not parse.
 pub fn normalized(source: &str, ledger: &Ledger) -> Result<String> {
     let style = &ledger.style;
     let mut document = Document::new(source.to_owned())?;
@@ -220,6 +225,13 @@ fn push_blank(out: &mut String, blank_run: &mut usize, after_key: bool) {
 /// `qctl fmt`: write the ledger in its declared style, or with `--check` say
 /// what is not in it and leave the file alone. A schema 3 file is rewritten
 /// to schema 4 first: each scalar `notes` becomes a list of paragraphs.
+///
+/// # Errors
+///
+/// Fails when the file cannot be read or written, when a schema 3 file
+/// cannot be upgraded, when the ledger is not
+/// [`checked`](crate::ledger::checked), or when it cannot be
+/// [`normalized`].
 pub fn run(args: &FmtArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let original = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;

@@ -58,6 +58,10 @@ impl Change {
 impl Document {
     /// A ledger's text. A row added to a list whose own rows do not settle
     /// its spacing is set off by a blank line, as every ledger qctl writes.
+    ///
+    /// # Errors
+    ///
+    /// Fails when the text is not YAML qctl can edit.
     pub fn new(source: String) -> Result<Self> {
         let yaml = yamled::Document::parse(source)
             .context("this ledger is not YAML qctl can edit")?
@@ -73,6 +77,10 @@ impl Document {
     /// Put the lists in the order these names give, each with the comments it
     /// owns. A list the file does not have is skipped; everything that is not
     /// a list stays in its slot. A file already in that order is left alone.
+    ///
+    /// # Errors
+    ///
+    /// Fails when yamled cannot move a list.
     pub fn reorder_sections(&mut self, order: &[&str]) -> Result<()> {
         let wanted: Vec<&str> = order
             .iter()
@@ -102,6 +110,10 @@ impl Document {
 
     /// Move every row of a section to sit this far under its key. A section
     /// with no rows has nothing to move.
+    ///
+    /// # Errors
+    ///
+    /// Fails when yamled cannot re-indent the rows.
     pub fn set_indent(&mut self, name: &str, indent: usize) -> Result<()> {
         let path = section(name);
         let Some(list) = self.yaml.node(&path) else {
@@ -124,6 +136,10 @@ impl Document {
     }
 
     /// Replace a top-level value, leaving its line where it was.
+    ///
+    /// # Errors
+    ///
+    /// Fails when the file has no such key or the value does not serialize.
     pub fn set<T: Serialize + ?Sized>(&mut self, key: &str, value: &T) -> Result<()> {
         self.yaml
             .replace(&section(key), value)
@@ -149,6 +165,10 @@ impl Document {
     }
 
     /// Drop a key from a row that is still in the file.
+    ///
+    /// # Errors
+    ///
+    /// Fails when the row or its key is not in the file.
     pub fn remove_row_key(&mut self, name: &str, index: usize, key: &str) -> Result<()> {
         self.yaml
             .remove(&section(name).index(index).key(key))
@@ -157,6 +177,10 @@ impl Document {
 
     /// Write a row's notes as a list, each note in the style [`notes::style`]
     /// picks. Used by `fmt` when rewriting a v3 scalar `notes`.
+    ///
+    /// # Errors
+    ///
+    /// Fails when the row has no `notes` or a note cannot be written.
     pub fn replace_row_notes(&mut self, name: &str, index: usize, items: &[String]) -> Result<()> {
         let path = section(name).index(index).key("notes");
         self.yaml
@@ -166,6 +190,10 @@ impl Document {
     }
 
     /// Apply field changes to one row.
+    ///
+    /// # Errors
+    ///
+    /// Fails when the row is not in the file or yamled refuses a change.
     pub fn revise(&mut self, name: &str, index: usize, changes: &[Change]) -> Result<()> {
         let row = section(name).index(index);
         for change in changes {
@@ -281,6 +309,10 @@ fn section(name: &str) -> Path {
 }
 
 /// Fail rather than write something the next verb cannot read.
+///
+/// # Errors
+///
+/// Fails when `source` is not valid YAML.
 pub fn must_still_parse(source: &str) -> Result<()> {
     if ctl_core::input::Input::new("tasks.yaml", source)
         .parse::<serde_json::Value>()

@@ -18,6 +18,13 @@ use crate::report::{Destination, Report};
 use crate::schema::{HorizonTask, QueuedTask};
 use crate::trailers;
 
+/// `qctl init`: write an empty ledger for a prefix.
+///
+/// # Errors
+///
+/// Fails when the prefix does not match `[A-Z][A-Z0-9]{1,7}`, when the file
+/// exists and `--force` is not set, or when the file or its directory cannot
+/// be written.
 pub fn init(args: &InitArgs) -> Result<Report> {
     let prefix = args.prefix.to_ascii_uppercase();
     ensure!(
@@ -50,6 +57,16 @@ pub fn init(args: &InitArgs) -> Result<Report> {
     })
 }
 
+/// `qctl add`: write a row under the next free id, on the queue or, with
+/// `--horizon`, on the horizon.
+///
+/// # Errors
+///
+/// Fails when the flags do not fit the list, when the ledger does not
+/// [`load`], when `--plan` names no file next to the ledger, or when the id
+/// space is used up. A queue row also fails when `--before` or `--after`
+/// names no queued id, when it would sit ahead of the active row, or when a
+/// blocker would not sit earlier than it. Last, the edited file must write.
 pub fn add(args: &AddArgs) -> Result<Report> {
     if args.horizon {
         ensure!(
@@ -181,6 +198,13 @@ fn insertion_index(ids: &[String], before: Option<&str>, after: Option<&str>) ->
     }
 }
 
+/// `qctl start`: make an unblocked queued row active and move it to the
+/// front of the queue.
+///
+/// # Errors
+///
+/// Fails when the ledger does not [`load`], when the id is not queued or is
+/// blocked, or when the file cannot be written.
 pub fn start(args: &crate::cli::IdArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
@@ -201,6 +225,15 @@ pub fn start(args: &crate::cli::IdArgs) -> Result<Report> {
     })
 }
 
+/// `qctl park`: move a queued row to the end of the horizon with its `kind`
+/// and `open`, dropping `acceptance` and `blocked_by`. Parking the active row
+/// clears `active`.
+///
+/// # Errors
+///
+/// Fails when the ledger does not [`load`], when the id is not queued, when
+/// another queued row still names it as a blocker, or when the file cannot
+/// be written.
 pub fn park(args: &ParkArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
@@ -240,6 +273,14 @@ pub fn park(args: &ParkArgs) -> Result<Report> {
     })
 }
 
+/// `qctl promote`: move a horizon row to the end of the queue with its
+/// acceptance and blockers, dropping `kind` and `open`.
+///
+/// # Errors
+///
+/// Fails when no `--acceptance` is given, when the ledger does not [`load`],
+/// when the id is not on the horizon, when a blocker is not queued, or when
+/// the file cannot be written.
 pub fn promote(args: &PromoteArgs) -> Result<Report> {
     ensure!(
         !args.acceptance.is_empty(),
@@ -279,6 +320,15 @@ pub fn promote(args: &PromoteArgs) -> Result<Report> {
     })
 }
 
+/// `qctl archive`: move a queued row to the front of the archive, stamped
+/// now in the ledger's zone, and take its id out of every `blocked_by`. The
+/// row then at the front of the queue becomes active.
+///
+/// # Errors
+///
+/// Fails when the ledger does not [`load`], when the id is not queued, when
+/// the ledger's `timezone` is not an offset from UTC, or when the file cannot
+/// be written.
 pub fn archive(args: &ArchiveArgs) -> Result<Report> {
     let path = archive_row(args)?;
     Ok(Report::Archived {
@@ -334,6 +384,14 @@ fn archive_row(args: &ArchiveArgs) -> Result<String> {
     Ok(path.display().to_string())
 }
 
+/// `qctl close-from-git`: archive every queued id a commit-body trailer
+/// closed, with the commit as its evidence.
+///
+/// # Errors
+///
+/// Fails when git cannot scan the history, when the pre-push input cannot be
+/// read or holds a malformed line, when an id fails to [`archive`], or when
+/// `active` still names a closed id afterwards.
 pub fn close_from_git(args: &CloseFromGitArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let root = path.parent().unwrap_or(&path);

@@ -9,6 +9,10 @@ use anyhow::{Context, Result, bail, ensure};
 ///
 /// A git failure is an error. `check` reports it; it does not skip. An
 /// unborn HEAD is an empty scan: there are no commits, so no trailers.
+///
+/// # Errors
+///
+/// Fails when git cannot be run or `git log` fails.
 pub fn closed_ids(root: &Path) -> Result<Vec<(String, String)>> {
     if !head_exists(root)? {
         return Ok(Vec::new());
@@ -49,6 +53,10 @@ pub fn git_root_status(start: &Path) -> GitRoot {
 }
 
 /// `git rev-parse --show-toplevel` from `start`.
+///
+/// # Errors
+///
+/// Fails when `start` is not in a git repository or git fails.
 pub fn git_root(start: &Path) -> Result<PathBuf> {
     match git_root_status(start) {
         GitRoot::Root(root) => Ok(root),
@@ -127,12 +135,20 @@ fn git_log(root: &Path, rev: &[&str]) -> Result<String> {
 /// Same scan, but a git failure is an error. `rev` is passed to `git log`
 /// after the format: empty means the whole reachable history, `main..HEAD`
 /// means that range, a SHA means that commit and its ancestors.
+///
+/// # Errors
+///
+/// Fails when git cannot be run or `git log` rejects `rev`.
 pub fn closed_ids_rev(root: &Path, rev: &[&str]) -> Result<Vec<(String, String)>> {
     Ok(parse_log(&git_log(root, rev)?))
 }
 
 /// Pre-push stdin: one `<local-ref> <local-sha> <remote-ref> <remote-sha>`
 /// line per ref. A zero remote SHA is a new ref (log the local SHA).
+///
+/// # Errors
+///
+/// Fails when a line does not hold four fields, or a `git log` fails.
 pub fn closed_ids_pre_push(root: &Path, stdin: &str) -> Result<Vec<(String, String)>> {
     let mut found = Vec::new();
     for line in stdin.lines() {
