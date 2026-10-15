@@ -44,9 +44,10 @@ Otherwise it SHALL be single-quoted when that reads back as the same string, and
 - **THEN** the appended line reads `- "2026-10-15: it's blocked on review"`
 - **AND** the file holds no `''`
 
-### Requirement: A verb keeps the bytes of items it does not change
+### Requirement: An append keeps the bytes of the items before it
 
-A verb SHALL keep the bytes of every list item it does not change, unless the ledger declares `normalize_on_write: true`, which runs the `fmt` rewrite on every write.
+A verb that only appends to a list SHALL keep the bytes of every item already in it, unless the ledger declares `normalize_on_write: true`, which runs the `fmt` rewrite on every write.
+A verb that rewrites a list whole, by a removal, a reorder, or `-R`, SHALL write every item of that list in the one-line form.
 
 #### Scenario: Appending a note leaves a folded note alone
 
@@ -105,12 +106,20 @@ Comments owned by a rewritten item SHALL stay above it.
 
 `qctl fmt` SHALL write a note whose text holds line breaks as one item per line, in order, in its place.
 It SHALL drop a line that is empty or holds only spaces, and with it the trailing line breaks a kept block (`|+`) carried.
+A note with no other line SHALL stay one item holding its whole text, double-quoted with `\n` escapes.
 
 #### Scenario: A literal note becomes one item per line
 
 - **WHEN** `DEMO-001`'s notes hold `- |-` followed by the lines `Lead: the design.`, `1. First.`, and `2. Second.`
 - **AND** `qctl fmt` runs
 - **THEN** the notes hold `- 'Lead: the design.'`, then `- 1. First.`, then `- 2. Second.`, in the place the block held
+
+#### Scenario: A note of only blank lines stays one item
+
+- **WHEN** `DEMO-001`'s notes hold a `- |+` block whose lines are all empty
+- **AND** `qctl fmt` runs
+- **THEN** the notes still hold one item, written on one line
+- **AND** `qctl show DEMO-001 --format json` reports the same note text as before
 
 ### Requirement: A verb rewriting notes splits a multi-line note
 
