@@ -14,6 +14,7 @@ use serde::Serialize;
 use yamled::{Path, Segment, Spacing, Style};
 
 /// A ledger's text, parsed so it can be edited in place.
+#[derive(Debug)]
 pub struct Document {
     yaml: yamled::Document,
 }
@@ -23,16 +24,24 @@ pub struct Document {
 pub enum Change {
     /// A value written in place, or added at the end of the row.
     Set {
+        /// The row key.
         key: String,
+        /// Its new value.
         value: serde_json::Value,
     },
     /// A key taken off the row.
-    Unset { key: String },
+    Unset {
+        /// The row key.
+        key: String,
+    },
     /// A list of strings rewritten. Items appended to a block list are added
     /// after the ones already written, so those keep their bytes.
     List {
+        /// The row key.
         key: String,
+        /// The items as the ledger holds them.
         before: Vec<String>,
+        /// The items to write.
         after: Vec<String>,
     },
 }
@@ -69,6 +78,7 @@ impl Document {
         Ok(Self { yaml })
     }
 
+    /// The edited text.
     #[must_use]
     pub fn into_source(self) -> String {
         self.yaml.into_string()

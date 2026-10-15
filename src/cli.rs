@@ -1,3 +1,6 @@
+//! The command-line grammar: one struct of arguments per verb. A flag's doc
+//! comment is its `--help` text.
+
 use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
@@ -5,24 +8,29 @@ use ctl_core::{ColorLong, FormatLong};
 
 use crate::schema::Kind;
 
-#[derive(Parser)]
+/// The whole command line.
+#[derive(Debug, Parser)]
 #[command(
     version,
     about = "Control in-repo YAML work queues",
     arg_required_else_help = true
 )]
 pub struct Cli {
+    /// The verb to run.
     #[command(subcommand)]
     pub command: Command,
 
+    /// `--format`, shared by every verb.
     #[command(flatten)]
     pub format: FormatLong,
 
+    /// `--color` and `--no-color`, shared by every verb.
     #[command(flatten)]
     pub color: ColorLong,
 }
 
-#[derive(Subcommand)]
+/// The verbs.
+#[derive(Debug, Subcommand)]
 pub enum Command {
     /// Write a tasks.yaml for a prefix. Does not copy a schema file.
     Init(InitArgs),
@@ -56,8 +64,10 @@ pub enum Command {
     Instructions,
 }
 
-#[derive(Args)]
+/// Arguments of `qctl fmt`.
+#[derive(Args, Debug)]
 pub struct FmtArgs {
+    /// The ledger to format.
     #[command(flatten)]
     pub ledger: LedgerArgs,
 
@@ -67,15 +77,18 @@ pub struct FmtArgs {
     pub check: bool,
 }
 
-#[derive(Args)]
+/// Arguments of `qctl schema`.
+#[derive(Args, Debug)]
 pub struct SchemaArgs {
     /// Where to write it. Defaults to schema/tasks.schema.json.
     #[arg(short = 'o', long, value_hint = clap::ValueHint::FilePath)]
     pub out: Option<PathBuf>,
 }
 
-#[derive(Args, Clone)]
+/// Arguments of `qctl check`.
+#[derive(Args, Clone, Debug)]
 pub struct CheckArgs {
+    /// The ledger to check.
     #[command(flatten)]
     pub ledger: LedgerArgs,
     /// Skip the git trailer scan. Needed for a scratch ledger that is not in
@@ -84,8 +97,10 @@ pub struct CheckArgs {
     pub no_git: bool,
 }
 
-#[derive(Args, Clone)]
+/// Arguments of `qctl close-from-git`.
+#[derive(Args, Clone, Debug)]
 pub struct CloseFromGitArgs {
+    /// The ledger to archive closed ids in.
     #[command(flatten)]
     pub ledger: LedgerArgs,
     /// Read pre-push stdin (`<local-ref> <local-sha> <remote-ref>
@@ -98,20 +113,25 @@ pub struct CloseFromGitArgs {
     pub range: Option<String>,
 }
 
-#[derive(Args)]
+/// Arguments of `qctl hook`.
+#[derive(Args, Debug)]
 pub struct HookArgs {
+    /// The hook verb to run.
     #[command(subcommand)]
     pub command: HookCommand,
 }
 
-#[derive(Subcommand)]
+/// The `qctl hook` verbs.
+#[derive(Debug, Subcommand)]
 pub enum HookCommand {
     /// Write `.git/hooks/pre-push` so a push archives closed ids.
     Install(HookInstallArgs),
 }
 
-#[derive(Args)]
+/// Arguments of `qctl hook install`.
+#[derive(Args, Debug)]
 pub struct HookInstallArgs {
+    /// The ledger the hook archives closed ids in.
     #[command(flatten)]
     pub ledger: LedgerArgs,
     /// Overwrite an existing git pre-push. Rejected when Lefthook is present
@@ -120,18 +140,21 @@ pub struct HookInstallArgs {
     pub force: bool,
 }
 
-#[derive(Args, Clone)]
+/// Which ledger file a verb reads.
+#[derive(Args, Clone, Debug)]
 pub struct LedgerArgs {
     /// Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`.
     #[arg(short = 'f', long, value_hint = clap::ValueHint::FilePath)]
     pub file: Option<PathBuf>,
 }
 
-#[derive(Args)]
+/// Arguments of `qctl init`.
+#[derive(Args, Debug)]
 pub struct InitArgs {
     /// Stable id prefix, such as PST, KAI, or OMX.
     #[arg(short = 'p', long)]
     pub prefix: String,
+    /// Where to write the ledger.
     #[command(flatten)]
     pub ledger: LedgerArgs,
     /// Overwrite an existing ledger.
@@ -139,20 +162,26 @@ pub struct InitArgs {
     pub force: bool,
 }
 
-#[derive(Args)]
+/// Arguments of `qctl add`.
+#[derive(Args, Debug)]
 pub struct AddArgs {
+    /// The ledger to add to.
     #[command(flatten)]
     pub ledger: LedgerArgs,
+    /// One-line name of the task.
     #[arg(short = 't', long)]
     pub title: String,
+    /// The part of the repository the task touches.
     #[arg(short = 's', long)]
     pub scope: String,
+    /// What is true once the task is done.
     #[arg(short = 'o', long)]
     pub outcome: String,
     /// Repeatable end condition that must be demonstrably true to close the
     /// row. Required on the queue; not used on the horizon.
     #[arg(short = 'a', long = "acceptance", required_unless_present = "horizon")]
     pub acceptance: Vec<String>,
+    /// The forkctl patch the task edits.
     #[arg(short = 'P', long)]
     pub patch: Option<String>,
     /// Repeatable note item. Intentional line and paragraph breaks are
@@ -162,6 +191,7 @@ pub struct AddArgs {
     /// Repeatable blocker id. Each must sit earlier than the new row.
     #[arg(short = 'b', long = "blocked-by")]
     pub blocked_by: Vec<String>,
+    /// A plan file next to the ledger, such as a change proposal.
     #[arg(short = 'l', long)]
     pub plan: Option<String>,
     /// Repeatable URI.
@@ -195,39 +225,54 @@ fn parse_kind(raw: &str) -> Result<Kind, String> {
     }
 }
 
-#[derive(Args)]
+/// Arguments of a verb that names one row: `start` and `show`.
+#[derive(Args, Debug)]
 pub struct IdArgs {
+    /// The task id, such as QCTL-001.
     pub id: String,
+    /// The ledger that holds the row.
     #[command(flatten)]
     pub ledger: LedgerArgs,
 }
 
-#[derive(Args)]
+/// Arguments of `qctl archive`.
+#[derive(Args, Debug)]
 pub struct ArchiveArgs {
+    /// The queued task id.
     pub id: String,
+    /// The ledger that holds the row.
     #[command(flatten)]
     pub ledger: LedgerArgs,
     /// Repeatable evidence line.
     #[arg(short = 'e', long = "evidence", required = true)]
     pub evidence: Vec<String>,
+    /// Whether the work was done or dropped.
     #[arg(short = 'd', long, value_enum, default_value = "completed")]
     pub disposition: Disposition,
 }
 
-#[derive(Args)]
+/// Arguments of `qctl park`.
+#[derive(Args, Debug)]
 pub struct ParkArgs {
+    /// The queued task id.
     pub id: String,
+    /// The ledger that holds the row.
     #[command(flatten)]
     pub ledger: LedgerArgs,
+    /// Why it goes on the horizon: research, evaluation, or deferred.
     #[arg(short = 'k', long, value_parser = parse_kind)]
     pub kind: Kind,
+    /// The missing start condition.
     #[arg(short = 'O', long)]
     pub open: String,
 }
 
-#[derive(Args)]
+/// Arguments of `qctl promote`.
+#[derive(Args, Debug)]
 pub struct PromoteArgs {
+    /// The horizon task id.
     pub id: String,
+    /// The ledger that holds the row.
     #[command(flatten)]
     pub ledger: LedgerArgs,
     /// Repeatable end condition that must be demonstrably true to close the
@@ -239,23 +284,33 @@ pub struct PromoteArgs {
     pub blocked_by: Vec<String>,
 }
 
-#[derive(Args)]
+/// Arguments of `qctl edit`.
+#[derive(Args, Debug)]
 pub struct EditArgs {
+    /// The task id, on any list.
     pub id: String,
+    /// The ledger that holds the row.
     #[command(flatten)]
     pub ledger: LedgerArgs,
+    /// New title.
     #[arg(short = 't', long)]
     pub title: Option<String>,
+    /// New scope.
     #[arg(short = 's', long)]
     pub scope: Option<String>,
+    /// New outcome.
     #[arg(short = 'o', long)]
     pub outcome: Option<String>,
+    /// New horizon kind: research, evaluation, or deferred.
     #[arg(short = 'k', long, value_parser = parse_kind)]
     pub kind: Option<Kind>,
+    /// New missing start condition of a horizon row.
     #[arg(short = 'O', long)]
     pub open: Option<String>,
+    /// New forkctl patch name.
     #[arg(short = 'P', long)]
     pub patch: Option<String>,
+    /// New plan file next to the ledger.
     #[arg(short = 'l', long)]
     pub plan: Option<String>,
     /// Drop `patch` or `plan`.
@@ -289,11 +344,16 @@ pub struct EditArgs {
     pub position: Option<EditPosition>,
 }
 
-#[derive(Clone)]
+/// Where `--position` moves a queued row.
+#[derive(Clone, Debug)]
 pub enum EditPosition {
+    /// The head of the queue.
     Front,
+    /// The tail of the queue.
     Back,
+    /// Just before this queued id.
     Before(String),
+    /// Just after this queued id.
     After(String),
 }
 
@@ -317,18 +377,27 @@ fn parse_position(raw: &str) -> Result<EditPosition, String> {
     }
 }
 
-#[derive(Clone)]
+/// One `--remove` value: a list, and the item to drop from it.
+#[derive(Clone, Debug)]
 pub struct RemoveSpec {
+    /// The list.
     pub field: RemoveField,
+    /// A 1-based index, or the item's exact text.
     pub selector: String,
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+/// A list `--remove` can drop an item from.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RemoveField {
+    /// `notes`.
     Note,
+    /// `acceptance`.
     Acceptance,
+    /// `links`.
     Link,
+    /// `blocked_by`.
     BlockedBy,
+    /// `evidence`.
     Evidence,
 }
 
@@ -357,19 +426,26 @@ fn parse_remove(raw: &str) -> Result<RemoveSpec, String> {
     })
 }
 
-#[derive(Clone, Copy, ValueEnum, PartialEq, Eq)]
+/// A field `--unset` can drop.
+#[derive(Clone, Copy, Debug, ValueEnum, PartialEq, Eq)]
 pub enum UnsetField {
+    /// The forkctl patch name.
     Patch,
+    /// The plan file.
     Plan,
 }
 
-#[derive(Clone, Copy, ValueEnum)]
+/// How a row left the queue.
+#[derive(Clone, Copy, Debug, ValueEnum)]
 pub enum Disposition {
+    /// The work is done.
     Completed,
+    /// The work will not be done.
     Dropped,
 }
 
 impl Disposition {
+    /// The value as the ledger writes it.
     #[must_use]
     pub fn as_str(self) -> &'static str {
         match self {
