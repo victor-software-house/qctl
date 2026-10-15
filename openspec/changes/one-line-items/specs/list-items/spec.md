@@ -72,7 +72,7 @@ The error SHALL say that a note is one line and that each line is passed as its 
 
 ### Requirement: fmt writes block list items on one line
 
-`qctl fmt` SHALL rewrite each folded or literal list item in `notes`, `acceptance`, `evidence`, `links`, and `blocked_by` into the one-line form, without changing the text it reads as.
+`qctl fmt` SHALL rewrite each folded or literal item of a block list in `notes`, `acceptance`, `evidence`, `links`, and `blocked_by` into the one-line form, without changing the text it reads as.
 An item of a field other than `notes` whose text holds a line break SHALL stay one item, double-quoted with `\n` escapes.
 Comments owned by a rewritten item SHALL stay above it.
 `qctl fmt --check` SHALL name each such item's lines and write nothing, and a later `qctl fmt` SHALL find nothing to change.
@@ -104,7 +104,7 @@ Comments owned by a rewritten item SHALL stay above it.
 
 ### Requirement: fmt writes a multi-line note one item per line
 
-`qctl fmt` SHALL write a note whose text holds line breaks as one item per line, in order, in its place.
+`qctl fmt` SHALL write a note of a block list whose text holds line breaks, `\n` or `\r`, in any style, as one item per line, in order, in its place.
 It SHALL drop a line that is empty or holds only spaces, and with it the trailing line breaks a kept block (`|+`) carried.
 A note with no other line SHALL stay one item holding its whole text, double-quoted with `\n` escapes.
 

@@ -20,9 +20,10 @@ yamled YMD-011 adds `TextStyle::Line` (one line, ignoring the node's current sty
 
 **Non-Goals:**
 
-1. Re-quoting a one-line item that is already written, such as an existing `'it''s'`. Its bytes stay; the operator's rule governs what qctl writes, and `fmt` changes only block items.
+1. Re-quoting a one-line item that is already written, such as an existing `'it''s'`. Its bytes stay; the operator's rule governs what qctl writes, and `fmt` changes only block items and notes holding a line break.
 2. Top-level scalars and row scalars (`title`, `outcome`, `plan`). They keep yamled's replace rules.
-3. A `check` error for a note holding a line break. `fmt --check` is the shape gate.
+3. Flow-sequence lists. A verb replaces one whole through yamled and `fmt` skips it, so neither splits its notes. No ledger in the census holds a non-empty flow list.
+4. A `check` error for a note holding a line break. `fmt --check` is the shape gate.
 
 ## Decisions
 
@@ -55,7 +56,7 @@ The one ledger note of that shape today (33 multi-line notes, 1 hard-wrapped) sh
 A new `fmt` step, after the schema 3 upgrade and before sections move, walks each row of `queue`, `archive`, and `horizon`.
 For each of `notes`, `acceptance`, `evidence`, `links`, and `blocked_by` that is a block sequence, every item whose node style is `Literal` or `Folded` is rewritten, and so is a note in any style whose split (item 1) differs from its text, such as a double-quoted note holding `\n` escapes. Items run last first, so earlier indexes stay valid:
 
-1. A note: its text split on `\n`, lines that are empty or only spaces dropped. The first line replaces the item with `replace_text(…, TextStyle::Line)`; each further line is inserted after it with the insert form of the item writer. A note with no line left, one holding only spaces and line breaks, stays one item: its whole text is written with `TextStyle::Line`, escaped, so no note and no owned comment disappears. The split, with this fallback, is one function that `write_list` (§4) also uses, so a later whole-list rewrite keeps the note too.
+1. A note: its text split at each `\n` or `\r`, the same breaks `-n/--note` refuses, lines that are empty or only spaces dropped. The first line replaces the item with `replace_text(…, TextStyle::Line)`; each further line is inserted after it with the insert form of the item writer. A note with no line left, one holding only spaces and line breaks, stays one item: its whole text is written with `TextStyle::Line`, escaped, so no note and no owned comment disappears. The split, with this fallback, is one function that `write_list` (§4) also uses, so a later whole-list rewrite keeps the note too.
 2. Any other field: `replace_text(…, TextStyle::Line)` with the item's text as is.
 
 Each rewritten value is read back from the parsed ledger, not from the source bytes, so the text cannot drift.
@@ -71,7 +72,7 @@ It lost because it changes text, and no note today has a blank line to split at,
 ### 4. A verb rewriting notes splits the same way
 
 `write_list` for `notes` maps each note through the same line split function as `fmt`, blank-note fallback included, before refilling the list.
-On a ledger `fmt` has already run on, no note holds a line break outside the blank-note fallback, so the split is the identity.
+On a block list of a ledger `fmt` has already run on, no note holds a line break outside the blank-note fallback, so the split is the identity.
 
 ### 5. Overrides
 
