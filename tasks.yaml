@@ -168,18 +168,29 @@ queue:
     plan: goals/row-edit/plan.md
 
   - id: QCTL-039
-    title: Write a note that needs quoting as a plain folded block
-    scope: qctl writer
-    outcome: A dated note is written as '- >-' followed by its text, so the ledger carries no indentation indicator it does not need.
+    title: Write every list item on one line
+    scope: qctl writer and fmt
+    outcome: Every row list item qctl writes or formats sits on one line, plain when YAML allows it and otherwise quoted, with no doubled single quote.
     blocked_by: []
     acceptance:
-      - A single-line note that the serializer would quote is written as '- >-' with the text on the next line.
-      - The '2' indentation indicator is written only when the note starts with a space.
-      - Every note still reads back to exactly the string that was given; the existing round-trip check stays.
-      - qctl fmt rewrites existing '>2-' notes to '>-' where the indicator is not needed, and changes no other bytes.
+      - "A note, acceptance item, evidence item, link, or blocker written by any verb is one line: plain when it reads back as itself, otherwise quoted, and double-quoted when it holds an apostrophe and no double quote."
+      - >-
+        add and edit refuse a note holding a line break, write nothing, and say to pass
+        each line as its own -n/--note.
+      - >-
+        qctl fmt leaves no folded or literal list item in a ledger, every value reads
+        back the same, a multi-line note becomes one item per line in order, and a second
+        qctl fmt changes nothing.
+      - >-
+        qctl instructions says to follow a note's date with a comma, not a colon, and
+        not to rewrite existing note text for it.
+      - A test asserts the written shape on a row a verb or fmt wrote to a real file.
     notes:
       - >2-
         2026-09-28: src/document/notes.rs item() writes '- >2-' for every single-line note that yaml_serde would quote. Nearly every note starts with a date and a colon, which as a plain scalar would read as a mapping, so nearly every note takes this path. '>' and '-' are needed for an exact round trip; the '2' is needed only for a leading space.
+      - >-
+        2026-10-15, reworked to the operator's decision of that day: one writer for every list item, one line each, no block scalars in notes, multi-line notes refused at input and split per line by fmt. Needs yamled YMD-011 (TextStyle::Line and double quotes for an apostrophe).
+    plan: openspec/changes/one-line-items/proposal.md
 
   - id: QCTL-048
     title: Take the shared template at v0.0.18
