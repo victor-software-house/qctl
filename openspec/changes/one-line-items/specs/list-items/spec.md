@@ -114,6 +114,12 @@ A note with no other line SHALL stay one item holding its whole text, double-quo
 - **AND** `qctl fmt` runs
 - **THEN** the notes hold `- 'Lead: the design.'`, then `- 1. First.`, then `- 2. Second.`, in the place the block held
 
+#### Scenario: A quoted note holding a line break is split
+
+- **WHEN** `DEMO-001`'s notes hold `- "First.\nSecond."`
+- **AND** `qctl fmt` runs
+- **THEN** the notes hold `- First.` then `- Second.`
+
 #### Scenario: A note of only blank lines stays one item
 
 - **WHEN** `DEMO-001`'s notes hold a `- |+` block whose lines are all empty
