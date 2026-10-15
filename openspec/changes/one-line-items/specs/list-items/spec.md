@@ -2,14 +2,15 @@
 
 ## Purpose
 
-How qctl writes the items of a row's list fields (`notes`, `acceptance`, `evidence`, `links`, `blocked_by`): one writer, one line per item, and a `fmt` rewrite that brings older block items into that shape without changing their text.
+How qctl writes the items of a row's list fields (`notes`, `acceptance`, `evidence`, `links`, `blocked_by`): one writer, in the layout the ledger declares with `style.list_items` (one line per item by default) and the quotes it declares with `style.quotes`, and a `fmt` rewrite that brings older block items into that shape without changing their text.
 
 ## ADDED Requirements
 
 ### Requirement: Every list item is written on one line
 
-Every verb that writes an item of a row's list field SHALL write it on one line, as the item's own line of the block list, and never as a folded or literal block.
-The item SHALL be plain when plain text reads back as the same string, and quoted otherwise.
+Under `list_items: line`, the default, every verb that writes an item of a row's list field SHALL write it on one line, as the item's own line of the block list, and never as a folded or literal block.
+The item SHALL be plain when plain text reads back as the same string, and quoted as the ledger's `quotes` say otherwise.
+Under `list_items: auto`, the item SHALL be written as yamled's automatic layout writes it: on one line, or as a literal block when its text holds a line break.
 
 #### Scenario: A dated note is quoted on one line
 
@@ -33,10 +34,10 @@ The item SHALL be plain when plain text reads back as the same string, and quote
 - **AND** `qctl edit DEMO-001 -x acceptance:1 -a "It's checked: yes"` runs
 - **THEN** the acceptance list reads `- Second` then `- "It's checked: yes"`
 
-### Requirement: A quoted item never doubles a quote
+### Requirement: A quoted item follows the declared quotes
 
-A quoted list item SHALL be double-quoted when its text holds an apostrophe and no double quote.
-Otherwise it SHALL be single-quoted when that reads back as the same string, and double-quoted when it does not.
+A list item that cannot be plain SHALL be quoted as the ledger's `quotes` option says.
+Under `quotes: auto`, the default, an item whose text holds an apostrophe and no double quote SHALL be double-quoted, so `''` is never written for an apostrophe.
 
 #### Scenario: A note with an apostrophe is double-quoted
 
@@ -55,15 +56,22 @@ A verb that rewrites a list whole, by a removal, a reorder, or `-R`, SHALL write
 - **AND** `qctl edit DEMO-001 -n "Next."` runs
 - **THEN** the `- >2-` block is unchanged and `- Next.` follows it
 
-### Requirement: A note holding a line break is refused
+### Requirement: A note holding a line break is refused under the line layout
 
-`qctl add` and `qctl edit` SHALL refuse a `-n/--note` value that holds a line break, before they write anything.
+Under `list_items: line`, `qctl add` and `qctl edit` SHALL refuse a `-n/--note` value that holds a line break, before they write anything.
 The error SHALL say that a note is one line and that each line is passed as its own `-n/--note`.
+Under `list_items: auto`, such a note SHALL be written as one literal block.
 
 #### Scenario: A two-line note is refused
 
 - **WHEN** `qctl add -t T -s S -o O -a A -n <note>` runs, where `<note>` is `First line.`, a line break, and `Second line.`
 - **THEN** it exits non-zero, `tasks.yaml` is unchanged, and the error names `-n/--note`
+
+#### Scenario: The automatic layout keeps a two-line note as one block
+
+- **WHEN** a `tasks.yaml` declares `style: {list_items: auto}`
+- **AND** `qctl add -t T -s S -o O -a A -n <note>` runs, where `<note>` is `First line.`, a line break, and `Second line.`
+- **THEN** the row's `notes` holds one `- |-` item whose lines are `First line.` and `Second line.`
 
 #### Scenario: Two notes are accepted
 
@@ -72,10 +80,10 @@ The error SHALL say that a note is one line and that each line is passed as its 
 
 ### Requirement: fmt writes block list items on one line
 
-`qctl fmt` SHALL rewrite each folded or literal item of a block list in `notes`, `acceptance`, `evidence`, `links`, and `blocked_by` into the one-line form, without changing the text it reads as.
-An item of a field other than `notes` whose text holds a line break SHALL stay one item, double-quoted with `\n` escapes.
-Comments owned by a rewritten item SHALL stay above it.
-`qctl fmt --check` SHALL name each such item's lines and write nothing, and a later `qctl fmt` SHALL find nothing to change.
+Under `list_items: line`, `qctl fmt` SHALL write each folded or literal item of a block list field on one line, reading as the same text.
+A non-note item holding a line break SHALL stay one item, with `\n` escapes.
+A rewritten item's comments SHALL stay above it.
+`qctl fmt --check` SHALL fail on such an item and write nothing, and a second `qctl fmt` SHALL change nothing.
 
 #### Scenario: A folded dated note becomes one line
 
@@ -102,9 +110,19 @@ Comments owned by a rewritten item SHALL stay above it.
 - **AND** `qctl fmt --check` runs
 - **THEN** it exits non-zero and `tasks.yaml` is unchanged
 
+### Requirement: fmt keeps item layout under the automatic layout
+
+Under `list_items: auto`, `qctl fmt` SHALL leave the layout of every list item as written.
+
+#### Scenario: The automatic layout keeps block items
+
+- **WHEN** a `tasks.yaml` declares `style: {list_items: auto}` and a row holds a `- >2-` note
+- **AND** `qctl fmt` runs
+- **THEN** the `- >2-` note is unchanged
+
 ### Requirement: fmt writes a multi-line note one item per line
 
-`qctl fmt` SHALL write a note of a block list whose text holds line breaks, `\n` or `\r`, in any style, as one item per line, in order, in its place.
+Under `list_items: line`, `qctl fmt` SHALL write a note of a block list whose text holds line breaks, `\n` or `\r`, in any style, as one item per line, in order, in its place.
 It SHALL drop a line that is empty or holds only spaces, and with it the trailing line breaks a kept block (`|+`) carried.
 A note with no other line SHALL stay one item holding its whole text, double-quoted with `\n` escapes.
 
@@ -129,7 +147,7 @@ A note with no other line SHALL stay one item holding its whole text, double-quo
 
 ### Requirement: A verb rewriting notes splits a multi-line note
 
-A verb that rewrites a row's whole `notes` list, such as `qctl edit -x note:N` or `qctl edit -R`, SHALL write each note whose text holds line breaks as one item per line, as `fmt` does, and keep a note with no other line as one item.
+Under `list_items: line`, a verb that rewrites a row's whole `notes` list, such as `qctl edit -x note:N` or `qctl edit -R`, SHALL write each note whose text holds line breaks as one item per line, as `fmt` does, and keep a note with no other line as one item.
 
 #### Scenario: Removing a note splits a literal neighbour
 

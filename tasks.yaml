@@ -168,28 +168,39 @@ queue:
     plan: goals/row-edit/plan.md
 
   - id: QCTL-039
-    title: Write every list item on one line
+    title: Write list items and quotes as the ledger declares
     scope: qctl writer and fmt
-    outcome: Every row list item qctl writes or formats sits on one line, plain when YAML allows it and otherwise quoted, with no doubled single quote.
+    outcome: A ledger declares its list-item layout and its quotes in style, every verb and fmt write them that way, and by default every list item sits on one line with no doubled single quote.
     blocked_by: []
     acceptance:
-      - "A note, acceptance item, evidence item, link, or blocker written by any verb is one line: plain when it reads back as itself, otherwise quoted, and double-quoted when it holds an apostrophe and no double quote."
-      - >-
-        add and edit refuse a note holding a line break, write nothing, and say to pass
-        each line as its own -n/--note.
-      - >-
-        qctl fmt leaves no folded or literal list item in a ledger, every value reads
-        back the same, a multi-line note becomes one item per line in order, and a second
-        qctl fmt changes nothing.
       - >-
         qctl instructions says to follow a note's date with a comma, not a colon, and
         not to rewrite existing note text for it.
       - A test asserts the written shape on a row a verb or fmt wrote to a real file.
+      - >-
+        style accepts list_items (line, auto; default line) and quotes (auto, single,
+        double; default auto), refuses other values, and every verb writes list items and
+        strings as they say.
+      - >-
+        Under list_items line, add and edit refuse a note holding a line break, write
+        nothing, and say to pass each line as its own -n/--note; under auto the note is
+        one literal block.
+      - >-
+        Under list_items line, qctl fmt leaves no folded or literal list item, a
+        multi-line note becomes one item per line in order, and every value reads back the same.
+      - >-
+        qctl fmt rewrites every one-line string whose quoting disagrees with quotes,
+        fmt --check fails on it, and a second qctl fmt changes nothing.
+      - >-
+        qctl fmt applies its scalar edits in one yamled batch, with wall times before
+        and after on the largest consumer ledger recorded in the pull request.
     notes:
       - >2-
         2026-09-28: src/document/notes.rs item() writes '- >2-' for every single-line note that yaml_serde would quote. Nearly every note starts with a date and a colon, which as a plain scalar would read as a mapping, so nearly every note takes this path. '>' and '-' are needed for an exact round trip; the '2' is needed only for a leading space.
       - >-
         2026-10-15, reworked to the operator's decision of that day: one writer for every list item, one line each, no block scalars in notes, multi-line notes refused at input and split per line by fmt. Needs yamled YMD-011 (TextStyle::Line and double quotes for an apostrophe).
+      - >-
+        2026-10-15, reworked on operator review: layout and quoting become the style options list_items and quotes, auto meaning yamled chooses in both. QCTL-021 folds in; row key order stays out.
     plan: openspec/changes/one-line-items/proposal.md
 
   - id: QCTL-048
