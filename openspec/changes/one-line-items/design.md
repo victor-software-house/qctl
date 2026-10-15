@@ -47,7 +47,7 @@ It lost because the operator requires every ctl behaviour to be declared and con
 `Document::new` takes the ledger's style and calls `with_quotes`.
 `Document` gets one private writer for list items that calls `push_text` or `insert_item_text` with the layout `list_items` maps to.
 `push_notes`, `push_items`, `append`, `write_list`, and `rewrite_blockers` all go through it, and `notes::style` is removed.
-A list rewritten whole is emptied and refilled item by item.
+A block list rewritten whole is emptied and refilled item by item; a flow list is replaced whole through yamled (Non-Goal 3).
 A new row is pushed with each list field empty, then each field is filled item by item, so key order stays what the row type serializes and an empty `blocked_by` stays `blocked_by: []`.
 
 Alternative: write the quoted text in qctl and hand yamled a raw line.
@@ -86,7 +86,7 @@ It lost because it changes text, and no note today has a blank line to split at.
 A `fmt` step visits every string scalar a ledger holds, by record kind: `prefix` and `active` at the top, and each row kind's string fields and list items.
 A scalar written on one line (plain, single-, or double-quoted) is replaced with its own value through `replace_text(…, TextStyle::Line)`, which renders it in the document's quotes and ignores its current style.
 yamled skips a splice that writes the bytes already there, so a scalar that already agrees costs nothing.
-A block scalar keeps its layout, and keys are left alone.
+A block scalar keeps its layout, keys are left alone, and an item step 4 rewrites is skipped (§6).
 
 Alternative: walk the parsed document generically.
 It lost because a schema per record kind states which fields are strings, and a generic walk would also visit keys and non-string values.
@@ -94,13 +94,13 @@ It lost because a schema per record kind states which fields are strings, and a 
 ### 6. One batch for the scalar steps
 
 Steps 4 and 5 run inside one `Document::batch`, so all their edits cost one parse.
-They touch separate bytes: step 4 edits block items and split notes, and step 5 one-line scalars, which step 4 never names.
+They touch separate bytes because step 5 skips every item step 4 rewrites: a block item, and under `line` a note whose split differs from its text, such as a double-quoted note holding `\n` escapes. Step 4 writes those in the declared quotes already.
 The structural steps that follow (archive order, indent, section order) need the edited index, so each runs after the batch; a step that changes nothing costs no parse.
 A ledger `fmt --check` already accepts parses once.
 
 ### 7. A verb rewriting notes splits the same way
 
-Under `line`, `write_list` for `notes` maps each note through the same split function as `fmt`, blank-note fallback included, before refilling the list.
+Under `line`, `write_list` for a block `notes` list maps each note through the same split function as `fmt`, blank-note fallback included, before refilling the list.
 On a block list `fmt` has already run on, no note holds a line break outside the fallback, so the split is the identity.
 
 ### 8. Overrides

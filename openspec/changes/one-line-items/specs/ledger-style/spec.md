@@ -73,8 +73,8 @@ It SHALL leave block scalars, keys, and values that are not strings as written.
 `fmt` SHALL NOT insert a blank line after a row whose text ends in a block
 scalar that keeps its trailing lines (`|+` or `>+`), because that line would
 become part of the value.
-A list item is never such a block after `fmt`, which writes every list item on
-one line, so the rule applies to a row scalar such as `outcome`.
+The rule applies to whatever block scalar ends the row: a row scalar such as
+`outcome`, or, under `list_items: auto`, a list item.
 
 #### Scenario: A row ending in a kept block scalar
 

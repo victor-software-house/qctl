@@ -48,7 +48,7 @@ Under `quotes: auto`, the default, an item whose text holds an apostrophe and no
 ### Requirement: An append keeps the bytes of the items before it
 
 A verb that only appends to a list SHALL keep the bytes of every item already in it, unless the ledger declares `normalize_on_write: true`, which runs the `fmt` rewrite on every write.
-A verb that rewrites a list whole, by a removal, a reorder, or `-R`, SHALL write every item of that list in the one-line form.
+A verb that rewrites a block list whole, by a removal, a reorder, or `-R`, SHALL write every item of that list in the declared layout.
 
 #### Scenario: Appending a note leaves a folded note alone
 
@@ -147,7 +147,7 @@ A note with no other line SHALL stay one item holding its whole text, double-quo
 
 ### Requirement: A verb rewriting notes splits a multi-line note
 
-Under `list_items: line`, a verb that rewrites a row's whole `notes` list, such as `qctl edit -x note:N` or `qctl edit -R`, SHALL write each note whose text holds line breaks as one item per line, as `fmt` does, and keep a note with no other line as one item.
+Under `list_items: line`, a verb that rewrites a row's whole block `notes` list, such as `qctl edit -x note:N` or `qctl edit -R`, SHALL write each note whose text holds line breaks as one item per line, as `fmt` does, and keep a note with no other line as one item.
 
 #### Scenario: Removing a note splits a literal neighbour
 
