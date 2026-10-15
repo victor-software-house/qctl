@@ -130,7 +130,8 @@ which zone an old stamp was taken in. Change it deliberately.
    when `active` is set; it does not invent a `--before`.
 3. `qctl start ID` requires the id to be queued and unblocked; it becomes
    `queue[0]` and `active`.
-4. `qctl archive ID -e EVIDENCE` moves a queued row to archive.
+4. `qctl archive ID -e EVIDENCE` moves a queued row to archive with
+   `disposition: completed`; `-d dropped` records work that will not be done.
    `qctl close-from-git` archives every queued id a commit-body trailer
    closed. Default scan is the same history `check` uses. `-r/--range
    main..HEAD` narrows it. `-u/--pre-push` reads the hook stdin. If it
@@ -156,7 +157,7 @@ which zone an old stamp was taken in. Change it deliberately.
    `blocked-by`, and `evidence`. `-R/--reorder-notes 3,1,2` permutes notes.
    `-p/--position front|back|before:ID|after:ID` moves a queued row without
    stealing `active`; every dependency must still point backward. Archive
-   rows accept only note, evidence, and link operations. `id` and `completed`
+   rows accept only plan, note, evidence, and link operations. `id` and `completed`
    are never editable. A missing id fails.
 
 YAML: quote list items that start with `#` or contain `: `.
