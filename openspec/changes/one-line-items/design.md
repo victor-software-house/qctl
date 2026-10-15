@@ -94,7 +94,7 @@ It lost because a schema per record kind states which fields are strings, and a 
 ### 6. One batch for the scalar steps
 
 Steps 4 and 5 run inside one `Document::batch`, so all their edits cost one parse.
-They touch separate bytes because step 5 skips every item step 4 rewrites: a block item, and under `line` a note whose split differs from its text, such as a double-quoted note holding `\n` escapes. Step 4 writes those in the declared quotes already.
+They touch separate bytes because step 5 skips every item step 4 rewrites: a block item, and under `line` a note of a block list whose split differs from its text, such as a double-quoted note holding `\n` escapes. Step 4 writes those in the declared quotes already; a note of a flow list is left to step 5.
 The structural steps that follow (archive order, indent, section order) need the edited index, so each runs after the batch; a step that changes nothing costs no parse.
 A ledger `fmt --check` already accepts parses once.
 
