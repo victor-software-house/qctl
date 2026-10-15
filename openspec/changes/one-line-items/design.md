@@ -55,7 +55,7 @@ The one ledger note of that shape today (33 multi-line notes, 1 hard-wrapped) sh
 A new `fmt` step, after the schema 3 upgrade and before sections move, walks each row of `queue`, `archive`, and `horizon`.
 For each of `notes`, `acceptance`, `evidence`, `links`, and `blocked_by` that is a block sequence, every item whose node style is `Literal` or `Folded` is rewritten, last item first so earlier indexes stay valid:
 
-1. A note: its text split on `\n`, lines that are empty or only spaces dropped. The first line replaces the item with `replace_text(…, TextStyle::Line)`; each further line is inserted after it with the insert form of the item writer. A note with no line left, one holding only spaces and line breaks, stays one item: its whole text is written with `TextStyle::Line`, escaped, so no note and no owned comment disappears.
+1. A note: its text split on `\n`, lines that are empty or only spaces dropped. The first line replaces the item with `replace_text(…, TextStyle::Line)`; each further line is inserted after it with the insert form of the item writer. A note with no line left, one holding only spaces and line breaks, stays one item: its whole text is written with `TextStyle::Line`, escaped, so no note and no owned comment disappears. The split, with this fallback, is one function that `write_list` (§4) also uses, so a later whole-list rewrite keeps the note too.
 2. Any other field: `replace_text(…, TextStyle::Line)` with the item's text as is.
 
 Each rewritten value is read back from the parsed ledger, not from the source bytes, so the text cannot drift.
@@ -70,7 +70,7 @@ It lost because it changes text, and no note today has a blank line to split at,
 
 ### 4. A verb rewriting notes splits the same way
 
-`write_list` for `notes` maps each note through the same line split before refilling the list.
+`write_list` for `notes` maps each note through the same line split function as `fmt`, blank-note fallback included, before refilling the list.
 On a ledger `fmt` has already run on, every note is one line and the split is the identity.
 
 ### 5. Overrides

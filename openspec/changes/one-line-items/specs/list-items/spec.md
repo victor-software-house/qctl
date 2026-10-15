@@ -123,7 +123,7 @@ A note with no other line SHALL stay one item holding its whole text, double-quo
 
 ### Requirement: A verb rewriting notes splits a multi-line note
 
-A verb that rewrites a row's whole `notes` list, such as `qctl edit -x note:N` or `qctl edit -R`, SHALL write each note whose text holds line breaks as one item per line, as `fmt` does.
+A verb that rewrites a row's whole `notes` list, such as `qctl edit -x note:N` or `qctl edit -R`, SHALL write each note whose text holds line breaks as one item per line, as `fmt` does, and keep a note with no other line as one item.
 
 #### Scenario: Removing a note splits a literal neighbour
 
