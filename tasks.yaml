@@ -181,18 +181,6 @@ queue:
       - >2-
         2026-09-28: src/document/notes.rs item() writes '- >2-' for every single-line note that yaml_serde would quote. Nearly every note starts with a date and a colon, which as a plain scalar would read as a mapping, so nearly every note takes this path. '>' and '-' are needed for an exact round trip; the '2' is needed only for a leading space.
 
-  - id: QCTL-044
-    title: Deny missing_docs and missing_debug_implementations
-    scope: src/
-    outcome: qctl takes the template's full lint set; every public item has a doc and a Debug implementation.
-    blocked_by: []
-    acceptance:
-      - Cargo.toml drops the local edit that leaves missing_docs and missing_debug_implementations off.
-      - mise run verify passes with both denied.
-    notes:
-      - >2-
-        2026-10-12: with both on, the lib reported 173 missing docs and 24 types without Debug. Obvious items get one short line; types used only inside the crate may become pub(crate) instead.
-
   - id: QCTL-048
     title: Take the shared template at v0.0.18
     scope: qctl template
@@ -294,6 +282,18 @@ horizon:
         so a ledger such as yamled's now holds both shapes.
 
 archive:
+  - id: QCTL-044
+    title: Deny missing_docs and missing_debug_implementations
+    scope: src/
+    outcome: qctl takes the template's full lint set; every public item has a doc and a Debug implementation.
+    notes:
+      - >2-
+        2026-10-12: with both on, the lib reported 173 missing docs and 24 types without Debug. Obvious items get one short line; types used only inside the crate may become pub(crate) instead.
+    completed: 2026-10-15T13:53:46
+    evidence:
+      - https://github.com/victor-software-house/qctl/pull/122
+    disposition: completed
+
   - id: QCTL-042
     title: Let edit repoint an archived row's plan
     scope: qctl edit
