@@ -122,12 +122,12 @@ queue:
     title: Point consumers at qctl check instead of copied Ajv tests
     scope: cross-repo
     outcome: >-
-      OMX seed, then kodus and pi-stuff, call qctl check. Copied
+      The first consumer, then the others, call qctl check. Copied
       test/tasks-ledger.test.ts files can die once the pin is real.
     blocked_by: [QCTL-003]
     acceptance:
-      - ompex/oh-my-pi seed uses mise run q -- check.
-      - pi-stuff and kodus-ai have a follow-up row or are converted.
+      - The first consumer's seed uses mise run q -- check.
+      - Every other consumer has a follow-up row or is converted.
       - No consumer still vendors ajv or a copied tasks.schema.json.
       - Each consumer $schema URL is a pinned qctl tag/release, not latest.
 

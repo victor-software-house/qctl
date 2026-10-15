@@ -58,7 +58,7 @@ macro_rules! pattern {
 
 pattern!(
     PREFIX = r"^[A-Z][A-Z0-9]{1,7}$",
-    "A repository's id prefix: PST, KAI, OMX."
+    "A repository's id prefix: QCTL, VER, FRK."
 );
 pattern!(
     TASK_ID = r"^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",

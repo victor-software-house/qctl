@@ -40,7 +40,7 @@ fn missing_horizon_defaults_to_empty() {
         &path,
         indoc! {"
             schema_version: 4
-            prefix: PST
+            prefix: VER
             active: null
             queue: []
             archive: []
@@ -58,7 +58,7 @@ fn rejects_an_id_from_another_repository() {
         prefix: QCTL
         active: null
         queue:
-          - id: OMX-001
+          - id: FRK-001
             title: t
             scope: s
             outcome: o
@@ -66,7 +66,7 @@ fn rejects_an_id_from_another_repository() {
             acceptance: [a]
         archive: []
     "});
-    assert!(found.iter().any(|e| e.contains("OMX-001")));
+    assert!(found.iter().any(|e| e.contains("FRK-001")));
 }
 
 /// A well-formed id that belongs to another repository is this ledger's own

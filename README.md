@@ -25,8 +25,8 @@ mise run q status
 mise run q status --format json
 mise run q check --format json
 mise run q add -t 'Document the schema' -s docs -o 'Readers can verify every row field.' -a 'The schema page names the queue, archive, and horizon fields.'
-mise run q start OMX-001
-mise run q archive OMX-001 -e 'Shipped.'
+mise run q start QCTL-001
+mise run q archive QCTL-001 -e 'Shipped.'
 ```
 
 Acceptance states observable, demonstrably true end conditions for closing the
