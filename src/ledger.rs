@@ -240,9 +240,9 @@ mod tests {
 
     #[test]
     fn accepts_prefixed_ids() {
-        assert!(id_matches_prefix("OMX-001", "OMX"));
-        assert!(id_matches_prefix("PST-037", "PST"));
-        assert!(!id_matches_prefix("OMX-01", "OMX"));
-        assert!(!id_matches_prefix("KAI-001", "OMX"));
+        assert!(id_matches_prefix("FRK-001", "FRK"));
+        assert!(id_matches_prefix("VER-037", "VER"));
+        assert!(!id_matches_prefix("FRK-01", "FRK"));
+        assert!(!id_matches_prefix("CTC-001", "FRK"));
     }
 }

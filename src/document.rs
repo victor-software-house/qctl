@@ -155,7 +155,7 @@ impl Document {
             .with_context(|| format!("remove {key} from {name}[{index}]"))
     }
 
-    /// Write a row's notes as a list, each note in the style [`notes::style`]
+    /// Write a row's notes as a list, each note in the style `notes::style`
     /// picks. Used by `fmt` when rewriting a v3 scalar `notes`.
     pub fn replace_row_notes(&mut self, name: &str, index: usize, items: &[String]) -> Result<()> {
         let path = section(name).index(index).key("notes");

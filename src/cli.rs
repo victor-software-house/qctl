@@ -129,7 +129,7 @@ pub struct LedgerArgs {
 
 #[derive(Args)]
 pub struct InitArgs {
-    /// Stable id prefix, such as PST, KAI, or OMX.
+    /// Stable id prefix, such as QCTL, VER, or FRK.
     #[arg(short = 'p', long)]
     pub prefix: String,
     #[command(flatten)]

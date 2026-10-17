@@ -8,10 +8,10 @@ use indoc::indoc;
 #[test]
 fn init_writes_ledger_without_schema_copy() {
     let dir = LedgerDir::empty();
-    let output = qctl(&["init", "-p", "omx", "-f", dir.path.to_str().unwrap()]);
+    let output = qctl(&["init", "-p", "frk", "-f", dir.path.to_str().unwrap()]);
     assert!(output.status.success(), "{}", stderr(&output));
     let body = dir.read();
-    assert!(body.contains("prefix: OMX"));
+    assert!(body.contains("prefix: FRK"));
     assert!(body.contains("horizon: []"));
     assert!(body.contains("$schema="));
     assert!(!dir.parent().join("tasks.schema.json").exists());

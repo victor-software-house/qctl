@@ -58,7 +58,7 @@ macro_rules! pattern {
 
 pattern!(
     PREFIX = r"^[A-Z][A-Z0-9]{1,7}$",
-    "A repository's id prefix: PST, KAI, OMX."
+    "A repository's id prefix: QCTL, VER, FRK."
 );
 pattern!(
     TASK_ID = r"^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",
@@ -509,7 +509,7 @@ fn the_one_version<C>(value: &u32, _: &C) -> garde::Result {
     Ok(())
 }
 
-/// A moment that exists. [`INSTANT`] states the shape once: garde validates
+/// A moment that exists. `INSTANT` states the shape once: garde validates
 /// against it and schemars writes it into the schema, so `check` and the verbs
 /// cannot disagree about what a stamp looks like. This adds what a regex cannot
 /// know — that the calendar agrees — so `2026-02-31T00:00:00` never lands in
@@ -517,7 +517,7 @@ fn the_one_version<C>(value: &u32, _: &C) -> garde::Result {
 ///
 /// A stamp carries no offset now that the ledger declares one, and no JSON
 /// Schema `format` describes a moment without a zone. `check` therefore calls
-/// [`unreal_instants`] for the same rule rather than getting it from the
+/// [`is_a_real_instant`] for the same rule rather than getting it from the
 /// schema.
 pub fn a_real_instant<C>(value: &str, _: &C) -> garde::Result {
     if is_a_real_instant(value) {

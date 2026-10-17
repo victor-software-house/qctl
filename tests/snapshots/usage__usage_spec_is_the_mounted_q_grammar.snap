@@ -30,7 +30,7 @@ flag --color help="Pretty-output color policy. JSON never contains ANSI" global=
 }
 flag --no-color help="Force colorless pretty output. Wins over `--color`" global=#true help_heading=Output
 cmd init display_order=0 args_override_self=#false help="Write a tasks.yaml for a prefix. Does not copy a schema file" unknown_flags=error {
-    flag "-p --prefix" help="Stable id prefix, such as PST, KAI, or OMX" required=#true {
+    flag "-p --prefix" help="Stable id prefix, such as QCTL, VER, or FRK" required=#true {
         arg <PREFIX>
     }
     flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
