@@ -2,17 +2,19 @@
 //! `style` declares, record kind by record kind.
 
 use anyhow::{Context, Result};
+use serde::Serialize;
 use yamled::{Path, Style, TextStyle};
 
 use super::{Document, notes, section};
 use crate::schema::{ArchivedTask, HorizonTask, Ledger, ListItems, QueuedTask};
 
 impl Document {
-    /// Write every string the ledger holds on one line in the declared quotes,
-    /// and under `line` every block item of a list on one line, a note one
-    /// item per line, all with one parse. Each value is read from `ledger`,
-    /// not from the source, so no text can drift. Keys, block row scalars, and
-    /// values that are not strings stay as written.
+    /// Write `prefix`, `active`, and every string a row holds on one line in
+    /// the declared quotes, and under `line` every block item of a list on one
+    /// line, a note one item per line, all with one parse. Each value is read
+    /// from `ledger`, not from the source, so no text can drift. Keys, block
+    /// row scalars, values that are not strings, and the `style` block stay as
+    /// written.
     ///
     /// # Errors
     ///
@@ -90,12 +92,13 @@ impl Strings<'_> {
             completed,
             outcome,
             evidence,
-            disposition: _,
+            disposition,
             patch,
             plan,
             links,
             notes,
         } = task;
+        let disposition = variant(disposition)?;
         self.row(
             row,
             &[
@@ -104,6 +107,7 @@ impl Strings<'_> {
                 ("scope", Some(scope)),
                 ("completed", Some(completed)),
                 ("outcome", Some(outcome)),
+                ("disposition", Some(&disposition)),
                 ("patch", patch.as_ref()),
                 ("plan", plan.as_ref()),
             ],
@@ -117,13 +121,14 @@ impl Strings<'_> {
             title,
             scope,
             outcome,
-            kind: _,
+            kind,
             open,
             patch,
             plan,
             links,
             notes,
         } = task;
+        let kind = variant(kind)?;
         self.row(
             row,
             &[
@@ -131,6 +136,7 @@ impl Strings<'_> {
                 ("title", Some(title)),
                 ("scope", Some(scope)),
                 ("outcome", Some(outcome)),
+                ("kind", Some(&kind)),
                 ("open", Some(open)),
                 ("patch", patch.as_ref()),
                 ("plan", plan.as_ref()),
@@ -205,4 +211,12 @@ impl Strings<'_> {
             .node(path)
             .is_some_and(|node| styles.contains(&node.style()))
     }
+}
+
+/// The name serde writes for a unit variant, such as `completed`.
+fn variant(value: &impl Serialize) -> Result<String> {
+    serde_json::to_value(value)?
+        .as_str()
+        .map(str::to_owned)
+        .context("a unit variant serializes as a string")
 }

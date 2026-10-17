@@ -143,7 +143,7 @@ for a hook.
 
 `fmt` does not guess. On a current-version file it changes what an option
 names, sorts the archive when asked, and removes whitespace nobody chose. It
-writes every one-line string in the declared quotes, and under
+writes every one-line string outside `style` in the declared quotes, and under
 `list_items: line` every block list item on one line, a note holding line
 breaks as one item per line with its blank lines dropped. A block row scalar,
 such as a folded `outcome`, keeps its layout. It never adds a comment or a

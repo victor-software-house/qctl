@@ -2,7 +2,7 @@
 source: tests/mutations.rs
 description: qctl fmt
 ---
-# -7 +7
+# -9 +9
  # yaml-language-server: $schema=./schema/tasks.schema.json
  schema_version: 4
 -prefix: "DEMO"
@@ -34,5 +34,13 @@ description: qctl fmt
 +    completed: 2026-08-19T10:00:00
      evidence:
        - 'Merged: the tag exists.'
-     disposition: "completed"
- horizon: []
+-    disposition: "completed"
++    disposition: completed
+ horizon:
+   - id: DEMO-003
+     title: Later
+     scope: demo
+     outcome: It is ready to start.
+-    kind: 'research'
++    kind: research
+     open: The fact was missing.

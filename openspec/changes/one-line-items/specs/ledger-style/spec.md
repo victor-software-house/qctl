@@ -44,7 +44,7 @@ Every string a verb writes SHALL be plain when it reads back unquoted, and quote
 ### Requirement: fmt re-quotes strings to the declared quotes
 
 `qctl fmt` SHALL rewrite each string scalar written on one line whose quoting differs from what the declared `quotes` write, keeping its value.
-It SHALL leave block scalars, keys, and values that are not strings as written.
+It SHALL leave block scalars, keys, values that are not strings, and the `style` block as written.
 `qctl fmt --check` SHALL fail on such a scalar and write nothing.
 
 #### Scenario: A doubled quote becomes double quotes

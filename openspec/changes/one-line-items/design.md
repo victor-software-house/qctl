@@ -83,7 +83,8 @@ It lost because it changes text, and no note today has a blank line to split at.
 
 ### 5. `fmt` re-quotes one-line strings to the declared quotes
 
-A `fmt` step visits every string scalar a ledger holds, by record kind: `prefix` and `active` at the top, and each row kind's string fields and list items.
+A `fmt` step visits every string scalar a ledger holds, by record kind: `prefix` and `active` at the top, and each row kind's string fields and list items, `disposition` and `kind` by the names serde writes for them.
+The `style` block is configuration `fmt` reads before it writes, and stays as written.
 A scalar written on one line (plain, single-, or double-quoted) is replaced with its own value through `replace_text(…, TextStyle::Line)`, which renders it in the document's quotes and ignores its current style.
 yamled skips a splice that writes the bytes already there, so a scalar that already agrees costs nothing.
 A block scalar keeps its layout, keys are left alone, and an item step 4 rewrites is skipped (§6).
