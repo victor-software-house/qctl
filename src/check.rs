@@ -1,3 +1,6 @@
+//! `qctl check`: the schema, the graph rules, and git trailers, reported in
+//! one pass.
+
 use std::collections::HashSet;
 
 use anyhow::Result;

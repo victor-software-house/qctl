@@ -1,3 +1,6 @@
+//! `qctl edit`: the fields it rewrites, the positions it allows, and which
+//! list takes which field.
+
 mod common;
 
 use common::{LedgerDir, qctl, stderr, stdout};

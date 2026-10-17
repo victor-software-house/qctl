@@ -1,3 +1,6 @@
+//! The verbs that write a ledger: `init`, `add`, `start`, `park`, `promote`,
+//! `archive`, and `close-from-git`.
+
 use std::collections::HashSet;
 use std::fs;
 use std::path::Path;

@@ -26,9 +26,8 @@ strip = "symbols"
 
 [lints.rust]
 unsafe_code = "forbid"
-# Local edit: the template denies missing_docs and
-# missing_debug_implementations; about 200 public items still lack docs or
-# Debug. QCTL-044 turns both on.
+missing_docs = "deny"
+missing_debug_implementations = "deny"
 unreachable_pub = "deny"
 rust_2018_idioms = { level = "deny", priority = -1 }
 

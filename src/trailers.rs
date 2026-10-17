@@ -1,3 +1,6 @@
+//! Commit trailers that close ids: `Closes PREFIX-NNN` and
+//! `Completes: PREFIX-NNN` in a commit body, read with `git log`.
+
 use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
@@ -21,6 +24,7 @@ pub fn closed_ids(root: &Path) -> Result<Vec<(String, String)>> {
 }
 
 /// Outcome of `git rev-parse --show-toplevel`.
+#[derive(Debug)]
 pub enum GitRoot {
     /// `start` is inside this repository.
     Root(PathBuf),
@@ -181,6 +185,8 @@ fn is_zero_sha(sha: &str) -> bool {
     !sha.is_empty() && sha.chars().all(|ch| ch == '0')
 }
 
+/// The `(id, commit)` pairs in `git log --format=%H%x00%B%x1e` output: each
+/// record is a commit hash, a NUL, and the body, ended by U+001E.
 #[must_use]
 pub fn parse_log(log: &str) -> Vec<(String, String)> {
     let mut found = Vec::new();

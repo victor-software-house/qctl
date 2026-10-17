@@ -367,8 +367,11 @@ impl Default for Style {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum Section {
+    /// Short-term work, in priority order.
     Queue,
+    /// Finished or dropped work.
     Archive,
+    /// Mapped work that cannot start yet.
     Horizon,
 }
 

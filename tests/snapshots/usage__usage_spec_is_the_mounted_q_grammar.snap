@@ -56,19 +56,19 @@ cmd add display_order=3 args_override_self=#false help="Add a task to the queue,
     flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
         arg <FILE>
     }
-    flag "-t --title" required=#true {
+    flag "-t --title" help="One-line name of the task" required=#true {
         arg <TITLE>
     }
-    flag "-s --scope" required=#true {
+    flag "-s --scope" help="The part of the repository the task touches" required=#true {
         arg <SCOPE>
     }
-    flag "-o --outcome" required=#true {
+    flag "-o --outcome" help="What is true once the task is done" required=#true {
         arg <OUTCOME>
     }
     flag "-a --acceptance" help="Repeatable end condition that must be demonstrably true to close the row. Required on the queue; not used on the horizon" var=#true {
         arg <ACCEPTANCE>… var=#true
     }
-    flag "-P --patch" {
+    flag "-P --patch" help="The forkctl patch the task edits" {
         arg <PATCH>
     }
     flag "-n --note" help="Repeatable note item. Intentional line and paragraph breaks are preserved" var=#true {
@@ -77,7 +77,7 @@ cmd add display_order=3 args_override_self=#false help="Add a task to the queue,
     flag "-b --blocked-by" help="Repeatable blocker id. Each must sit earlier than the new row" var=#true {
         arg <BLOCKED_BY>… var=#true
     }
-    flag "-l --plan" {
+    flag "-l --plan" help="A plan file next to the ledger, such as a change proposal" {
         arg <PLAN>
     }
     flag "-L --link" help="Repeatable URI" var=#true {
@@ -104,7 +104,7 @@ cmd start display_order=4 args_override_self=#false help="Make one unblocked que
     flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
         arg <FILE>
     }
-    arg <ID>
+    arg <ID> help="The task id, such as QCTL-001"
     complete file type=path
 }
 cmd archive display_order=5 args_override_self=#false help="Move a queued task to the archive" unknown_flags=error {
@@ -114,25 +114,28 @@ cmd archive display_order=5 args_override_self=#false help="Move a queued task t
     flag "-e --evidence" help="Repeatable evidence line" required=#true var=#true {
         arg <EVIDENCE>… var=#true
     }
-    flag "-d --disposition" default=completed {
+    flag "-d --disposition" help="Whether the work was done or dropped" default=completed {
         arg <DISPOSITION> {
-            choices completed dropped
+            choices {
+                choice completed help="The work is done"
+                choice dropped help="The work will not be done"
+            }
         }
     }
-    arg <ID>
+    arg <ID> help="The queued task id"
     complete file type=path
 }
 cmd park display_order=6 args_override_self=#false help="Demote a queued task onto the horizon" unknown_flags=error {
     flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
         arg <FILE>
     }
-    flag "-k --kind" required=#true {
+    flag "-k --kind" help="Why it goes on the horizon: research, evaluation, or deferred" required=#true {
         arg <KIND>
     }
-    flag "-O --open" required=#true {
+    flag "-O --open" help="The missing start condition" required=#true {
         arg <OPEN>
     }
-    arg <ID>
+    arg <ID> help="The queued task id"
     complete file type=path
 }
 cmd promote display_order=7 args_override_self=#false help="Move a horizon row onto the queue" unknown_flags=error {
@@ -145,37 +148,40 @@ cmd promote display_order=7 args_override_self=#false help="Move a horizon row o
     flag "-b --blocked-by" help="Repeatable blocker id. Each must already sit on the queue" var=#true {
         arg <BLOCKED_BY>… var=#true
     }
-    arg <ID>
+    arg <ID> help="The horizon task id"
     complete file type=path
 }
 cmd edit display_order=8 args_override_self=#false help="Rewrite fields or queue position of an existing row" unknown_flags=error {
     flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
         arg <FILE>
     }
-    flag "-t --title" {
+    flag "-t --title" help="New title" {
         arg <TITLE>
     }
-    flag "-s --scope" {
+    flag "-s --scope" help="New scope" {
         arg <SCOPE>
     }
-    flag "-o --outcome" {
+    flag "-o --outcome" help="New outcome" {
         arg <OUTCOME>
     }
-    flag "-k --kind" {
+    flag "-k --kind" help="New horizon kind: research, evaluation, or deferred" {
         arg <KIND>
     }
-    flag "-O --open" {
+    flag "-O --open" help="New missing start condition of a horizon row" {
         arg <OPEN>
     }
-    flag "-P --patch" {
+    flag "-P --patch" help="New forkctl patch name" {
         arg <PATCH>
     }
-    flag "-l --plan" {
+    flag "-l --plan" help="New plan file next to the ledger" {
         arg <PLAN>
     }
     flag "-U --unset" help="Drop `patch` or `plan`" var=#true {
         arg <UNSET>… var=#true {
-            choices patch plan
+            choices {
+                choice patch help="The forkctl patch name"
+                choice plan help="The plan file"
+            }
         }
     }
     flag "-a --acceptance" help="Repeatable end condition that must be demonstrably true to close the row" var=#true {
@@ -202,14 +208,14 @@ cmd edit display_order=8 args_override_self=#false help="Rewrite fields or queue
     flag "-p --position" help="Move this queued row to `front`, `back`, `before:ID`, or `after:ID`" {
         arg <POSITION>
     }
-    arg <ID>
+    arg <ID> help="The task id, on any list"
     complete file type=path
 }
 cmd show display_order=9 args_override_self=#false help="Print one queued, archived, or horizon task" unknown_flags=error {
     flag "-f --file" help="Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`" {
         arg <FILE>
     }
-    arg <ID>
+    arg <ID> help="The task id, such as QCTL-001"
     complete file type=path
 }
 cmd fmt display_order=10 args_override_self=#false help="Rewrite a ledger into the style it declares. Upgrades schema 3 to 4" unknown_flags=error {

@@ -36,8 +36,7 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   answers. Take a new tag with `copier update --defaults` and check
   `git diff --check` before committing. The CI job `Template` fails when the
   newest tag would change a file. These local edits survive updates:
-  `Cargo.toml` leaves `missing_docs` and `missing_debug_implementations` off
-  until QCTL-044, `lefthook.yml` keeps the push-range commit lint and the
+  `lefthook.yml` keeps the push-range commit lint and the
   git-env unset before `verify`, `mise-tasks/commits` takes several
   commits, `ci.yml` sets git's default branch to `main` for the tests that
   run `git init`, `.rumdl.toml` allows the README banner's HTML, and

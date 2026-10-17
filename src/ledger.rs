@@ -1,3 +1,6 @@
+//! Reading a ledger: where it is, whether its values pass, and the graph
+//! rules a JSON Schema cannot state.
+
 mod corpus;
 pub(crate) mod order;
 
@@ -17,6 +20,7 @@ pub use crate::schema::{Ledger, VERSION};
 /// The schema qctl was built with, generated from [`crate::schema`].
 pub const CANONICAL_SCHEMA: &str = include_str!("../schema/tasks.schema.json");
 
+/// The ledger file: `--file`, else `TASKS_LEDGER`, else `tasks.yaml`.
 #[must_use]
 pub fn resolve_path(args: &LedgerArgs) -> PathBuf {
     args.file
@@ -152,6 +156,10 @@ pub fn show(args: &crate::cli::IdArgs) -> Result<Report> {
     })
 }
 
+/// Every rule the ledger breaks that a JSON Schema cannot state: real
+/// completion stamps, id prefixes and the id corpus, the active row, blocker
+/// order, archive order, and plan files. `root` is the ledger's path; plans
+/// resolve next to it.
 #[must_use]
 pub fn graph_errors(ledger: &Ledger, root: &Path) -> Vec<String> {
     let mut errors = Vec::new();

@@ -1,3 +1,6 @@
+//! Each report as a ctl-core document, which ctl-core renders as pretty text.
+//! `--format json` serializes the report itself. Nothing here prints.
+
 use ctl_core::{Document, Fields, MessageKind, Notice, NoticeLevel, Present, Section, Table, Text};
 
 use crate::report::{HookOutcome, Report, Task};

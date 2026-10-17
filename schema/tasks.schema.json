@@ -328,12 +328,23 @@
 		},
 		"Section": {
 			"description": "One of a ledger's three lists.",
-			"enum": [
-				"queue",
-				"archive",
-				"horizon"
-			],
-			"type": "string"
+			"oneOf": [
+				{
+					"const": "queue",
+					"description": "Short-term work, in priority order.",
+					"type": "string"
+				},
+				{
+					"const": "archive",
+					"description": "Finished or dropped work.",
+					"type": "string"
+				},
+				{
+					"const": "horizon",
+					"description": "Mapped work that cannot start yet.",
+					"type": "string"
+				}
+			]
 		},
 		"Style": {
 			"additionalProperties": false,
