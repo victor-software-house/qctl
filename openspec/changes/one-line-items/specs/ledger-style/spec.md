@@ -56,9 +56,9 @@ It SHALL leave block scalars, keys, and values that are not strings as written.
 
 #### Scenario: A needlessly quoted stamp becomes plain
 
-- **WHEN** an archived row reads `completed: "2026-08-19T10:00:00+00:00"`
+- **WHEN** an archived row reads `completed: "2026-08-19T10:00:00"`
 - **AND** `qctl fmt` runs
-- **THEN** the line reads `completed: 2026-08-19T10:00:00+00:00`
+- **THEN** the line reads `completed: 2026-08-19T10:00:00`
 
 #### Scenario: A string that agrees is untouched
 

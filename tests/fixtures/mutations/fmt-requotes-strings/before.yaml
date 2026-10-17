@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=./schema/tasks.schema.json
+schema_version: 4
+prefix: "DEMO"
+active: 'DEMO-001'
+queue:
+  - id: DEMO-001
+    title: 'It''s here: now'
+    scope: demo
+    outcome: >-
+      A folded outcome keeps
+      its layout.
+    blocked_by: []
+    acceptance: ['It holds.', "It's checked."]
+    notes:
+      - 'it''s here: now'
+      - "Already plain."
+archive:
+  - id: DEMO-002
+    title: Done
+    scope: demo
+    outcome: It shipped.
+    completed: "2026-08-19T10:00:00"
+    evidence:
+      - 'Merged: the tag exists.'
+    disposition: "completed"
+horizon: []

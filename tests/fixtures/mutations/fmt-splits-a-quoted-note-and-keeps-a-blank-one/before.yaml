@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=./schema/tasks.schema.json
+schema_version: 4
+prefix: DEMO
+active: DEMO-001
+queue:
+  - id: DEMO-001
+    title: Notes holding line breaks outside a block
+    scope: demo
+    outcome: The quoted note splits and the blank note stays one item.
+    blocked_by: []
+    acceptance:
+      - Every note reads the same afterwards.
+    notes:
+      - Kept.
+      # The blank note owns this comment.
+      - |+
+
+
+      - "First.\nSecond."
+      - Next.
+archive: []
+horizon: []

@@ -124,24 +124,25 @@ impl Document {
         self.revise(to, index, changes)
     }
 
-    /// Add a row at the end of a section, then its notes, written one by one
-    /// in the style each note gets. `row` carries no notes of its own.
+    /// Add a row at the end of a section. yamled writes the row whole, then
+    /// each list that holds items is written again by the one item writer, so
+    /// its items take the declared layout and the key keeps its slot.
     ///
     /// # Errors
     ///
-    /// Fails when the row does not serialize or a note cannot be written.
-    pub fn append<T: Serialize>(&mut self, name: &str, row: &T, notes: &[String]) -> Result<()> {
+    /// Fails when the row does not serialize or an item cannot be written.
+    pub fn append<T: Serialize>(&mut self, name: &str, row: &T) -> Result<()> {
         self.ensure_section(name)?;
         let list = section(name);
         self.yaml.push(&list, row).context("add the row")?;
-        if notes.is_empty() {
-            return Ok(());
+        let path = list.index(self.ids(name).len() - 1);
+        let fields = serde_json::to_value(row).context("read the new row back")?;
+        for (key, value) in fields.as_object().into_iter().flatten() {
+            if let Some(items) = string_items(value).filter(|items| !items.is_empty()) {
+                self.write_items(&path, key, &items)?;
+            }
         }
-        let row = list.index(self.ids(name).len() - 1);
-        self.yaml
-            .insert(&row, "notes", &NO_ITEMS, Position::End)
-            .context("add notes")?;
-        self.push_notes(&row.key("notes"), notes)
+        Ok(())
     }
 
     /// Put a section's rows in the order these ids give.
@@ -169,11 +170,8 @@ impl Document {
     ///
     /// Fails when no row in the section carries `row`.
     pub fn rewrite_blockers(&mut self, name: &str, row: &str, kept: &[String]) -> Result<()> {
-        let path = section(name)
-            .index(self.position_of(name, row)?)
-            .key("blocked_by");
-        self.yaml
-            .replace(&path, kept)
+        let path = section(name).index(self.position_of(name, row)?);
+        self.write_items(&path, "blocked_by", kept)
             .with_context(|| format!("rewrite {row}'s blocked_by"))
     }
 
@@ -199,4 +197,13 @@ impl Document {
             .insert(&Path::root(), name, &NO_ITEMS, Position::End)
             .with_context(|| format!("add {name}"))
     }
+}
+
+/// The strings of a list field, or `None` for any other value.
+fn string_items(value: &serde_json::Value) -> Option<Vec<String>> {
+    value
+        .as_array()?
+        .iter()
+        .map(|item| item.as_str().map(ToOwned::to_owned))
+        .collect()
 }

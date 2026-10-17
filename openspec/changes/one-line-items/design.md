@@ -48,7 +48,7 @@ It lost because the operator requires every ctl behaviour to be declared and con
 `Document` gets one private writer for list items that calls `push_text` or `insert_item_text` with the layout `list_items` maps to.
 `push_notes`, `push_items`, `append`, `write_list`, and `rewrite_blockers` all go through it, and `notes::style` is removed.
 A block list rewritten whole is emptied and refilled item by item; a flow list is replaced whole through yamled (Non-Goal 3).
-A new row is pushed with each list field empty, then each field is filled item by item, so key order stays what the row type serializes and an empty `blocked_by` stays `blocked_by: []`.
+A new row is pushed whole, then each list field that holds items is emptied and filled again item by item, so key order stays what the row type serializes and an empty `blocked_by` stays `blocked_by: []`.
 
 Alternative: write the quoted text in qctl and hand yamled a raw line.
 It lost because yamled owns quoting and its proof; a second quoting rule in qctl is the drift this change removes.

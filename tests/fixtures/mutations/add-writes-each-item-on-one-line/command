@@ -1,0 +1,1 @@
+add --title "Write it on one line" --scope demo --outcome "Every item is one line." --acceptance "Done: every row passes" --acceptance "It's checked" --note "2026-10-15: found in review" --note "2026-10-15, found in review" --note "It's blocked: on review" --note "Done: every row passes"

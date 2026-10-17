@@ -15,6 +15,7 @@ use crate::cli::{EditArgs, RemoveField};
 use crate::document::Change;
 use crate::ledger::{Ledger, load, resolve_path};
 use crate::report::Report;
+use crate::schema::Style;
 
 /// `qctl edit`: rewrite named fields, list items, or the queue position of
 /// one row.
@@ -34,6 +35,7 @@ pub fn run(args: &EditArgs) -> Result<Report> {
     ensure!(!requested.is_empty(), "edit needs a field or a position");
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
+    crate::mutate::one_line_notes(&ledger.style, &args.note)?;
     let located = locate(&ledger, &args.id)?;
     policy::validate(&requested, located.kind)?;
     let row = RowLists::new(&ledger, located);
@@ -96,6 +98,7 @@ pub fn run(args: &EditArgs) -> Result<Report> {
     };
     rewrite_row(
         &path,
+        &ledger.style,
         located.kind.section(),
         &args.id,
         destination,
@@ -182,12 +185,13 @@ impl<'a> RowLists<'a> {
 
 fn rewrite_row(
     path: &Path,
+    style: &Style,
     section: &str,
     id: &str,
     destination: usize,
     changes: &[Change],
 ) -> Result<()> {
-    let mut document = crate::mutate::read(path)?;
+    let mut document = crate::mutate::read(path, style)?;
     let current = document.position_of(section, id)?;
     if changes.is_empty() && current == destination {
         return Ok(());

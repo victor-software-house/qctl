@@ -36,8 +36,8 @@ command line wins.
 Acceptance states observable, demonstrably true end conditions for closing the
 task. Write the resulting state in the present tense. Put implementation steps
 in `plan` and supporting context in `notes`. Repeat `-n/--note` for distinct
-facts; each argument is one ordered list item, and intentional line and paragraph
-breaks survive YAML readback.
+facts; each argument is one ordered list item, written on one line unless the
+ledger declares `style.list_items: auto`.
 
 Consumer mise catalog — copy [`examples/mise.toml`](examples/mise.toml), which
 pins the tool and the task include to the same release:

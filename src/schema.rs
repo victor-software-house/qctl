@@ -303,13 +303,16 @@ pub struct HorizonTask {
 
 /// How a ledger is written, declared by the ledger itself.
 ///
-/// Every option has a default that is what qctl already wrote, so a file with
-/// no `style` block keeps the shape it has. `qctl fmt` applies these; a verb
+/// Every option has a default, so a file with no `style` block is valid. The
+/// first options default to what qctl already wrote. [`Style::list_items`]
+/// and [`Style::quotes`] default to one line per item and yamled's choice of
+/// quotes, which changes the shape of a ledger written before them; its first
+/// `qctl fmt` brings it into that shape. `qctl fmt` applies these; a verb
 /// writes any new text in them and, unless [`Style::normalize_on_write`] says
 /// otherwise, leaves the rest of the file alone.
 ///
-/// This is meant to grow. A new option is a new field with a default equal to
-/// today's behaviour, which is a minor change rather than a migration.
+/// This is meant to grow. A new option is a new field with a default, so
+/// `schema_version` does not move.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema, Validate)]
 #[serde(deny_unknown_fields, default)]
 pub struct Style {
@@ -348,6 +351,15 @@ pub struct Style {
     /// normalized, at the price of touching lines nobody asked about.
     #[garde(skip)]
     pub normalize_on_write: bool,
+
+    /// How each item of a row's list is laid out: `notes`, `acceptance`,
+    /// `evidence`, `links`, and `blocked_by`.
+    #[garde(skip)]
+    pub list_items: ListItems,
+
+    /// Which quotes a string gets when it cannot be written plain.
+    #[garde(skip)]
+    pub quotes: Quotes,
 }
 
 impl Default for Style {
@@ -359,8 +371,37 @@ impl Default for Style {
             archive_order: ArchiveOrder::NewestFirst,
             row_spacing: RowSpacing::AsWritten,
             normalize_on_write: false,
+            list_items: ListItems::Line,
+            quotes: Quotes::Auto,
         }
     }
+}
+
+/// How a list item is laid out.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ListItems {
+    /// Every item on one line, plain or quoted. A verb refuses a note that
+    /// holds a line break, and `fmt` writes a folded or literal item on one
+    /// line, a multi-line note as one item per line.
+    Line,
+    /// yamled chooses: one line, or a literal block for text that holds a
+    /// line break. `fmt` leaves each item's layout as written.
+    Auto,
+}
+
+/// Which quotes a string gets when it cannot be written plain.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Quotes {
+    /// yamled chooses: single quotes for text without an apostrophe, double
+    /// quotes for text with one and no double quote, and otherwise whichever
+    /// needs fewer escapes. An apostrophe is never doubled.
+    Auto,
+    /// Single quotes, with an apostrophe doubled.
+    Single,
+    /// Double quotes.
+    Double,
 }
 
 /// One of a ledger's three lists.

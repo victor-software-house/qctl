@@ -109,18 +109,22 @@ implementation instructions, or a sequence of steps in acceptance. A `plan`
 owns the procedure; `notes` carry context a reader cannot reconstruct.
 
 `notes` is an ordered list. Every repeated `-n/--note` is one item, so separate
-facts instead of building one unbounded paragraph. Intentional line breaks stay
-line breaks; blank lines stay paragraph separators. Qctl writes those as `|-`
-literal block items. YAML-sensitive single-line prose, such as text containing
-`: `, uses `>-` so it stays readable without quotes or escape sequences. A
-block gets an indentation digit (`|2-`) only when its first line starts with a
-space. Short safe notes stay plain. Qctl never inserts mechanical line breaks mid-sentence.
+facts instead of building one unbounded paragraph. Under the default
+`list_items: line`, every list item is one line: a note holding a line break is
+refused, so pass each line as its own `-n/--note`. Under `list_items: auto`, such
+a note is written as one `|-` literal block. Qctl never inserts mechanical line
+breaks mid-sentence.
+
+Follow a note's date with a comma, not a colon: `2026-10-15, found in review`
+stays plain, while a colon followed by a space, or a space followed by `#`,
+forces YAML quotes. Do not rewrite existing note text for this.
 
 ## Style
 
-A ledger declares how it is written, under `style`. Every option is optional
-and defaults to what qctl already wrote, so a file with no `style` block is
-valid.
+A ledger declares how it is written, under `style`. Every option is optional,
+so a file with no `style` block is valid. Most defaults are what qctl already
+wrote. `list_items` and `quotes` change the shape of a ledger written before
+them; its first `qctl fmt` brings it into that shape.
 
 | Option | Default | What it decides |
 |:--|:--|:--|
@@ -130,6 +134,8 @@ valid.
 | `archive_order` | `newest_first` | Whether `fmt` sorts the archive or leaves it as written. |
 | `row_spacing` | `as_written` | Whether `fmt` keeps exactly one blank line between rows (`blank_line`) or leaves the spacing as written. |
 | `normalize_on_write` | `false` | Whether every verb normalizes the whole file, or only the lines it changes. |
+| `list_items` | `line` | Whether every list item is one line (`line`), or a literal block when it holds a line break (`auto`). |
+| `quotes` | `auto` | The quotes a string gets when it cannot be plain: `auto` takes single quotes, or double quotes for text holding `'`; `single` and `double` pin one. |
 
 `qctl fmt` writes a ledger in its declared style. `qctl fmt --check` writes
 nothing, names the lines that differ, and exits non-zero — that is the one
@@ -137,9 +143,13 @@ for a hook.
 
 `fmt` does not guess. On a current-version file it changes what an option
 names, sorts the archive when asked, and removes whitespace nobody chose. It
-never adds a comment or a key, and it never rewrites a value. It adds a blank
-line only between rows, when `row_spacing: blank_line` asks for one, and never
-after a row whose last value is a `|+` or `>+` block, which would absorb it.
+writes every one-line string in the declared quotes, and under
+`list_items: line` every block list item on one line, a note holding line
+breaks as one item per line with its blank lines dropped. A block row scalar,
+such as a folded `outcome`, keeps its layout. It never adds a comment or a
+key, and it never rewrites a value. It adds a blank line only between rows,
+when `row_spacing: blank_line` asks for one, and never after a row whose last
+value is a `|+` or `>+` block, which would absorb it.
 Schema 3 is the exception: scalar `notes` become a list, then the style
 rules run.
 

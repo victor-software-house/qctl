@@ -8,11 +8,8 @@
 //! no one chose — a space at the end of a line, a second blank line, a file
 //! that does not end in exactly one newline — and it never inserts a comment or
 //! a key. It inserts a blank line only between rows, and only when
-//! [`Style::row_spacing`] asks for one. Row key order and quote style are the
-//! obvious next options, and are deliberately not decided here yet.
-//!
-//! [`Style`]: crate::schema::Style
-//! [`Style::row_spacing`]: crate::schema::Style::row_spacing
+//! [`Style::row_spacing`] asks for one. It rewrites a string only into the
+//! layout and quotes the style declares, and never changes its value.
 
 use std::fs;
 
@@ -23,7 +20,7 @@ use crate::cli::FmtArgs;
 use crate::document::{Document, KeyShape, must_still_parse};
 use crate::ledger::{Ledger, resolve_path};
 use crate::report::Report;
-use crate::schema::{ArchiveOrder, RowSpacing, Section, VERSION};
+use crate::schema::{ArchiveOrder, RowSpacing, Section, Style, VERSION};
 
 /// The ledger as its own style says it should be written.
 ///
@@ -33,8 +30,9 @@ use crate::schema::{ArchiveOrder, RowSpacing, Section, VERSION};
 /// be applied, or when the result would not parse.
 pub fn normalized(source: &str, ledger: &Ledger) -> Result<String> {
     let style = &ledger.style;
-    let mut document = Document::new(source.to_owned())?;
+    let mut document = Document::new(source.to_owned(), style)?;
 
+    document.rewrite_scalars(ledger)?;
     if style.archive_order == ArchiveOrder::NewestFirst {
         document.reorder_rows("archive", &newest_first(ledger))?;
     }
@@ -46,7 +44,7 @@ pub fn normalized(source: &str, ledger: &Ledger) -> Result<String> {
 
     let mut source = document.into_source();
     if style.row_spacing == RowSpacing::BlankLine {
-        source = separated(&source)?;
+        source = separated(&source, style)?;
     }
     let source = tidied(&source);
     must_still_parse(&source)?;
@@ -57,8 +55,8 @@ pub fn normalized(source: &str, ledger: &Ledger) -> Result<String> {
 /// directly. A run of blank lines is left for [`tidied`] to collapse, and a
 /// gap holding anything else is left alone. A row ending in a block scalar
 /// that keeps its trailing lines is skipped: the blank line would join it.
-fn separated(source: &str) -> Result<String> {
-    let document = Document::new(source.to_owned())?;
+fn separated(source: &str, style: &Style) -> Result<String> {
+    let document = Document::new(source.to_owned(), style)?;
     let mut gaps: Vec<usize> = Section::ALL
         .iter()
         .flat_map(|section| {
@@ -294,7 +292,11 @@ fn peek_schema_version(source: &str) -> Option<u64> {
 
 fn rewrite_v3_notes(source: &str) -> Result<String> {
     let parsed: serde_json::Value = Input::new("tasks.yaml", source).parse()?;
-    let mut document = Document::new(source.to_owned())?;
+    let style = match parsed.get("style") {
+        Some(style) => serde_json::from_value(style.clone()).context("read the style block")?,
+        None => Style::default(),
+    };
+    let mut document = Document::new(source.to_owned(), &style)?;
     for section in ["queue", "archive", "horizon"] {
         let Some(rows) = parsed.get(section).and_then(serde_json::Value::as_array) else {
             continue;

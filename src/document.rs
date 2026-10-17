@@ -4,19 +4,24 @@
 //! [`yamled`] does the editing: it finds each node by path, moves a row with
 //! the comments it owns, closes a list that loses its last row, and keeps a
 //! rewritten list in the style it was written in. What stays here is the
-//! ledger's vocabulary: sections, rows found by id, and how a note is written.
+//! ledger's vocabulary: sections, rows found by id, and how a list item is
+//! written, in the layout and quotes the ledger's `style` declares.
 
 mod notes;
 mod rows;
+mod scalars;
 
 use anyhow::{Context, Result, bail};
 use serde::Serialize;
-use yamled::{Path, Segment, Spacing, Style};
+use yamled::{Path, Segment, Spacing, Style, TextStyle};
+
+use crate::schema::{ListItems, Quotes};
 
 /// A ledger's text, parsed so it can be edited in place.
 #[derive(Debug)]
 pub struct Document {
     yaml: yamled::Document,
+    layout: ListItems,
 }
 
 /// One change to a row's fields.
@@ -44,6 +49,14 @@ pub enum Change {
         /// The items to write.
         after: Vec<String>,
     },
+    /// A list of strings written whole, whatever the row held before. An
+    /// empty list is written as `[]`.
+    Items {
+        /// The row key.
+        key: String,
+        /// The items to write.
+        items: Vec<String>,
+    },
 }
 
 impl Change {
@@ -62,20 +75,34 @@ impl Change {
             key: key.to_owned(),
         }
     }
+
+    /// Write `items` as the whole of `key`'s list.
+    #[must_use]
+    pub fn items(key: &str, items: &[String]) -> Self {
+        Self::Items {
+            key: key.to_owned(),
+            items: items.to_vec(),
+        }
+    }
 }
 
 impl Document {
-    /// A ledger's text. A row added to a list whose own rows do not settle
+    /// A ledger's text, written in the list-item layout and the quotes its
+    /// `style` declares. A row added to a list whose own rows do not settle
     /// its spacing is set off by a blank line, as every ledger qctl writes.
     ///
     /// # Errors
     ///
     /// Fails when the text is not YAML qctl can edit.
-    pub fn new(source: String) -> Result<Self> {
+    pub fn new(source: String, style: &crate::schema::Style) -> Result<Self> {
         let yaml = yamled::Document::parse(source)
             .context("this ledger is not YAML qctl can edit")?
-            .with_spacing(Spacing::Blank);
-        Ok(Self { yaml })
+            .with_spacing(Spacing::Blank)
+            .with_quotes(quotes(style.quotes));
+        Ok(Self {
+            yaml,
+            layout: style.list_items,
+        })
     }
 
     /// The edited text.
@@ -185,8 +212,8 @@ impl Document {
             .with_context(|| format!("remove {key} from {name}[{index}]"))
     }
 
-    /// Write a row's notes as a list, each note in the style `notes::style`
-    /// picks. Used by `fmt` when rewriting a v3 scalar `notes`.
+    /// Write a row's notes as a list, through the one item writer. Used by
+    /// `fmt` when rewriting a v3 scalar `notes`.
     ///
     /// # Errors
     ///
@@ -196,7 +223,7 @@ impl Document {
         self.yaml
             .replace(&path, &NO_ITEMS)
             .context("empty the notes")?;
-        self.push_notes(&path, items)
+        self.push_items(&path, "notes", items)
     }
 
     /// Apply field changes to one row.
@@ -213,6 +240,7 @@ impl Document {
                 Change::List { key, before, after } => {
                     self.write_list(&row, key, before, after)?;
                 }
+                Change::Items { key, items } => self.write_items(&row, key, items)?,
             }
         }
         Ok(())
@@ -249,45 +277,58 @@ impl Document {
             return self.drop_field(row, key);
         }
         let path = row.clone().key(key);
-        let Some(list) = self.yaml.node(&path) else {
-            self.yaml
-                .insert(row, key, &NO_ITEMS, yamled::Position::End)
-                .with_context(|| format!("add {key}"))?;
-            return self.push_items(&path, key, after);
-        };
-        let appended = list.style() == Style::BlockSequence && after.starts_with(before);
+        let appended = self
+            .yaml
+            .node(&path)
+            .is_some_and(|list| list.style() == Style::BlockSequence)
+            && after.starts_with(before);
         if appended {
             return self.push_items(&path, key, &after[before.len()..]);
         }
-        if key == "notes" {
-            self.yaml
+        self.write_items(row, key, after)
+    }
+
+    /// Write `items` as the whole of a row's `key` list. A flow list stays a
+    /// flow list, written by yamled in its own layout; any other list is
+    /// emptied and filled again one item at a time.
+    fn write_items(&mut self, row: &Path, key: &str, items: &[String]) -> Result<()> {
+        let path = row.clone().key(key);
+        match self.yaml.node(&path).map(|list| list.style()) {
+            None => self
+                .yaml
+                .insert(row, key, &NO_ITEMS, yamled::Position::End)
+                .with_context(|| format!("add {key}"))?,
+            Some(Style::FlowSequence) => {
+                return self
+                    .yaml
+                    .replace(&path, items)
+                    .with_context(|| format!("write {key}"));
+            }
+            Some(_) => self
+                .yaml
                 .replace(&path, &NO_ITEMS)
-                .context("empty the notes")?;
-            return self.push_notes(&path, after);
+                .with_context(|| format!("empty {key}"))?,
         }
-        self.yaml
-            .replace(&path, after)
-            .with_context(|| format!("write {key}"))
+        self.push_items(&path, key, items)
     }
 
+    /// The one writer of a row's list items, in the declared layout. Under
+    /// `line`, a note holding line breaks, which only a file written before
+    /// that rule can carry, is written one item per line by
+    /// [`notes::lines`].
     fn push_items(&mut self, path: &Path, key: &str, items: &[String]) -> Result<()> {
-        if key == "notes" {
-            return self.push_notes(path, items);
-        }
+        let layout = self.layout;
+        let written: Vec<&str> = match layout {
+            ListItems::Line if key == "notes" => {
+                items.iter().flat_map(|note| notes::lines(note)).collect()
+            }
+            ListItems::Line | ListItems::Auto => items.iter().map(String::as_str).collect(),
+        };
         self.tight(|yaml| {
-            items
+            written
                 .iter()
-                .try_for_each(|item| yaml.push(path, item))
+                .try_for_each(|item| yaml.push_text(path, item, text_style(layout)))
                 .with_context(|| format!("add to {key}"))
-        })
-    }
-
-    fn push_notes(&mut self, path: &Path, items: &[String]) -> Result<()> {
-        self.tight(|yaml| {
-            items
-                .iter()
-                .try_for_each(|note| yaml.push_text(path, note, notes::style(note)))
-                .context("add a note")
         })
     }
 
@@ -303,6 +344,23 @@ impl Document {
 
 /// An empty list, for a key that is about to be filled.
 const NO_ITEMS: [&str; 0] = [];
+
+/// The yamled layout a list item is written in.
+fn text_style(layout: ListItems) -> TextStyle {
+    match layout {
+        ListItems::Line => TextStyle::Line,
+        ListItems::Auto => TextStyle::Auto,
+    }
+}
+
+/// The yamled quotes a ledger's strings are written in.
+fn quotes(quotes: Quotes) -> yamled::Quotes {
+    match quotes {
+        Quotes::Auto => yamled::Quotes::Auto,
+        Quotes::Single => yamled::Quotes::Single,
+        Quotes::Double => yamled::Quotes::Double,
+    }
+}
 
 /// How a row field is written.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

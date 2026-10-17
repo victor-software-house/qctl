@@ -1,41 +1,34 @@
 //! How a note is written.
 
-use ctl_core::input::Input;
-use yamled::TextStyle;
-
-/// A note with line breaks is a literal block, so each break stays where it
-/// was typed. A one-line note is plain when plain text reads back as itself,
-/// and otherwise a folded block, so a colon or a quote in prose never turns
-/// into escaped text.
-pub(super) fn style(note: &str) -> TextStyle {
-    if note.contains('\n') {
-        TextStyle::Literal
-    } else if reads_back_plain(note) {
-        TextStyle::Auto
-    } else {
-        TextStyle::Folded
-    }
-}
-
-fn reads_back_plain(note: &str) -> bool {
-    Input::new("note", format!("- {note}"))
-        .parse::<Vec<String>>()
-        .is_ok_and(|notes| notes.as_slice() == [note])
+/// A note as the one-line items it is written as: each line its own item, in
+/// order. A line ends at `\n` or `\r`, the breaks `-n/--note` refuses. A
+/// blank line only ever separated paragraphs inside an old block scalar, so
+/// blank lines are dropped, and a CRLF pair leaves no item between. A note
+/// with no other line stays one item with its text as it was, so no note
+/// disappears.
+pub(super) fn lines(note: &str) -> Vec<&str> {
+    let lines: Vec<&str> = note
+        .split(['\n', '\r'])
+        .filter(|line| !line.trim().is_empty())
+        .collect();
+    if lines.is_empty() { vec![note] } else { lines }
 }
 
 #[cfg(test)]
 mod tests {
-    use yamled::TextStyle;
-
-    use super::style;
+    use super::lines;
 
     #[test]
-    fn a_note_is_plain_folded_or_literal() {
-        assert_eq!(style("Short context."), TextStyle::Auto);
+    fn a_note_is_one_item_per_line_without_blank_lines() {
+        assert_eq!(lines("Short context."), ["Short context."]);
         assert_eq!(
-            style("Source: the colon stays readable."),
-            TextStyle::Folded
+            lines("Lead: the design.\n1. First.\n\n  \n2. Second."),
+            ["Lead: the design.", "1. First.", "2. Second."]
         );
-        assert_eq!(style("First line.\nSecond line."), TextStyle::Literal);
+        assert_eq!(
+            lines("First.\r\nSecond.\rThird."),
+            ["First.", "Second.", "Third."]
+        );
+        assert_eq!(lines(" \n\n"), [" \n\n"]);
     }
 }
