@@ -49,7 +49,9 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   (taplo, rumdl, typos, actionlint, OpenSpec validation, and `check:local`,
   which holds this repository's own checks).
   qctl's own tasks live in `mise-tasks/`. CI adds `deny:advisories` and
-  `semver`, which need the network. `mise.toml` pins stable 1.99.0 with
+  `semver`, which need the network. Until 0.5.9 is on crates.io, CI runs
+  `semver:window`, which lets only the QCTL-039 API changes fail; QCTL-050
+  removes it. `mise.toml` pins stable 1.99.0 with
   `mr_boxington = true`, locally and in CI, where `jdx/mr-boxington-action`
   restores its cache; `rust-toolchain.toml` and `rust-version` match.
 - The pull request's CI runs `verify`; no hook runs it. Lefthook: pre-commit
