@@ -59,40 +59,6 @@ queue:
       - 'qctl instructions states the rule: a foreign prefix is recorded, never resolved, until QCTL-019 decides how resolution works.'
       - "Which prefixes a ledger may name is declared in tasks.yaml, beside the rows — it is data about the work, so this phase adds no second file."
 
-  - id: QCTL-021
-    title: Style says how a scalar is quoted
-    scope: qctl
-    outcome: >-
-      A ledger declares its quoting the way it declares its indent, so one
-      file writes one fact one way whoever wrote the row.
-    blocked_by: []
-    acceptance:
-      - "`style` carries the option, defaulting to what the serializer does today, so an existing ledger is unchanged until it asks."
-      - "`fmt` rewrites a scalar that disagrees with the declared style, and `fmt --check` fails it, so a mix cannot survive a hook."
-      - Every writer honours it, so a row a verb writes and a row fmt rewrites come out identical.
-      - A test asserts the shape on a written row rather than on a hand-built string.
-    notes:
-      - >-
-        2026-08-19, raised on verctl#46 and corrected here after reading the
-        code rather than the symptom. The first write-up called this qctl
-        disagreeing with itself. It is not: every stamp qctl has ever written is
-        unquoted, because `yaml_serde`'s emitter decides, and CTC's writer row
-        already stated that intent — "the serializer quotes what needs quoting".
-        The mix in verctl's ledger came from a foreign writer, the QCTL-011
-        recovery script, which wrote `completed: "…"` as literal text.
-        So the gap is a missing option, not a bug, and the code already says so:
-        `format.rs` names "row key order and quote style" as the obvious next
-        options, deliberately not decided, and `document.rs` disclaims deciding
-        "how to quote a value". `style` has five options — timezone,
-        section_order, indent, archive_order, normalize_on_write — and none is
-        about scalar style. `check` cannot see quoting at all, because it
-        validates the parsed value, where both forms are the same String.
-        Nothing is broken today: every reader we ship takes an unquoted ISO-8601
-        scalar as a string. The risk is a reader that does not — a YAML 1.1
-        resolver takes it as a timestamp node while the `$schema` line says
-        string. Do this with row key order, since format.rs pairs them, and
-        leave the default at today's behaviour so no ledger moves unasked.
-
   - id: QCTL-023
     title: check says which rules it enforces
     scope: qctl
@@ -166,42 +132,6 @@ queue:
       - '2026-09-12 recovery: preserved the inherited dirty implementation without reset, restore, stash, or clean; tracked diff SHA-256 3a353b12517300ba40f217de3d8f8641953050d574e47f8ae6333eff30faae1d.'
       - '2026-09-12 operator decisions: both releases are patch bumps; edit collapses position and removal flags; Rust code follows nested feature modules; qctl is reviewed as a PR stack.'
     plan: goals/row-edit/plan.md
-
-  - id: QCTL-039
-    title: Write list items and quotes as the ledger declares
-    scope: qctl writer and fmt
-    outcome: A ledger declares its list-item layout and its quotes in style, every verb and fmt write them that way, and by default every list item sits on one line with no doubled single quote.
-    blocked_by: []
-    acceptance:
-      - >-
-        qctl instructions says to follow a note's date with a comma, not a colon, and
-        not to rewrite existing note text for it.
-      - A test asserts the written shape on a row a verb or fmt wrote to a real file.
-      - >-
-        style accepts list_items (line, auto; default line) and quotes (auto, single,
-        double; default auto), refuses other values, and every verb writes list items and
-        strings as they say.
-      - >-
-        Under list_items line, add and edit refuse a note holding a line break, write
-        nothing, and say to pass each line as its own -n/--note; under auto the note is
-        one literal block.
-      - >-
-        Under list_items line, qctl fmt leaves no folded or literal list item, a
-        multi-line note becomes one item per line in order, and every value reads back the same.
-      - >-
-        qctl fmt rewrites every one-line string whose quoting disagrees with quotes,
-        fmt --check fails on it, and a second qctl fmt changes nothing.
-      - >-
-        qctl fmt applies its scalar edits in one yamled batch, with wall times before
-        and after on the largest consumer ledger recorded in the pull request.
-    notes:
-      - >2-
-        2026-09-28: src/document/notes.rs item() writes '- >2-' for every single-line note that yaml_serde would quote. Nearly every note starts with a date and a colon, which as a plain scalar would read as a mapping, so nearly every note takes this path. '>' and '-' are needed for an exact round trip; the '2' is needed only for a leading space.
-      - >-
-        2026-10-15, reworked to the operator's decision of that day: one writer for every list item, one line each, no block scalars in notes, multi-line notes refused at input and split per line by fmt. Needs yamled YMD-011 (TextStyle::Line and double quotes for an apostrophe).
-      - >-
-        2026-10-15, reworked on operator review: layout and quoting become the style options list_items and quotes, auto meaning yamled chooses in both. QCTL-021 folds in; row key order stays out.
-    plan: openspec/changes/one-line-items/proposal.md
 
   - id: QCTL-048
     title: Take the shared template at v0.0.18
@@ -319,6 +249,55 @@ horizon:
         so a ledger such as yamled's now holds both shapes.
 
 archive:
+  - id: QCTL-039
+    title: Write list items and quotes as the ledger declares
+    scope: qctl writer and fmt
+    outcome: A ledger declares its list-item layout and its quotes in style, every verb and fmt write them that way, and by default every list item sits on one line with no doubled single quote.
+    notes:
+      - >2-
+        2026-09-28: src/document/notes.rs item() writes '- >2-' for every single-line note that yaml_serde would quote. Nearly every note starts with a date and a colon, which as a plain scalar would read as a mapping, so nearly every note takes this path. '>' and '-' are needed for an exact round trip; the '2' is needed only for a leading space.
+      - >-
+        2026-10-15, reworked to the operator's decision of that day: one writer for every list item, one line each, no block scalars in notes, multi-line notes refused at input and split per line by fmt. Needs yamled YMD-011 (TextStyle::Line and double quotes for an apostrophe).
+      - >-
+        2026-10-15, reworked on operator review: layout and quoting become the style options list_items and quotes, auto meaning yamled chooses in both. QCTL-021 folds in; row key order stays out.
+    plan: openspec/changes/one-line-items/proposal.md
+    completed: 2026-10-17T18:15:06
+    evidence:
+      - https://github.com/victor-software-house/qctl/pull/118
+    disposition: completed
+
+  - id: QCTL-021
+    title: Style says how a scalar is quoted
+    scope: qctl
+    outcome: >-
+      A ledger declares its quoting the way it declares its indent, so one
+      file writes one fact one way whoever wrote the row.
+    notes:
+      - >-
+        2026-08-19, raised on verctl#46 and corrected here after reading the
+        code rather than the symptom. The first write-up called this qctl
+        disagreeing with itself. It is not: every stamp qctl has ever written is
+        unquoted, because `yaml_serde`'s emitter decides, and CTC's writer row
+        already stated that intent — "the serializer quotes what needs quoting".
+        The mix in verctl's ledger came from a foreign writer, the QCTL-011
+        recovery script, which wrote `completed: "…"` as literal text.
+        So the gap is a missing option, not a bug, and the code already says so:
+        `format.rs` names "row key order and quote style" as the obvious next
+        options, deliberately not decided, and `document.rs` disclaims deciding
+        "how to quote a value". `style` has five options — timezone,
+        section_order, indent, archive_order, normalize_on_write — and none is
+        about scalar style. `check` cannot see quoting at all, because it
+        validates the parsed value, where both forms are the same String.
+        Nothing is broken today: every reader we ship takes an unquoted ISO-8601
+        scalar as a string. The risk is a reader that does not — a YAML 1.1
+        resolver takes it as a timestamp node while the `$schema` line says
+        string. Do this with row key order, since format.rs pairs them, and
+        leave the default at today's behaviour so no ledger moves unasked.
+    completed: 2026-10-17T18:15:06
+    evidence:
+      - 'Absorbed by QCTL-039: style.quotes, https://github.com/victor-software-house/qctl/pull/118.'
+    disposition: completed
+
   - id: QCTL-044
     title: Deny missing_docs and missing_debug_implementations
     scope: src/
