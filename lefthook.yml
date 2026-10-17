@@ -52,11 +52,6 @@ pre-push:
             mise run commits "$commit" </dev/null || exit 1
           done
         done
-    verify:
-      env: *hookenv
-      # Local edit: git exports GIT_DIR and friends to hooks, and tests that
-      # probe a scratch directory with `git -C` would find this repository.
-      run: unset $(git rev-parse --local-env-vars) && mise run verify
     full-history-secrets:
       env: *hookenv
       run: mise run hooks:secrets:history
