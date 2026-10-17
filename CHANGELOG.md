@@ -1,5 +1,12 @@
 # Changelog
 
+## qctl 0.5.5
+
+- Fix the three documentation links that failed the docs.rs build since 0.4.7: two pointed at private items and one at a function that no longer exists.
+
+The `--prefix` help and the prefix documentation now give public example prefixes ([#119](https://github.com/victor-software-house/qctl/pull/119)).
+- The operator instructions and bundled skill now match the commands: `archive -d dropped` is documented, an archived row's plan is editable, and the skill no longer points at an unrelated plugin ([#120](https://github.com/victor-software-house/qctl/pull/120)).
+
 ## qctl 0.5.4
 
 ### Fixed
