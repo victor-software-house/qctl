@@ -113,6 +113,10 @@ test fixtures and assertions.
   path a domain module may use; `tests/architecture.rs` refuses the rest.
 - `-f` remains qctl's ledger-file shorthand. The root composes ctl-core
   `FormatLong` with `ColorLong`, so shared `--format` never takes `-f` back.
+- The root parser carries `#[command(env_prefix = "QCTL")]` (ctl shared
+  rule 7), so every long option reads `QCTL_<LONG>`. The ledger path is
+  `--file`, then `QCTL_FILE`, then `tasks.yaml`; `TASKS_LEDGER` is not read.
+  The test helper `common::binary` clears every `QCTL_*` variable.
 
 ## Changes
 

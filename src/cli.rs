@@ -4,16 +4,18 @@
 use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
-use ctl_core::{ColorLong, FormatLong};
+use ctl_core::{ColorLong, EnvPrefix, FormatLong};
 
 use crate::schema::Kind;
 
-/// The whole command line.
+/// The whole command line. Every long option also reads `QCTL_<LONG>`, such
+/// as `QCTL_FILE` or `QCTL_FORMAT`; the command line wins over the variable.
 #[derive(Debug, Parser)]
 #[command(
     version,
     about = "Control in-repo YAML work queues",
-    arg_required_else_help = true
+    arg_required_else_help = true,
+    env_prefix = "QCTL"
 )]
 pub struct Cli {
     /// The verb to run.
@@ -143,7 +145,7 @@ pub struct HookInstallArgs {
 /// Which ledger file a verb reads.
 #[derive(Args, Clone, Debug)]
 pub struct LedgerArgs {
-    /// Ledger path. Defaults to `TASKS_LEDGER`, then `tasks.yaml`.
+    /// Ledger path. Defaults to `tasks.yaml`.
     #[arg(short = 'f', long, value_hint = clap::ValueHint::FilePath)]
     pub file: Option<PathBuf>,
 }

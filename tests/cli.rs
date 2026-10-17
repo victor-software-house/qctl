@@ -1115,3 +1115,55 @@ fn json_output_holds_no_escape_byte_under_forced_colour() {
             .unwrap_or_else(|error| panic!("{args:?}: stdout is not JSON: {error}"));
     }
 }
+
+/// Every long option reads `QCTL_<LONG>`, and the command line wins over the
+/// variable.
+#[test]
+fn variables_set_flags_under_the_command_line() {
+    let dir = LedgerDir::empty();
+    dir.write(MINIMAL);
+    let path = dir.path.to_string_lossy();
+    let json = common::binary()
+        .args(["status", "-f", &path])
+        .env("QCTL_FORMAT", "json")
+        .output()
+        .expect("run qctl");
+    assert!(json.status.success(), "{}", stderr(&json));
+    serde_json::from_slice::<serde_json::Value>(&json.stdout).expect("JSON on stdout");
+
+    let pretty = common::binary()
+        .args(["status", "-f", &path, "--format", "pretty"])
+        .env("QCTL_FORMAT", "json")
+        .output()
+        .expect("run qctl");
+    assert!(pretty.status.success(), "{}", stderr(&pretty));
+    assert!(serde_json::from_slice::<serde_json::Value>(&pretty.stdout).is_err());
+}
+
+/// `QCTL_FILE` names the ledger; the retired `TASKS_LEDGER` does not.
+#[test]
+fn the_ledger_comes_from_qctl_file() {
+    let dir = LedgerDir::empty();
+    dir.write(MINIMAL);
+    let elsewhere = tempfile::tempdir().expect("temp dir");
+    let selected = common::binary()
+        .args(["status", "--format", "json"])
+        .env("QCTL_FILE", &dir.path)
+        .current_dir(elsewhere.path())
+        .output()
+        .expect("run qctl");
+    assert!(selected.status.success(), "{}", stderr(&selected));
+
+    let retired = common::binary()
+        .arg("status")
+        .env("TASKS_LEDGER", &dir.path)
+        .current_dir(elsewhere.path())
+        .output()
+        .expect("run qctl");
+    assert!(!retired.status.success());
+    assert!(
+        stderr(&retired).contains("tasks.yaml"),
+        "{}",
+        stderr(&retired)
+    );
+}

@@ -29,6 +29,10 @@ mise run q start QCTL-001
 mise run q archive QCTL-001 -e 'Shipped.'
 ```
 
+Every long option also reads `QCTL_<LONG>`: `QCTL_FILE` names a ledger other
+than `./tasks.yaml`, and `QCTL_FORMAT=json` asks for JSON. A flag on the
+command line wins.
+
 Acceptance states observable, demonstrably true end conditions for closing the
 task. Write the resulting state in the present tense. Put implementation steps
 in `plan` and supporting context in `notes`. Repeat `-n/--note` for distinct
