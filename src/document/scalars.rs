@@ -98,7 +98,7 @@ impl Strings<'_> {
             links,
             notes,
         } = task;
-        let disposition = variant(disposition)?;
+        let disposition = disposition.as_ref().map(variant).transpose()?;
         self.row(
             row,
             &[
@@ -107,7 +107,7 @@ impl Strings<'_> {
                 ("scope", Some(scope)),
                 ("completed", Some(completed)),
                 ("outcome", Some(outcome)),
-                ("disposition", Some(&disposition)),
+                ("disposition", disposition.as_ref()),
                 ("patch", patch.as_ref()),
                 ("plan", plan.as_ref()),
             ],

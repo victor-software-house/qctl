@@ -36,6 +36,13 @@ description: qctl fmt
        - 'Merged: the tag exists.'
 -    disposition: "completed"
 +    disposition: completed
+   - id: DEMO-004
+     title: Older
+     scope: demo
+     outcome: It shipped first.
+     completed: 2026-08-18T10:00:00
+     evidence:
+       - It merged.
  horizon:
    - id: DEMO-003
      title: Later
