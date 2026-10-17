@@ -20,7 +20,7 @@ impl Document {
     pub fn rewrite_scalars(&mut self, ledger: &Ledger) -> Result<()> {
         let layout = self.layout;
         self.tight(|yaml| {
-            yaml.batch(|yaml| {
+            yaml.batch(|yaml| -> Result<()> {
                 let mut strings = Strings { yaml, layout };
                 strings.scalar(&section("prefix"), &ledger.prefix)?;
                 if let Some(active) = &ledger.active {
