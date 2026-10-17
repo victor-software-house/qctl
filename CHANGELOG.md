@@ -1,5 +1,10 @@
 # Changelog
 
+## qctl 0.5.7
+
+- qctl builds on ctl-core 0.6.23 and yamled 0.0.7, and reads YAML through serde-saphyr 2.0.0.
+A list item that needs quotes and holds an apostrophe is now written in double quotes, `"The operator's call: yes."`, instead of doubling the apostrophe inside single quotes ([#127](https://github.com/victor-software-house/qctl/pull/127)).
+
 ## qctl 0.5.6
 
 - The docs.rs page builds with every feature, and every public function that can fail says when it fails in an `# Errors` section ([#121](https://github.com/victor-software-house/qctl/pull/121)).
