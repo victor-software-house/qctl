@@ -196,6 +196,21 @@ queue:
       - >-
         Found on 2026-10-13 in qctl #112: the Template job fails on every branch because v0.0.18 changes files qctl kept at v0.0.7. The tag deletes mise-tasks/commit-msg and mise-tasks/commits and raises mise min_version from 2026.10.3 to 2026.10.9.
       - The deleted commit-lint tasks are among the local edits AGENTS.md says survive template updates, so this row needs its own review, possibly with the session that owns the Copier templates.
+
+  - id: QCTL-049
+    title: Read every flag from a QCTL_ variable
+    scope: qctl cli
+    outcome: >-
+      Every long option reads QCTL_<LONG> through ctl-core's EnvPrefix, and QCTL_FILE
+      replaces TASKS_LEDGER.
+    blocked_by: []
+    acceptance:
+      - >-
+        QCTL_FORMAT=json makes qctl status print JSON, and --format pretty on the
+        command line wins over it.
+      - QCTL_FILE names the ledger, and TASKS_LEDGER is not read.
+      - qctl instructions and the bundled skill name the QCTL_ variables.
+    plan: openspec/changes/env-bound-flags/proposal.md
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it

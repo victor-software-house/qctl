@@ -20,12 +20,11 @@ pub use crate::schema::{Ledger, VERSION};
 /// The schema qctl was built with, generated from [`crate::schema`].
 pub const CANONICAL_SCHEMA: &str = include_str!("../schema/tasks.schema.json");
 
-/// The ledger file: `--file`, else `TASKS_LEDGER`, else `tasks.yaml`.
+/// The ledger file: `--file` or `QCTL_FILE`, else `tasks.yaml`.
 #[must_use]
 pub fn resolve_path(args: &LedgerArgs) -> PathBuf {
     args.file
         .clone()
-        .or_else(|| std::env::var_os("TASKS_LEDGER").map(PathBuf::from))
         .unwrap_or_else(|| PathBuf::from("tasks.yaml"))
 }
 

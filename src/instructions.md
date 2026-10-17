@@ -71,6 +71,10 @@ under `--format json` is a JSON error even when the bad argument comes first.
 `--file`; format has no `-f` shorthand. `--color` has no `-c` shorthand;
 `fmt -c` is `--check`.
 
+Every long option also reads `QCTL_<LONG>`: `QCTL_FILE` names the ledger,
+`QCTL_FORMAT=json` asks for JSON, and `--help` prints each name. A flag on the
+command line wins over its variable, and an empty variable counts as unset.
+
 `status --format json` includes the complete ledger state. The JSON from
 `check --format json` carries `problems` as an array and exits non-zero when it
 is not empty.
