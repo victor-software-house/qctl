@@ -1,0 +1,26 @@
+---
+source: tests/mutations.rs
+description: "qctl add --title \"Write it on one line\" --scope demo --outcome \"Every item is one line.\" --acceptance \"Done: every row passes\" --acceptance \"It's checked\" --note \"2026-10-15: found in review\" --note \"2026-10-15, found in review\" --note \"It's blocked: on review\" --note \"Done: every row passes\""
+---
+# -1 +14
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 4
+ prefix: DEMO
+ active: null
+-queue: []
++queue:
++  - id: DEMO-001
++    title: Write it on one line
++    scope: demo
++    outcome: Every item is one line.
++    blocked_by: []
++    acceptance:
++      - 'Done: every row passes'
++      - It's checked
++    notes:
++      - '2026-10-15: found in review'
++      - 2026-10-15, found in review
++      - "It's blocked: on review"
++      - 'Done: every row passes'
+ archive: []
+ horizon: []
