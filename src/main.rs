@@ -1,3 +1,8 @@
+//! The `qctl` command: it parses the arguments, runs one verb from the
+//! library, and prints its report. ctl-core's `App` owns parsing, help, and
+//! output; `qctl instructions` prints the operator contract built into the
+//! binary.
+
 use anyhow::Result;
 use ctl_core::prelude::{App, ExitCode};
 use qctl::cli::{Cli, Command, HookCommand};

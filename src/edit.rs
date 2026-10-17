@@ -16,6 +16,19 @@ use crate::document::Change;
 use crate::ledger::{Ledger, load, resolve_path};
 use crate::report::Report;
 
+/// `qctl edit`: rewrite named fields, list items, or the queue position of
+/// one row.
+///
+/// # Errors
+///
+/// Fails when no field or position is asked for, when the ledger does not
+/// [`load`], when no list holds the id, or when that list does not take a
+/// requested field. It also fails on a field both set and unset, an empty
+/// value, a duplicate list item, or a removal or reorder that names an item
+/// the row lacks. A queued row may not lose its last acceptance, an archived
+/// row its last evidence, or the active row its place at the front. Last,
+/// `--plan` must name a file next to the ledger, the position must keep every
+/// dependency pointing backward, and the file must write.
 pub fn run(args: &EditArgs) -> Result<Report> {
     let requested = policy::requested(args);
     ensure!(!requested.is_empty(), "edit needs a field or a position");

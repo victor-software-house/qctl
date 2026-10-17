@@ -16,6 +16,15 @@ use crate::cli::HookInstallArgs;
 use crate::ledger::resolve_path;
 use crate::report::{HookOutcome, Report};
 
+/// `qctl hook install`: with Lefthook, report the snippet that runs
+/// `close-from-git`; without it, write the git `pre-push` hook.
+///
+/// # Errors
+///
+/// Fails when the ledger's directory cannot be resolved or is not in a git
+/// repository, or when the ledger path holds a single quote. Without
+/// Lefthook it also fails when a `pre-push` hook exists and `--force` is not
+/// set, or when the hook cannot be written.
 pub fn install(args: &HookInstallArgs) -> Result<Report> {
     let ledger = resolve_path(&args.ledger);
     let ledger = canonicalize_ledger(&ledger)?;

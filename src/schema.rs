@@ -519,6 +519,10 @@ fn the_one_version<C>(value: &u32, _: &C) -> garde::Result {
 /// Schema `format` describes a moment without a zone. `check` therefore calls
 /// [`is_a_real_instant`] for the same rule rather than getting it from the
 /// schema.
+///
+/// # Errors
+///
+/// Returns a garde error when the calendar has no such moment.
 pub fn a_real_instant<C>(value: &str, _: &C) -> garde::Result {
     if is_a_real_instant(value) {
         return Ok(());
@@ -540,6 +544,10 @@ pub const COMMITTED: &str = "schema/tasks.schema.json";
 ///
 /// Tab-indented and newline-terminated, which is how the file was written
 /// before it was generated, so adopting generation is not also a reformat.
+///
+/// # Errors
+///
+/// Fails when the schema does not serialize to JSON.
 pub fn generated() -> anyhow::Result<String> {
     let schema = serde_json::to_value(schema_for!(Ledger))?;
     let mut out = Vec::new();
@@ -554,6 +562,11 @@ pub fn generated() -> anyhow::Result<String> {
 
 /// Write the schema where it is committed. Whether the file on disk is current
 /// is the test suite's question, not a second flag here.
+///
+/// # Errors
+///
+/// Fails when the schema cannot be generated or the file cannot be
+/// written.
 pub fn write(args: &crate::cli::SchemaArgs) -> anyhow::Result<crate::report::Report> {
     let path = args
         .out

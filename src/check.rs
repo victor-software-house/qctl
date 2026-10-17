@@ -8,6 +8,14 @@ use crate::ledger::{Ledger, graph_errors, load_value, resolve_path, schema_value
 use crate::report::Report;
 use crate::trailers;
 
+/// `qctl check`: hold a ledger to the schema, the graph rules, and the git
+/// trailers, and report every problem in one pass.
+///
+/// # Errors
+///
+/// Fails only when nothing can be checked: the file cannot be read or is not
+/// YAML, or the embedded schema does not compile. Every other problem is a
+/// line in the report's `problems`.
 pub fn run(args: &CheckArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let schema = schema_value()?;

@@ -6,10 +6,13 @@ rust-version = "1.99.0"
 description = "Control in-repo YAML work queues"
 license = "MIT"
 repository = "https://github.com/victor-software-house/qctl"
-homepage = "https://github.com/victor-software-house/qctl"
 readme = "README.md"
 keywords = ["tasks", "ledger", "yaml", "cli"]
 categories = ["command-line-utilities", "development-tools"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cap-lints", "warn"]
 
 # Line tables keep backtraces readable at a fraction of full debug info.
 [profile.dev]
