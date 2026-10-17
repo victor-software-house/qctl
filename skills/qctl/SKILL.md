@@ -7,7 +7,6 @@ description: >-
   research/evaluation rows, or the user mentions qctl, the work queue, or
   replacing Ajv test:ledger. Use when adding, parking, or editing a ledger
   row instead of editing tasks.yaml by hand.
-  Do not use the vault ompex/task-ledger plugin.
 license: MIT
 version: 0.5.4
 compatibility: Requires a qctl binary. A repository-mounted mise `q` task may provision an exact version after a GitHub Release exists.
@@ -117,6 +116,7 @@ qctl edit QCTL-001 -n 'An addendum' -t 'New title'
 qctl edit QCTL-001 -x note:1 -p before:QCTL-002
 qctl start QCTL-001
 qctl archive QCTL-001 -e 'Shipped.'
+qctl archive QCTL-002 -d dropped -e 'Superseded by QCTL-003.'
 qctl fmt
 qctl close-from-git
 qctl hook install
