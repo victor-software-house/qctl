@@ -8,7 +8,7 @@ description: >-
   replacing Ajv test:ledger. Use when adding, parking, or editing a ledger
   row instead of editing tasks.yaml by hand.
 license: MIT
-version: 0.5.5
+version: 0.5.6
 compatibility: Requires a qctl binary. A repository-mounted mise `q` task may provision an exact version after a GitHub Release exists.
 ---
 
