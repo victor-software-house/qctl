@@ -1,5 +1,13 @@
 # Changelog
 
+## qctl 0.5.6
+
+- The docs.rs page builds with every feature, and every public function that can fail says when it fails in an `# Errors` section ([#121](https://github.com/victor-software-house/qctl/pull/121)).
+- Every public item is documented and implements `Debug`.
+`--help` now describes every flag and argument, including `--title`, `--scope`, `--outcome`, `--patch`, `--plan`, `--kind`, `--open`, and the task id.
+The `--disposition` and `--unset` values say what each one means.
+The generated schema gives each `section_order` value a description, as it already did for the other enumerations ([#122](https://github.com/victor-software-house/qctl/pull/122)).
+
 ## qctl 0.5.5
 
 - Fix the three documentation links that failed the docs.rs build since 0.4.7: two pointed at private items and one at a function that no longer exists.
