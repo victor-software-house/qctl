@@ -36,27 +36,26 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   answers. Take a new tag with `copier update --defaults` and check
   `git diff --check` before committing. The CI job `Template` fails when the
   newest tag would change a file. These local edits survive updates:
-  `lefthook.yml` keeps the push-range commit lint and the
-  git-env unset before `verify`, `mise-tasks/commits` takes several
-  commits, `ci.yml` sets git's default branch to `main` for the tests that
-  run `git init`, `.rumdl.toml` allows the README banner's HTML, and
+  `lefthook.yml` keeps the push-range commit lint, `ci.yml` sets git's
+  default branch to `main` for the tests that run `git init`,
+  `.rumdl.toml` allows the README banner's HTML, and
   `.typos.toml` ignores commit hashes cited in prose.
 - `mise run verify` is the gate, from ctl-core's `tasks/rust.toml` (included
   by `git::` URL): toolchain pins, rustfmt on the dated nightly, clippy with
   the `Cargo.toml` lints denied, `check:features`, `cargo test`, doc-tests,
   cargo-deny licenses, bans, and sources, cargo-machete, and `check:repo`
-  (taplo, rumdl, typos, actionlint, OpenSpec validation, then `check:local`,
+  (taplo, rumdl, typos, actionlint, OpenSpec validation, and `check:local`,
   which holds this repository's own checks).
   qctl's own tasks live in `mise-tasks/`. CI adds `deny:advisories` and
   `semver`, which need the network. `mise.toml` pins stable 1.99.0 with
   `mr_boxington = true`, locally and in CI, where `jdx/mr-boxington-action`
   restores its cache; `rust-toolchain.toml` and `rust-version` match.
-- Lefthook runs the gate before code leaves a machine: pre-commit checks
-  formatting and scans the staged diff for credentials, commit-msg lints the
-  message with committed (`committed.toml`), and pre-push runs
-  `mise install --locked`, the commit lint over every pushed commit,
-  `mise run verify`, and a full-history credential scan. Every hook runs with
-  `MISE_ENV=dev,hooks`. A fresh clone arms them with `mise install`, through
+- The pull request's CI runs `verify`; no hook runs it. Lefthook: pre-commit
+  checks formatting and scans the staged diff for credentials, commit-msg
+  lints the message with committed (`committed.toml`), and pre-push runs
+  `mise install --locked`, the commit lint over every pushed commit, and a
+  full-history credential scan. Every hook runs with `MISE_ENV=dev,hooks`.
+  A fresh clone arms them with `mise install`, through
   `mise.dev.toml`'s postinstall hook; CI never loads `dev`, so no runner gets
   them.
 - This repo's release declarations live in `.ctl/ver.yaml`; `.ctl/` is the
