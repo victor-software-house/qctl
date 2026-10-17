@@ -94,10 +94,11 @@ every row field.` is acceptance; `Run the schema generator` is an implementation
 step. Put the procedure in `plan` and supporting context in `notes`.
 
 `notes` is an ordered list; each repeated `-n/--note` is one item. Use separate
-items for distinct facts. Intentional line breaks and blank-line paragraph
-separators survive readback as `|-` literal blocks. YAML-sensitive single-line
-prose uses a readable `>-` block instead of quotes or escape sequences. Qctl does
-not mechanically wrap sentences.
+items for distinct facts. Every item is one line unless the ledger declares
+`style.list_items: auto`, so a note holding a line break is refused: pass each
+line as its own `-n/--note`. Follow a note's date with a comma, not a colon,
+so it stays unquoted; do not rewrite existing notes for this. Qctl does not
+mechanically wrap sentences.
 
 ## Mutate
 

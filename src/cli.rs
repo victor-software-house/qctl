@@ -186,8 +186,8 @@ pub struct AddArgs {
     /// The forkctl patch the task edits.
     #[arg(short = 'P', long)]
     pub patch: Option<String>,
-    /// Repeatable note item. Intentional line and paragraph breaks are
-    /// preserved.
+    /// Repeatable note item, one line each unless the ledger's
+    /// `style.list_items` is `auto`.
     #[arg(short = 'n', long = "note")]
     pub note: Vec<String>,
     /// Repeatable blocker id. Each must sit earlier than the new row.
@@ -322,8 +322,8 @@ pub struct EditArgs {
     /// row.
     #[arg(short = 'a', long = "acceptance")]
     pub acceptance: Vec<String>,
-    /// Repeatable note item to append. Intentional line and paragraph breaks
-    /// are preserved.
+    /// Repeatable note item to append, one line each unless the ledger's
+    /// `style.list_items` is `auto`.
     #[arg(short = 'n', long = "note")]
     pub note: Vec<String>,
     /// Repeatable URI to append.

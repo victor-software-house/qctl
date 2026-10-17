@@ -1,0 +1,29 @@
+---
+source: tests/mutations.rs
+description: qctl fmt
+---
+# -1 +1
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 4
+ prefix: DEMO
+ style:
+   list_items: auto
+ active: DEMO-001
+ queue:
+   - id: DEMO-001
+     title: Block items stay blocks
+     scope: demo
+     outcome: Only the quotes change.
+     blocked_by: []
+     acceptance:
+       - It holds.
+     notes:
+       - >2-
+         2026-09-28: the old shape
+       - |-
+         Lead: the design.
+         1. First.
+-      - 'it''s here: now'
++      - "it's here: now"
+ archive: []
+ horizon: []

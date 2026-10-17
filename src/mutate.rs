@@ -18,7 +18,7 @@ use crate::document::{Change, Document};
 use crate::ledger::order::{self, Row};
 use crate::ledger::{load, next_id, resolve_path};
 use crate::report::{Destination, Report};
-use crate::schema::{HorizonTask, QueuedTask};
+use crate::schema::{HorizonTask, ListItems, QueuedTask, Style};
 use crate::trailers;
 
 /// `qctl init`: write an empty ledger for a prefix.
@@ -97,6 +97,7 @@ fn add_queue(args: &AddArgs) -> Result<Report> {
     );
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
+    one_line_notes(&ledger.style, &args.note)?;
     require_plan(&path, args.plan.as_deref())?;
     let id = next_id(&ledger)?;
     let row = QueuedTask {
@@ -109,7 +110,7 @@ fn add_queue(args: &AddArgs) -> Result<Report> {
         patch: args.patch.clone(),
         plan: args.plan.clone(),
         links: args.links.clone(),
-        notes: Vec::new(),
+        notes: args.note.clone(),
     };
 
     let mut ids: Vec<String> = ledger.queue.iter().map(|task| task.id.clone()).collect();
@@ -140,8 +141,8 @@ fn add_queue(args: &AddArgs) -> Result<Report> {
     );
     order::validate(&ordered)?;
 
-    let mut document = read(&path)?;
-    document.append("queue", &row, &args.note)?;
+    let mut document = read(&path, &ledger.style)?;
+    document.append("queue", &row)?;
     if insertion < ids.len() {
         ids.insert(insertion, id.clone());
         document.reorder_rows("queue", &ids)?;
@@ -159,6 +160,7 @@ fn add_horizon(args: &AddArgs) -> Result<Report> {
     let open = args.open.as_deref().context("--horizon needs --open")?;
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
+    one_line_notes(&ledger.style, &args.note)?;
     require_plan(&path, args.plan.as_deref())?;
     let id = next_id(&ledger)?;
     let row = HorizonTask {
@@ -171,10 +173,10 @@ fn add_horizon(args: &AddArgs) -> Result<Report> {
         patch: args.patch.clone(),
         plan: args.plan.clone(),
         links: args.links.clone(),
-        notes: Vec::new(),
+        notes: args.note.clone(),
     };
-    let mut document = read(&path)?;
-    document.append("horizon", &row, &args.note)?;
+    let mut document = read(&path, &ledger.style)?;
+    document.append("horizon", &row)?;
     write(&path, document)?;
     Ok(Report::Added {
         path: path.display().to_string(),
@@ -218,7 +220,7 @@ pub fn start(args: &crate::cli::IdArgs) -> Result<Report> {
         .with_context(|| format!("{} is not queued", args.id))?;
     ensure!(task.blocked_by.is_empty(), "{} is blocked", args.id);
 
-    let mut document = read(&path)?;
+    let mut document = read(&path, &ledger.style)?;
     document.move_to_front("queue", &args.id)?;
     document.set("active", args.id.as_str())?;
     write(&path, document)?;
@@ -254,7 +256,7 @@ pub fn park(args: &ParkArgs) -> Result<Report> {
         );
     }
 
-    let mut document = read(&path)?;
+    let mut document = read(&path, &ledger.style)?;
     document.move_to_end(
         "queue",
         "horizon",
@@ -304,7 +306,7 @@ pub fn promote(args: &PromoteArgs) -> Result<Report> {
         );
     }
 
-    let mut document = read(&path)?;
+    let mut document = read(&path, &ledger.style)?;
     document.move_to_end(
         "horizon",
         "queue",
@@ -312,8 +314,8 @@ pub fn promote(args: &PromoteArgs) -> Result<Report> {
         &[
             Change::unset("kind"),
             Change::unset("open"),
-            Change::set("blocked_by", args.blocked_by.clone()),
-            Change::set("acceptance", args.acceptance.clone()),
+            Change::items("blocked_by", &args.blocked_by),
+            Change::items("acceptance", &args.acceptance),
         ],
     )?;
     write(&path, document)?;
@@ -350,7 +352,7 @@ fn archive_row(args: &ArchiveArgs) -> Result<String> {
     );
     let now = now_in(&ledger.style.timezone)?;
 
-    let mut document = read(&path)?;
+    let mut document = read(&path, &ledger.style)?;
     // The row loses what only a queued row carries and gains what only an
     // archived one does on the way across, while it stands alone.
     document.move_between(
@@ -361,7 +363,7 @@ fn archive_row(args: &ArchiveArgs) -> Result<String> {
             Change::unset("blocked_by"),
             Change::unset("acceptance"),
             Change::set("completed", now.as_str()),
-            Change::set("evidence", args.evidence.clone()),
+            Change::items("evidence", &args.evidence),
             Change::set("disposition", args.disposition.as_str()),
         ],
     )?;
@@ -451,9 +453,24 @@ fn now_in(zone: &str) -> Result<String> {
         .context("format the moment this row left the queue")
 }
 
-pub(crate) fn read(path: &Path) -> Result<Document> {
+/// The ledger file as a document, written in the style it declares.
+pub(crate) fn read(path: &Path, style: &Style) -> Result<Document> {
     let source = fs::read_to_string(path).with_context(|| path.display().to_string())?;
-    Document::new(source)
+    Document::new(source, style)
+}
+
+/// Refuse a note holding a line break when the ledger writes each list item
+/// on one line, before anything is written: only the author knows where a
+/// pasted paragraph's real breaks are.
+pub(crate) fn one_line_notes(style: &Style, notes: &[String]) -> Result<()> {
+    match style.list_items {
+        ListItems::Line => ensure!(
+            !notes.iter().any(|note| note.contains(['\n', '\r'])),
+            "a note is one line: pass each line as its own -n/--note"
+        ),
+        ListItems::Auto => {}
+    }
+    Ok(())
 }
 
 /// Write only a document that still reads as the ledger it was, so a verb can

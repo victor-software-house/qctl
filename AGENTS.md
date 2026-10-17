@@ -13,10 +13,12 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
 - Acceptance states observable, demonstrably true end conditions for closing a
   row. It does not carry implementation instructions or procedural steps;
   `plan` and `notes` own how the work is done.
-- `notes` is an ordered list, and each `-n/--note` is one item. Preserve
-  intentional line breaks and blank-line paragraph separators with literal YAML
-  blocks; use folded blocks for YAML-sensitive single-line prose. Never insert
-  mechanical sentence wraps or encode readable prose as escape sequences.
+- `notes` is an ordered list, and each `-n/--note` is one item. Every list
+  item goes through one writer, `Document::push_items`, in the layout
+  `style.list_items` declares (`line` by default) and the quotes
+  `style.quotes` declares. Under `line` a verb refuses a note holding a line
+  break, and `fmt` writes older block items on one line. Never insert
+  mechanical sentence wraps.
 - Schema is types + schemars (QCTL-001). Generated JSON lives only here.
   Consumers pin a `$schema` URL and run `qctl check`. `schema_version` is 4:
   `notes` is a list, a ledger declares its `style`, and `completed` is a moment
@@ -47,7 +49,9 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   (taplo, rumdl, typos, actionlint, OpenSpec validation, and `check:local`,
   which holds this repository's own checks).
   qctl's own tasks live in `mise-tasks/`. CI adds `deny:advisories` and
-  `semver`, which need the network. `mise.toml` pins stable 1.99.0 with
+  `semver`, which need the network. Until 0.5.9 is on crates.io, CI runs
+  `semver:window`, which lets only the QCTL-039 API changes fail; QCTL-050
+  removes it. `mise.toml` pins stable 1.99.0 with
   `mr_boxington = true`, locally and in CI, where `jdx/mr-boxington-action`
   restores its cache; `rust-toolchain.toml` and `rust-version` match.
 - The pull request's CI runs `verify`; no hook runs it. Lefthook: pre-commit

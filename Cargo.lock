@@ -321,9 +321,9 @@ dependencies = [
 
 [[package]]
 name = "ctl-core"
-version = "0.6.23"
+version = "0.6.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f56ff5b7e3465aebd5ed1bed6dabb801da3547e6aa4afabb78bfbe4d7b02d404"
+checksum = "ecbd52669e16ed08679d6ba84fa5f90ef2d1db79e7622ec67061a2e041c5cfd5"
 dependencies = [
  "anstream",
  "anstyle",
@@ -1916,9 +1916,9 @@ checksum = "3ad82d2a33cdc9674dc7465672f271e096168fcdbe0f799d9e6db8c5892679dc"
 
 [[package]]
 name = "yamled"
-version = "0.0.7"
+version = "0.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ed890a098a684339f8e0b2178c420a005d44d102570452a3c2a7fb0ffe35f26"
+checksum = "df5cb831cf481d8bcec22469b52c956dcd99ff7319beb89eff94eef1edb5b548"
 dependencies = [
  "granit-parser",
  "serde",

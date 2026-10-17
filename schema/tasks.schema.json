@@ -223,6 +223,21 @@
 				}
 			]
 		},
+		"ListItems": {
+			"description": "How a list item is laid out.",
+			"oneOf": [
+				{
+					"const": "line",
+					"description": "Every item on one line, plain or quoted. A verb refuses a note that\nholds a line break, and `fmt` writes a folded or literal item on one\nline, a multi-line note as one item per line.",
+					"type": "string"
+				},
+				{
+					"const": "auto",
+					"description": "yamled chooses: one line, or a literal block for text that holds a\nline break. `fmt` leaves each item's layout as written.",
+					"type": "string"
+				}
+			]
+		},
 		"QueuedTask": {
 			"additionalProperties": false,
 			"description": "A task on the queue.",
@@ -311,6 +326,26 @@
 			],
 			"type": "object"
 		},
+		"Quotes": {
+			"description": "Which quotes a string gets when it cannot be written plain.",
+			"oneOf": [
+				{
+					"const": "auto",
+					"description": "yamled chooses: single quotes for text without an apostrophe, double\nquotes for text with one and no double quote, and otherwise whichever\nneeds fewer escapes. An apostrophe is never doubled.",
+					"type": "string"
+				},
+				{
+					"const": "single",
+					"description": "Single quotes, with an apostrophe doubled.",
+					"type": "string"
+				},
+				{
+					"const": "double",
+					"description": "Double quotes.",
+					"type": "string"
+				}
+			]
+		},
 		"RowSpacing": {
 			"description": "How rows in a list are set apart.",
 			"oneOf": [
@@ -348,7 +383,7 @@
 		},
 		"Style": {
 			"additionalProperties": false,
-			"description": "How a ledger is written, declared by the ledger itself.\n\nEvery option has a default that is what qctl already wrote, so a file with\nno `style` block keeps the shape it has. `qctl fmt` applies these; a verb\nwrites any new text in them and, unless [`Style::normalize_on_write`] says\notherwise, leaves the rest of the file alone.\n\nThis is meant to grow. A new option is a new field with a default equal to\ntoday's behaviour, which is a minor change rather than a migration.",
+			"description": "How a ledger is written, declared by the ledger itself.\n\nEvery option has a default, so a file with no `style` block is valid. The\nfirst options default to what qctl already wrote. [`Style::list_items`]\nand [`Style::quotes`] default to one line per item and yamled's choice of\nquotes, which changes the shape of a ledger written before them; its first\n`qctl fmt` brings it into that shape. `qctl fmt` applies these; a verb\nwrites any new text in them and, unless [`Style::normalize_on_write`] says\notherwise, leaves the rest of the file alone.\n\nThis is meant to grow. A new option is a new field with a default, so\n`schema_version` does not move.",
 			"properties": {
 				"archive_order": {
 					"$ref": "#/$defs/ArchiveOrder",
@@ -363,10 +398,20 @@
 					"minimum": 1,
 					"type": "integer"
 				},
+				"list_items": {
+					"$ref": "#/$defs/ListItems",
+					"default": "line",
+					"description": "How each item of a row's list is laid out: `notes`, `acceptance`,\n`evidence`, `links`, and `blocked_by`."
+				},
 				"normalize_on_write": {
 					"default": false,
 					"description": "Whether a verb normalizes the whole file on the way out.\n\nFalse, and a verb rewrites only the lines it changes — so a diff shows\nthe work and nothing else. True, and every verb leaves the file fully\nnormalized, at the price of touching lines nobody asked about.",
 					"type": "boolean"
+				},
+				"quotes": {
+					"$ref": "#/$defs/Quotes",
+					"default": "auto",
+					"description": "Which quotes a string gets when it cannot be written plain."
 				},
 				"row_spacing": {
 					"$ref": "#/$defs/RowSpacing",
@@ -449,7 +494,9 @@
 			"default": {
 				"archive_order": "newest_first",
 				"indent": 2,
+				"list_items": "line",
 				"normalize_on_write": false,
+				"quotes": "auto",
 				"row_spacing": "as_written",
 				"section_order": [
 					"queue",

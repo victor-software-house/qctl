@@ -228,6 +228,30 @@ fn accepts_a_ledger(#[case] ledger: &str) {
     "},
     "row_spacing"
 )]
+#[case::a_list_layout_qctl_does_not_know(
+    indoc! {"
+        schema_version: 4
+        prefix: QCTL
+        style:
+          list_items: folded
+        active: null
+        queue: []
+        archive: []
+    "},
+    "list_items"
+)]
+#[case::quotes_qctl_does_not_know(
+    indoc! {"
+        schema_version: 4
+        prefix: QCTL
+        style:
+          quotes: backtick
+        active: null
+        queue: []
+        archive: []
+    "},
+    "quotes"
+)]
 #[case::a_file_that_does_not_parse(
     indoc! {"
         queue:

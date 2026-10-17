@@ -1,0 +1,1 @@
+promote DEMO-002 --acceptance "Done: it's ready" --blocked-by DEMO-001

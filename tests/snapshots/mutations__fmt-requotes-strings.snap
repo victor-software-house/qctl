@@ -1,0 +1,53 @@
+---
+source: tests/mutations.rs
+description: qctl fmt
+---
+# -9 +9
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 4
+-prefix: "DEMO"
+-active: 'DEMO-001'
++prefix: DEMO
++active: DEMO-001
+ queue:
+   - id: DEMO-001
+-    title: 'It''s here: now'
++    title: "It's here: now"
+     scope: demo
+     outcome: >-
+       A folded outcome keeps
+       its layout.
+     blocked_by: []
+-    acceptance: ['It holds.', "It's checked."]
++    acceptance: [It holds., It's checked.]
+     notes:
+-      - 'it''s here: now'
+-      - "Already plain."
++      - "it's here: now"
++      - Already plain.
+ archive:
+   - id: DEMO-002
+     title: Done
+     scope: demo
+     outcome: It shipped.
+-    completed: "2026-08-19T10:00:00"
++    completed: 2026-08-19T10:00:00
+     evidence:
+       - 'Merged: the tag exists.'
+-    disposition: "completed"
++    disposition: completed
+   - id: DEMO-004
+     title: Older
+     scope: demo
+     outcome: It shipped first.
+     completed: 2026-08-18T10:00:00
+     evidence:
+       - It merged.
+ horizon:
+   - id: DEMO-003
+     title: Later
+     scope: demo
+     outcome: It is ready to start.
+-    kind: 'research'
++    kind: research
+     open: The fact was missing.
