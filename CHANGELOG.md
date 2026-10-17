@@ -1,5 +1,10 @@
 # Changelog
 
+## qctl 0.5.8
+
+- Every long option now reads `QCTL_<LONG>`, as in the other ctl CLIs: `QCTL_FILE` names the ledger, `QCTL_FORMAT=json` asks for JSON, and `--help` prints each variable. A flag on the command line wins over its variable.
+`TASKS_LEDGER` is no longer read. A caller that set it sets `QCTL_FILE` instead ([#129](https://github.com/victor-software-house/qctl/pull/129)).
+
 ## qctl 0.5.7
 
 - qctl builds on ctl-core 0.6.23 and yamled 0.0.7, and reads YAML through serde-saphyr 2.0.0.
