@@ -121,17 +121,6 @@ queue:
     notes:
       - 'Found on 2026-10-13 in qctl #112: the Template job fails on every branch because v0.0.18 changes files qctl kept at v0.0.7. The tag deletes mise-tasks/commit-msg and mise-tasks/commits and raises mise min_version from 2026.10.3 to 2026.10.9.'
       - The deleted commit-lint tasks are among the local edits AGENTS.md says survive template updates, so this row needs its own review, possibly with the session that owns the Copier templates.
-
-  - id: QCTL-050
-    title: Drop the semver window after 0.5.9
-    scope: CI
-    outcome: The Semver step runs the plain semver check again.
-    blocked_by: []
-    acceptance:
-      - CI runs mise run semver, and mise-tasks/semver/window.sh is gone.
-      - AGENTS.md no longer names semver:window.
-    notes:
-      - 2026-10-17, opened by qctl#118 for the QCTL-039 API changes, which ship in a patch release.
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
@@ -165,6 +154,17 @@ horizon:
       - "2026-09-29: raised by a review of an archived row that had lost its criteria. `archive` has dropped both fields since the line-level rewrite, before the move to yamled. Rows archived by hand keep them, so a ledger such as yamled's now holds both shapes."
 
 archive:
+  - id: QCTL-050
+    title: Drop the semver window after 0.5.9
+    scope: CI
+    outcome: The Semver step runs the plain semver check again.
+    notes:
+      - 2026-10-17, opened by qctl#118 for the QCTL-039 API changes, which ship in a patch release.
+    completed: 2026-10-18T00:45:40
+    evidence:
+      - https://github.com/victor-software-house/qctl/pull/133
+    disposition: completed
+
   - id: QCTL-049
     title: Read every flag from a QCTL_ variable
     scope: qctl cli
