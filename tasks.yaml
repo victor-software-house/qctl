@@ -185,7 +185,7 @@ archive:
       - "2026-09-28: src/document/notes.rs item() writes '- >2-' for every single-line note that yaml_serde would quote. Nearly every note starts with a date and a colon, which as a plain scalar would read as a mapping, so nearly every note takes this path. '>' and '-' are needed for an exact round trip; the '2' is needed only for a leading space."
       - "2026-10-15, reworked to the operator's decision of that day: one writer for every list item, one line each, no block scalars in notes, multi-line notes refused at input and split per line by fmt. Needs yamled YMD-011 (TextStyle::Line and double quotes for an apostrophe)."
       - '2026-10-15, reworked on operator review: layout and quoting become the style options list_items and quotes, auto meaning yamled chooses in both. QCTL-021 folds in; row key order stays out.'
-    plan: openspec/changes/one-line-items/proposal.md
+    plan: openspec/changes/archive/2026-10-18-one-line-items/proposal.md
     completed: 2026-10-17T18:15:06
     evidence:
       - https://github.com/victor-software-house/qctl/pull/118
