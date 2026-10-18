@@ -77,7 +77,9 @@ Each repository's owner bumps its qctl pin and runs `qctl fmt` once, in its own 
 Block items per public repository, as counted on 2026-10-15; the re-quoted strings per ledger are counted with the release before rollout:
 
 - [ ] 6.1 verctl: 33 notes, 5 doubled quotes.
-- [ ] 6.2 qctl: 28 notes, 1 acceptance item, 3 evidence items, 1 doubled quote.
+- [x] 6.2 qctl: 28 notes, 1 acceptance item, 3 evidence items, 1 doubled quote.
+
+  2026-10-18 UTC: [ebd5f25][ebd5f25] runs qctl 0.5.9 `fmt` on this repository's ledger in [qctl#133][qctl#133]: 359 lines removed, 52 added. Every value reads back the same as JSON before and after, notes 43 → 43 items; `qctl check --no-git` exits 0, and a second `fmt --check` exits 0.
 - [ ] 6.3 forkctl: 12 notes.
 - [ ] 6.4 ctl-core: 7 notes.
 - [ ] 6.5 yamled: 1 note, plus the notes YMD-011 added.
@@ -94,3 +96,5 @@ One is still on schema 3; its first `qctl fmt` upgrades it and writes its notes 
 [ed326ae]: https://github.com/victor-software-house/qctl/commit/ed326ae1f08a59a693ebc67071839d3f915e45e6
 [378c973]: https://github.com/victor-software-house/qctl/commit/378c973f94cef309fe97ddd3ad12a05eb1bf4741
 [3a8a5a5]: https://github.com/victor-software-house/qctl/commit/3a8a5a59845c59dbf152f5592b632c42952adb7d
+[ebd5f25]: https://github.com/victor-software-house/qctl/commit/ebd5f25343a100b5a3477017928893e85bab2885
+[qctl#133]: https://github.com/victor-software-house/qctl/pull/133
