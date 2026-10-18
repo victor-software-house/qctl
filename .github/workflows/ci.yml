@@ -40,10 +40,8 @@ jobs:
       - name: Advisories
         run: mise run deny:advisories
       # Compares the public API with the last release on crates.io.
-      # mise-tasks/semver/window.sh allows the QCTL-039 API changes only while
-      # 0.5.8 is the newest release.
       - name: Semver
-        run: mise run semver:window
+        run: mise run semver
       - name: Package
         run: mise x -- cargo package --locked --all-features
 
