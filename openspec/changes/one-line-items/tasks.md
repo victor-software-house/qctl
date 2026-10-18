@@ -76,13 +76,21 @@ The build host for every check below is the pull request's CI ([run on 3a8a5a5][
 Each repository's owner bumps its qctl pin and runs `qctl fmt` once, in its own pull request.
 Block items per public repository, as counted on 2026-10-15; the re-quoted strings per ledger are counted with the release before rollout:
 
-- [ ] 6.1 verctl: 33 notes, 5 doubled quotes.
+- [x] 6.1 verctl: 33 notes, 5 doubled quotes.
+
+  2026-10-17 UTC: [verctl#169][verctl#169] takes qctl 0.5.9 and runs its first `fmt` (`tasks.yaml` +98/−144). At its merge commit qctl 0.5.9 `fmt --check` exits 0, and no block list item is left.
 - [x] 6.2 qctl: 28 notes, 1 acceptance item, 3 evidence items, 1 doubled quote.
 
   2026-10-18 UTC: [ebd5f25][ebd5f25] runs qctl 0.5.9 `fmt` on this repository's ledger in [qctl#133][qctl#133]: 359 lines removed, 52 added. Every value reads back the same as JSON before and after, notes 43 → 43 items; `qctl check --no-git` exits 0, and a second `fmt --check` exits 0.
-- [ ] 6.3 forkctl: 12 notes.
-- [ ] 6.4 ctl-core: 7 notes.
-- [ ] 6.5 yamled: 1 note, plus the notes YMD-011 added.
+- [x] 6.3 forkctl: 12 notes.
+
+  2026-10-17 UTC: [forkctl#116][forkctl#116] takes qctl 0.5.9 and runs its first `fmt` (`tasks.yaml` +31/−32). At its merge commit qctl 0.5.9 `fmt --check` exits 0, and no block list item is left.
+- [x] 6.4 ctl-core: 7 notes.
+
+  2026-10-17 UTC: [ctl-core#142][ctl-core#142] takes qctl 0.5.9 and runs its first `fmt` (`tasks.yaml` +39/−49). At its merge commit qctl 0.5.9 `fmt --check` exits 0, and no block list item is left.
+- [x] 6.5 yamled: 1 note, plus the notes YMD-011 added.
+
+  2026-10-17 UTC: [yamled#41][yamled#41] takes qctl 0.5.9 and runs its first `fmt` (`tasks.yaml` +9/−13). At its merge commit qctl 0.5.9 `fmt --check` exits 0, and no block list item is left.
 
 unixd has no block items.
 Nine private ledgers hold the rest; their owners get the list outside this repository.
@@ -98,3 +106,7 @@ One is still on schema 3; its first `qctl fmt` upgrades it and writes its notes 
 [3a8a5a5]: https://github.com/victor-software-house/qctl/commit/3a8a5a59845c59dbf152f5592b632c42952adb7d
 [ebd5f25]: https://github.com/victor-software-house/qctl/commit/ebd5f25343a100b5a3477017928893e85bab2885
 [qctl#133]: https://github.com/victor-software-house/qctl/pull/133
+[verctl#169]: https://github.com/victor-software-house/verctl/pull/169
+[forkctl#116]: https://github.com/victor-software-house/forkctl/pull/116
+[ctl-core#142]: https://github.com/victor-software-house/ctl-core/pull/142
+[yamled#41]: https://github.com/victor-software-house/yamled/pull/41
