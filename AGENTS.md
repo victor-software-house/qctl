@@ -33,7 +33,7 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
 - `qctl fmt` applies the declared style; `qctl fmt --check` is the hook form.
   New style options are additive: a field with a default equal to today's
   behaviour is a minor change, not a migration.
-- The repository setup comes from the shared Copier template (kind
+- The repository setup comes from the shared Copier template (project
   `rust-crate`, layout `crate`): `.copier-answers.yml` records its tag and
   answers. Take a new tag with `copier update --defaults` and check
   `git diff --check` before committing. The CI job `Template` fails when the
