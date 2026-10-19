@@ -60,6 +60,13 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   A fresh clone arms them with `mise install`, through
   `mise.dev.toml`'s postinstall hook; CI never loads `dev`, so no runner gets
   them.
+- `.github/workflows/release.yml` calls verctl's reusable release workflow on
+  every push to `main`: it publishes each version commit not yet fully
+  released to crates.io, builds the tarballs (the linux-x64 build attaches
+  `schema/tasks.schema.json`, task `release:qctl` in `mise.release.toml`), and
+  opens the Version PR on `verctl/release/main` with auto-merge. Bump its pin
+  with the verctl pin in `mise.release.toml` and the `ver` include in
+  `mise.toml`.
 - This repo's release declarations live in `.ctl/ver.yaml`; `.ctl/` is the
   directory every ctl CLI shares, and qctl's own project config will land
   beside it as `.ctl/q.yaml`. There is no `verctl.toml`.

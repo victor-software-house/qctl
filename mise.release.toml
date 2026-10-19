@@ -1,5 +1,19 @@
-# Loaded when MISE_ENV contains `release`.
-# Published verctl tarball only. No rust.
+# Loaded when MISE_ENV contains `release`: the published verctl tarball and
+# the asset build. The `ver` task the release workflow runs is in mise.toml.
 
 [tools]
-"github:victor-software-house/verctl" = "0.4.0"
+"github:victor-software-house/verctl" = "0.5.0"
+
+# assets.build in .ctl/ver.yaml: the stock build, and the ledger schema
+# attached to the Release from the linux-x64 build only, so one job uploads it.
+# A rerun replaces it.
+[tasks."release:qctl"]
+description = "Build qctl for a target and attach the ledger schema; verctl's asset job runs it"
+usage = 'arg "<triple>" help="The Rust target triple verctl builds"'
+dir = "{{config_root}}"
+run = '''
+cargo build --release --locked --target "${usage_triple}"
+if [ "${VERCTL_UPLOAD:-}" = true ] && [ "${usage_triple}" = x86_64-unknown-linux-gnu ]; then
+  gh release upload "${VERCTL_TAG}" schema/tasks.schema.json --clobber --repo "${GITHUB_REPOSITORY}"
+fi
+'''
