@@ -45,7 +45,7 @@ pins the tool and the task include to the same release:
 ```toml
 [task_config]
 includes = [
-  "git::https://github.com/victor-software-house/qctl.git//tasks/q?ref=v0.5.10",
+  "git::https://github.com/victor-software-house/qctl.git//tasks/q?ref=v0.5.11",
   "mise-tasks",
 ]
 ```
@@ -55,7 +55,7 @@ Install:
 ```sh
 cargo install qctl --locked
 # or the native tarball:
-mise x github:victor-software-house/qctl@0.5.10 -- qctl --version
+mise x github:victor-software-house/qctl@0.5.11 -- qctl --version
 ```
 
 Do not name this `taskctl` (existing Go Make alternative) or `pi-tasks`
