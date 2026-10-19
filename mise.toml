@@ -45,8 +45,8 @@ includes = [
   "mise-tasks",
   # `mise run ver`, which the release workflow runs. Bump the ref together
   # with the verctl pin in mise.release.toml and the workflow's pin.
-  "git::https://github.com/victor-software-house/verctl.git//tasks/ver?ref=v0.5.0",
+  "git::https://github.com/victor-software-house/verctl.git//tasks/ver?ref=v0.5.1",
   # The standard Rust tasks (check:toolchain, format, lint, test, test:doc,
   # deny, deny:advisories, deps, semver, verify).
-  "git::https://github.com/victor-software-house/ctl-core.git//tasks/rust.toml?ref=v0.6.20",
+  "git::https://github.com/victor-software-house/ctl-core.git//tasks/rust.toml?ref=v0.6.27",
 ]
