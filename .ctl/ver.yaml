@@ -13,7 +13,10 @@ packages:
 # Both are built-in records, so the runner labels, os, arch, and triple come
 # from verctl — this repo is public, so those defaults are the free hosted
 # runners it wants. PR CI never builds these.
+# The build is a task in mise.release.toml: the stock cargo build, and the
+# ledger schema attached to the Release from linux-x64.
 assets:
+  build: [mise, run, "release:qctl", "{triple}"]
   darwin-arm64: {}
   linux-x64: {}
 
