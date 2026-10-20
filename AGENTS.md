@@ -36,16 +36,23 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
 - The repository setup comes from the shared Copier template (project
   `rust-crate`, layout `crate`): `.copier-answers.yml` records its tag and
   answers. Take a new tag with `copier update --defaults` and check
-  `git diff --check` before committing. The CI job `Template` fails when the
-  newest tag would change a file. These local edits survive updates:
-  `lefthook.yml` keeps the push-range commit lint, `ci.yml` sets git's
-  default branch to `main` for the tests that run `git init`,
+  `git diff --check` before committing. `ci.yml` and `template.yml` call the
+  shared workflows of the public actions repository at the commit the
+  template pins; their checks report as `verify / Verify` and
+  `template / Template`. The drift check fails only a pull request that
+  changes `.copier-answers.yml` without reaching the newest tag; a push to
+  `main` or the daily run keeps a "Template update available" issue open
+  while a newer tag would change a file. The shared Verify sets git's default
+  branch to `main` for the tests that run `git init`. These local edits
+  survive updates: `lefthook.yml` keeps the push-range commit lint,
   `.rumdl.toml` allows the README banner's HTML, and
   `.typos.toml` ignores commit hashes cited in prose.
-- `mise run verify` is the gate, from ctl-core's `tasks/rust.toml` (included
-  by `git::` URL): toolchain pins, rustfmt on the dated nightly, clippy with
-  the `Cargo.toml` lints denied, `check:features`, `cargo test`, doc-tests,
-  cargo-deny licenses, bans, and sources, cargo-machete, and `check:repo`
+- `mise run verify` is the gate, composed in `mise.toml` from the actions
+  repository's `tasks/rust.toml` (included by `git::` URL): toolchain pins,
+  rustfmt on the dated nightly, clippy with the `Cargo.toml` lints denied,
+  `check:features`, `cargo test`, doc-tests, `doc` (rustdoc as docs.rs builds
+  it), cargo-deny licenses, bans, and sources, cargo-machete,
+  `check:versions`, and `check:repo`
   (taplo, rumdl, typos, actionlint, OpenSpec validation, and `check:local`,
   which holds this repository's own checks).
   qctl's own tasks live in `mise-tasks/`. CI adds `deny:advisories` and
