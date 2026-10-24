@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=./schema/tasks.schema.json
-schema_version: 4
+schema_version: 5
 prefix: QCTL
 
 style:
@@ -282,6 +282,7 @@ archive:
     evidence:
       - 'Shipped in qctl 0.5.2 (#106, released by #107) on ctl-core 0.6.16: JSON output, JSON errors, a parse error under --format json, and an unknown verb hold no ESC byte under forced colour.'
     disposition: completed
+    plan: openspec/changes/archive/2026-10-24-plain-json-forced-colour/proposal.md
 
   - id: QCTL-043
     title: Take the shared Rust setup from the Copier template

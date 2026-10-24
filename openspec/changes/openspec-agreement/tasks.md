@@ -27,6 +27,12 @@ The build host for every check below is the pull request's CI.
 
 ## 6. Rollout
 
-- [ ] 6.1 Release qctl as a minor (0.6.0) through the Version PR. Verify the release tag exists and its binaries are attached.
+- [x] 6.1 Release qctl as a minor (0.6.0) through the Version PR. Verify the release tag exists and its binaries are attached.
+  - 2026-10-24 UTC: [PR 153][qctl#153] released [v0.6.0] with
+    `qctl_0.6.0_linux_x64.tar.gz`, `qctl_0.6.0_macos_arm64.tar.gz`, and
+    `tasks.schema.json` attached.
 - [ ] 6.2 Run the released `qctl check` in each ctl repository beside an `openspec/` tree and fix what it reports in that repository's qctl bump pull request. Verify each repository's CI runs `qctl check` green on the bump.
 - [ ] 6.3 After the release, run `qctl fmt` on this repository's `tasks.yaml` to reach version 5, archive this change, and point QCTL-051 at the archived proposal with `qctl close-from-openspec`. Verify `qctl check` passes on this repository.
+
+[qctl#153]: https://github.com/victor-software-house/qctl/pull/153
+[v0.6.0]: https://github.com/victor-software-house/qctl/releases/tag/v0.6.0
