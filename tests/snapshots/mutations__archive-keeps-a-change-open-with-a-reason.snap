@@ -1,0 +1,26 @@
+---
+source: tests/mutations.rs
+description: "qctl archive DEMO-001 --evidence https://example.com/pull/1 --keep-change-open 'The change continues under another ledger.'"
+---
+# -5 +7
+ schema_version: 5
+ prefix: DEMO
+ active: null
+-queue:
++queue: []
++archive:
+   - id: DEMO-001
+     title: Add the thing
+     scope: demo
+     outcome: The thing exists.
+-    blocked_by: []
+-    acceptance:
+-      - The thing exists.
+     plan: openspec/changes/add-thing/proposal.md
+-archive: []
++    completed: [NOW]
++    evidence:
++      - https://example.com/pull/1
++    disposition: completed
++    keep_change_open: The change continues under another ledger.
+ horizon: []
