@@ -6,7 +6,7 @@ context: |
   through ctl-core and owns no terminal presentation of its own.
   Contracts: AGENTS.md, `qctl instructions`, skills/qctl/SKILL.md, and the
   published tasks.schema.json.
-  Work queue: tasks.yaml (QCTL-###). One openspec change maps to one queue row.
+  Work queue: tasks.yaml (QCTL-###). A row names its openspec change through its plan: path; one change may serve several rows, and a row names at most one change.
   Writing style: plain English, short sentences, numbered lists, no em-dashes,
   no emojis. This repository is public: no local paths, machine names, or
   private repository names in any artifact.

@@ -121,6 +121,21 @@ queue:
     notes:
       - 'Found on 2026-10-13 in qctl #112: the Template job fails on every branch because v0.0.18 changes files qctl kept at v0.0.7. The tag deletes mise-tasks/commit-msg and mise-tasks/commits and raises mise min_version from 2026.10.3 to 2026.10.9.'
       - The deleted commit-lint tasks are among the local edits AGENTS.md says survive template updates, so this row needs its own review, possibly with the session that owns the Copier templates.
+
+  - id: QCTL-051
+    title: Check that queue rows and OpenSpec changes agree
+    scope: qctl check, archive, close-from-openspec
+    outcome: >-
+      qctl check fails when a row and its OpenSpec change disagree, archive refuses
+      to leave a change open by accident, and close-from-openspec closes and repoints
+      rows after openspec archive.
+    blocked_by: []
+    acceptance:
+      - qctl check reports a finished row whose change is still open, a plan that points into a change since archived, and an open change that no row names.
+      - qctl archive refuses the last row of an open change unless --waiver gives a reason, which the archived row keeps.
+      - qctl close-from-openspec archives the queued rows of an archived change with the archive folder as evidence and repoints every row that named it.
+      - The released check runs green in every ctl repository beside an openspec tree, after that repository fixes the drift it reports.
+    plan: openspec/changes/openspec-agreement/proposal.md
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it

@@ -139,4 +139,5 @@ test fixtures and assertions.
 Plan a behaviour or contract change as an OpenSpec change in
 `openspec/changes/<name>/` before writing code. `openspec/config.yaml` holds
 this repository's context and rules, and `openspec validate <name>` checks the
-change. One change maps to one `tasks.yaml` row.
+change. A `tasks.yaml` row names its change through its `plan:` path; one change
+may serve several rows, and a row names at most one change.
