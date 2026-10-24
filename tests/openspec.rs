@@ -1,4 +1,4 @@
-//! Rows and OpenSpec changes agree: `check` reports where they do not,
+//! Rows and `openspec` changes agree: `check` reports where they do not,
 //! `archive` will not leave a change open by accident, and
 //! `close-from-openspec` closes and repoints rows after `openspec archive`.
 
@@ -93,9 +93,9 @@ fn beside(changes: &[&str]) -> LedgerDir {
 
 fn run(dir: &LedgerDir, args: &[&str]) -> std::process::Output {
     let path = dir.path.to_string_lossy().into_owned();
-    let mut argv = args.to_vec();
-    argv.extend(["--file", &path]);
-    qctl(&argv)
+    let mut command = args.to_vec();
+    command.extend(["--file", &path]);
+    qctl(&command)
 }
 
 fn check(dir: &LedgerDir) -> (bool, String) {
