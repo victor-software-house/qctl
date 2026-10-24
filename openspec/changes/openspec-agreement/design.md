@@ -145,7 +145,7 @@ It lost because `Ledger` states one accepted version, and two would mean a versi
 
 ## Migration Plan
 
-1. qctl ships this change as a patch, per the house rule.
+1. qctl ships this change as a minor release (0.6.0): the library API gains public fields and enum variants, which `cargo semver-checks` counts as breaking, and verctl asks for a minor fragment for an intended break.
 2. Each consumer bumps qctl, runs `qctl fmt` to reach schema 5, and moves its `$schema` pin.
 3. Each ctl repository beside an `openspec/` tree then runs `qctl check` and fixes what it reports: `openspec archive` for finished work, then `qctl close-from-openspec`; `qctl edit ID -l PATH` for changes tracked only in notes.
 4. Rollback: revert the qctl pin, remove any `keep_change_open` field, and set `schema_version: 4` by hand. Everything else the new verbs write is valid for the older release.

@@ -87,9 +87,27 @@ pub enum Report {
         path: String,
         /// The ids archived, in trailer order.
         archived: Vec<String>,
+        /// The ids left queued because each is the last row of an `openspec`
+        /// change that is still open.
+        refused: Vec<String>,
         /// Whether the pre-push hook must stop the push, so the edited ledger
         /// can be committed first.
         retry_push: bool,
+    },
+    /// `close-from-openspec`: rows of archived `openspec` changes were closed
+    /// and their plans repointed.
+    ClosedFromOpenspec {
+        /// The ledger file.
+        path: String,
+        /// The queued ids archived, each with its plan pointed into the
+        /// archive folder.
+        archived: Vec<String>,
+        /// The ids already archived whose plan was pointed into the archive
+        /// folder.
+        repointed: Vec<String>,
+        /// The ids left for the operator: horizon rows, and rows whose change
+        /// was archived more than once.
+        left: Vec<String>,
     },
     /// `fmt`: whether the ledger is in its declared style.
     Formatted {

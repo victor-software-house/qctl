@@ -221,19 +221,20 @@ fn push_blank(out: &mut String, blank_run: &mut usize, after_key: bool) {
 }
 
 /// `qctl fmt`: write the ledger in its declared style, or with `--check` say
-/// what is not in it and leave the file alone. A schema 3 file is rewritten
-/// to schema 4 first: each scalar `notes` becomes a list of paragraphs.
+/// what is not in it and leave the file alone. An older file is upgraded
+/// first: schema 3's scalar `notes` become lists of paragraphs, and schemas 3
+/// and 4 are set to the current version, which only added an optional field.
 ///
 /// # Errors
 ///
-/// Fails when the file cannot be read or written, when a schema 3 file
-/// cannot be upgraded, when the ledger is not
+/// Fails when the file cannot be read or written, when an older file cannot
+/// be upgraded, when the ledger is not
 /// [`checked`](crate::ledger::checked), or when it cannot be
 /// [`normalized`].
 pub fn run(args: &FmtArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let original = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
-    let source = upgrade_v3(&original)?;
+    let source = upgrade(&original)?;
     let ledger = crate::ledger::checked(&Input::new(path.display().to_string(), source.as_str()))?;
     let wanted = normalized(&source, &ledger)?;
 
@@ -272,17 +273,32 @@ fn changes(source: &str, wanted: &str) -> Vec<String> {
         .collect()
 }
 
-/// A schema 3 ledger becomes schema 4: scalar `notes` split on blank-line
-/// paragraphs, then `schema_version` is set to 4. A current-version file is
-/// returned unchanged. Other versions are refused.
-fn upgrade_v3(source: &str) -> Result<String> {
+/// An older ledger becomes the current version. Schema 3's scalar `notes`
+/// are split on blank-line paragraphs; schema 4 needs only its version set,
+/// because 5 added one optional field. A current-version file is returned
+/// unchanged. Other versions are refused.
+fn upgrade(source: &str) -> Result<String> {
     match peek_schema_version(source) {
         Some(version) if version == u64::from(VERSION) => Ok(source.to_owned()),
         Some(3) => rewrite_v3_notes(source),
+        Some(4) => {
+            let mut document = Document::new(source.to_owned(), &declared_style(source)?)?;
+            document.set("schema_version", &VERSION)?;
+            Ok(document.into_source())
+        }
         Some(version) => {
-            bail!("schema_version {version} must be {VERSION} (or 3, which fmt rewrites)")
+            bail!("schema_version {version} must be {VERSION} (or 3 or 4, which fmt upgrades)")
         }
         None => Ok(source.to_owned()),
+    }
+}
+
+/// The `style` block of a ledger not yet read as the current version.
+fn declared_style(source: &str) -> Result<Style> {
+    let parsed: serde_json::Value = Input::new("tasks.yaml", source).parse()?;
+    match parsed.get("style") {
+        Some(style) => serde_json::from_value(style.clone()).context("read the style block"),
+        None => Ok(Style::default()),
     }
 }
 
@@ -292,11 +308,7 @@ fn peek_schema_version(source: &str) -> Option<u64> {
 
 fn rewrite_v3_notes(source: &str) -> Result<String> {
     let parsed: serde_json::Value = Input::new("tasks.yaml", source).parse()?;
-    let style = match parsed.get("style") {
-        Some(style) => serde_json::from_value(style.clone()).context("read the style block")?,
-        None => Style::default(),
-    };
-    let mut document = Document::new(source.to_owned(), &style)?;
+    let mut document = Document::new(source.to_owned(), &declared_style(source)?)?;
     for section in ["queue", "archive", "horizon"] {
         let Some(rows) = parsed.get(section).and_then(serde_json::Value::as_array) else {
             continue;

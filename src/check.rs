@@ -1,4 +1,5 @@
-//! `qctl check`: the schema, the graph rules, and git trailers, reported in
+//! `qctl check`: the schema, the graph rules, git trailers, and, beside an
+//! `openspec/` folder, whether rows and `openspec` changes agree, reported in
 //! one pass.
 
 use std::collections::HashSet;
@@ -7,7 +8,11 @@ use anyhow::Result;
 use ctl_core::input::Input;
 
 use crate::cli::CheckArgs;
-use crate::ledger::{Ledger, graph_errors, load_value, resolve_path, schema_value};
+use crate::ledger::{
+    Ledger, graph_errors, load_value, resolve_path, schema_value, schema_version,
+    stale_schema_message, upgradable,
+};
+use crate::openspec::{self, Layout};
 use crate::report::Report;
 use crate::trailers;
 
@@ -24,17 +29,12 @@ pub fn run(args: &CheckArgs) -> Result<Report> {
     let schema = schema_value()?;
     let input = Input::read(&path)?;
     let instance = load_value(&input)?;
-    if instance
-        .get("schema_version")
-        .and_then(serde_json::Value::as_u64)
-        == Some(3)
+    if schema_version(&input).is_some_and(upgradable)
+        && let Some(message) = stale_schema_message(&input)
     {
         return Ok(Report::Check {
             path: path.display().to_string(),
-            problems: vec![format!(
-                "{}: schema_version 3; run qctl fmt to rewrite notes into a list and set schema_version 4",
-                path.display()
-            )],
+            problems: vec![message],
         });
     }
     // `format` is an annotation by default, which would let `completed: last
@@ -68,9 +68,13 @@ pub fn run(args: &CheckArgs) -> Result<Report> {
     // repeating it would print each defect twice.
     match input.parse::<Ledger>() {
         Ok(ledger) => {
-            errors.extend(graph_errors(&ledger, &path));
+            let layout = Layout::read(&path)?;
+            errors.extend(graph_errors(&ledger, &path, layout.as_ref()));
+            if let Some(layout) = &layout {
+                errors.extend(openspec::problems(&ledger, layout));
+            }
             if !args.no_git {
-                errors.extend(trailer_errors(&ledger, &path));
+                errors.extend(trailer_errors(&ledger, &path, layout.as_ref()));
             }
         }
         Err(error) => errors.push(format!("{error:#}")),
@@ -88,7 +92,11 @@ pub fn run(args: &CheckArgs) -> Result<Report> {
     })
 }
 
-fn trailer_errors(ledger: &crate::ledger::Ledger, path: &std::path::Path) -> Vec<String> {
+fn trailer_errors(
+    ledger: &crate::ledger::Ledger,
+    path: &std::path::Path,
+    layout: Option<&Layout>,
+) -> Vec<String> {
     let cwd = match std::env::current_dir() {
         Ok(cwd) => cwd,
         Err(error) => return vec![format!("git trailer scan failed: {error}")],
@@ -128,9 +136,17 @@ fn trailer_errors(ledger: &crate::ledger::Ledger, path: &std::path::Path) -> Vec
         if !queued.contains(id.as_str()) || !seen.insert(id.clone()) {
             continue;
         }
-        errors.push(format!(
-            "{id} is closed by {sha} but still queued; archive it (Closes/Completes trailer)"
-        ));
+        // `close-from-git` will not archive the last row of an open change, so
+        // pointing back at it would leave the row stuck; name the ways out.
+        let left_open = layout.and_then(|layout| openspec::left_open(ledger, layout, &id));
+        errors.push(match left_open {
+            Some(change) => format!(
+                "{id} is closed by {sha} but its change {change} is still open; archive the change with openspec archive and run qctl close-from-openspec, or run qctl archive {id} --keep-change-open REASON"
+            ),
+            None => format!(
+                "{id} is closed by {sha} but still queued; archive it (Closes/Completes trailer)"
+            ),
+        });
     }
     errors
 }

@@ -4,7 +4,7 @@ description: qctl start DEMO-002
 ---
 # -18 +15
  # yaml-language-server: $schema=./schema/tasks.schema.json
- schema_version: 4
+ schema_version: 5
  prefix: DEMO
  
  style:

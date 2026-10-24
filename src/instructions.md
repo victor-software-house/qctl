@@ -20,7 +20,7 @@ completion bootstrap.
 |:--|:--|:--|
 | `init` | — | Write a tasks.yaml for a prefix. Does not copy a schema file |
 | `status` | — | Print the active task and the priority-ordered queue |
-| `check` | — | Validate schema, graph, and git trailers that closed still-queued ids |
+| `check` | — | Validate schema, graph, git trailers, and agreement with `openspec` changes |
 | `add` | — | Add a task to the queue, or to the horizon |
 | `start` | — | Make one unblocked queued task active (moves it to queue head) |
 | `archive` | — | Move a queued task to the archive |
@@ -28,8 +28,9 @@ completion bootstrap.
 | `promote` | — | Move a horizon row onto the queue |
 | `edit` | — | Rewrite fields or queue position of an existing row |
 | `show` | — | Print one queued, archived, or horizon task |
-| `fmt` | — | Rewrite a ledger into the style it declares. Upgrades schema 3 to 4 |
+| `fmt` | — | Rewrite a ledger into the style it declares. Upgrades schema 3 and 4 to 5 |
 | `close-from-git` | — | Archive queued ids that commit-body trailers closed |
+| `close-from-openspec` | — | Archive queued rows whose `openspec` change was archived, and repoint plans |
 | `hook` | — | Install git hooks for this ledger |
 | `schema` | — | Write schema/tasks.schema.json from the ledger types |
 | `instructions` | — | Print the installed-version operator contract |
@@ -57,6 +58,8 @@ rejected commands.
   git `pre-push` that runs
   `qctl close-from-git --pre-push`. Neither amends. `Closes #12` is
   GitHub's, not ours.
+- Beside an `openspec/` folder, `qctl check` also holds each row to the
+  OpenSpec change its `plan:` names (see OpenSpec changes).
 - `qctl instructions` and `--help` are the installed-version contract.
 
 ## Output
@@ -97,10 +100,12 @@ priority. Queue, horizon, and archive partition one task corpus: every id from
 move changes status without creating a second copy; `qctl check` reports every
 gap and every id claimed by more than one status.
 
-`schema_version` is `4`. `notes` is a list of strings on every row. A
-schema 3 ledger still has scalar notes: run `qctl fmt` once to split those
-on blank-line paragraphs and set version 4. Other verbs refuse version 3
-and name that command. A ledger on an earlier version is not rewritten.
+`schema_version` is `5`. `notes` is a list of strings on every row, and an
+archived row may carry `keep_change_open`. A schema 4 ledger needs only its
+version raised: run `qctl fmt` once. A schema 3 ledger still has scalar notes:
+`qctl fmt` splits those on blank-line paragraphs and sets version 5. Other
+verbs refuse versions 3 and 4 and name that command. A ledger on an earlier
+version is not rewritten.
 
 Acceptance is closure truth stated in advance. Each line names an observable,
 demonstrably true end condition and reads as the resulting state, for example:
@@ -150,11 +155,39 @@ such as a folded `outcome`, keeps its layout. It never adds a comment or a
 key, and it never rewrites a value. It adds a blank line only between rows,
 when `row_spacing: blank_line` asks for one, and never after a row whose last
 value is a `|+` or `>+` block, which would absorb it.
-Schema 3 is the exception: scalar `notes` become a list, then the style
-rules run.
+Older schemas are the exception: schema 3's scalar `notes` become a list,
+schema 4 has only its version raised, then the style rules run.
 
 Changing `timezone` does not move the stamps already written: nothing records
 which zone an old stamp was taken in. Change it deliberately.
+
+## OpenSpec changes
+
+A row names an OpenSpec change through its `plan:` path: a file under
+`openspec/changes/<name>/`, or under
+`openspec/changes/archive/<YYYY-MM-DD>-<name>/` once the change is archived.
+A change mentioned only in a note is not named. One change may serve several
+rows; a row names at most one.
+
+When an `openspec/` folder sits next to the ledger, `qctl check` also reports:
+
+1. a finished row whose change is still open, unless a queued or horizon row
+   still names that change or the row gives a `keep_change_open` reason;
+2. a plan that points into a change since archived, with the archive folder
+   and the command that fixes it;
+3. an open change that no row's plan names.
+
+No flag turns these off. `qctl archive` refuses the last queued row of an open
+change: archive the change first, or pass `-K/--keep-change-open REASON`, which
+the archived row keeps as `keep_change_open`. `close-from-git` leaves such a
+row queued and reports it as refused.
+
+After `openspec archive`, run `qctl close-from-openspec`. It archives each
+queued row whose change moved, with the archive folder as evidence, and points
+every row that named the change at the moved file. Horizon rows and changes
+archived more than once are listed and left alone. It refuses while `active`
+names a row it would archive. qctl reads folder names itself and never runs
+`openspec`.
 
 ## Workflow
 

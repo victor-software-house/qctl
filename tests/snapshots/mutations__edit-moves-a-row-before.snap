@@ -4,7 +4,7 @@ description: "qctl edit DEMO-003 --position before:DEMO-002"
 ---
 # -6 +6
  # yaml-language-server: $schema=./schema/tasks.schema.json
- schema_version: 4
+ schema_version: 5
  prefix: DEMO
  active: DEMO-001
  queue:

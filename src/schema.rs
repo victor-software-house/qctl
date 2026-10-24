@@ -27,8 +27,9 @@ use serde_json::{Value, json};
 
 /// The one version of this shape a ledger may declare. 3 gave a ledger a
 /// `style` block and moved the zone out of every `completed` stamp into it.
-/// 4 made `notes` a list on every row.
-pub const VERSION: u32 = 4;
+/// 4 made `notes` a list on every row. 5 let an archived row keep its
+/// `openspec` change open with `keep_change_open`.
+pub const VERSION: u32 = 5;
 
 /// The published identity of the generated schema.
 const SCHEMA_ID: &str =
@@ -231,6 +232,12 @@ pub struct ArchivedTask {
     #[garde(inner(custom(inside_the_repo)))]
     #[schemars(pattern(PLAN_PATTERN))]
     pub plan: Option<String>,
+
+    /// Why the `openspec` change its plan names stays open after it finished.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[garde(inner(length(min = 1)))]
+    #[schemars(length(min = 1))]
+    pub keep_change_open: Option<String>,
 
     /// Anything outside this repository worth following.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

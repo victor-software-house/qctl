@@ -10,7 +10,7 @@ use indoc::indoc;
 fn queued_edit_updates_only_requested_fields_and_preserves_flow_lists() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 4
+        schema_version: 5
         prefix: QCTL
         active: QCTL-001
         queue:
@@ -82,7 +82,7 @@ fn queued_edit_updates_only_requested_fields_and_preserves_flow_lists() {
 fn queue_position_revalidates_every_dependency() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 4
+        schema_version: 5
         prefix: QCTL
         active: QCTL-001
         queue:
@@ -136,7 +136,7 @@ fn queue_position_revalidates_every_dependency() {
 fn row_kind_policy_is_explicit() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 4
+        schema_version: 5
         prefix: QCTL
         active: null
         queue: []
@@ -193,7 +193,7 @@ fn an_archived_row_follows_its_moved_plan() {
         "# Done",
     );
     dir.write(indoc! {"
-        schema_version: 4
+        schema_version: 5
         prefix: QCTL
         active: null
         queue: []

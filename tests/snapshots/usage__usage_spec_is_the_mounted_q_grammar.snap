@@ -45,7 +45,7 @@ cmd status display_order=1 args_override_self=#false help="Print the active task
     }
     complete file type=path
 }
-cmd check display_order=2 args_override_self=#false help="Validate schema, graph, and git trailers that closed still-queued ids" unknown_flags=error {
+cmd check display_order=2 args_override_self=#false help="Validate schema, graph, git trailers, and agreement with `openspec` changes" unknown_flags=error {
     flag "-f --file" help="Ledger path. Defaults to `tasks.yaml`" {
         arg <FILE>
     }
@@ -121,6 +121,9 @@ cmd archive display_order=5 args_override_self=#false help="Move a queued task t
                 choice dropped help="The work will not be done"
             }
         }
+    }
+    flag "-K --keep-change-open" help="Why the `openspec` change the row's plan names stays open after the row is archived. Needed when no other queued or horizon row names that change" {
+        arg <REASON>
     }
     arg <ID> help="The queued task id"
     complete file type=path
@@ -218,7 +221,7 @@ cmd show display_order=9 args_override_self=#false help="Print one queued, archi
     arg <ID> help="The task id, such as QCTL-001"
     complete file type=path
 }
-cmd fmt display_order=10 args_override_self=#false help="Rewrite a ledger into the style it declares. Upgrades schema 3 to 4" unknown_flags=error {
+cmd fmt display_order=10 args_override_self=#false help="Rewrite a ledger into the style it declares. Upgrades schema 3 and 4 to 5" unknown_flags=error {
     flag "-f --file" help="Ledger path. Defaults to `tasks.yaml`" {
         arg <FILE>
     }
@@ -235,7 +238,13 @@ cmd close-from-git display_order=11 args_override_self=#false help="Archive queu
     }
     complete file type=path
 }
-cmd hook display_order=12 subcommand_required=#true arg_required_else_help=#true args_override_self=#false help="Install git hooks for this ledger" unknown_flags=error {
+cmd close-from-openspec display_order=12 args_override_self=#false help="Archive queued rows whose `openspec` change was archived, and repoint plans" unknown_flags=error {
+    flag "-f --file" help="Ledger path. Defaults to `tasks.yaml`" {
+        arg <FILE>
+    }
+    complete file type=path
+}
+cmd hook display_order=13 subcommand_required=#true arg_required_else_help=#true args_override_self=#false help="Install git hooks for this ledger" unknown_flags=error {
     cmd install display_order=0 args_override_self=#false help="Write `.git/hooks/pre-push` so a push archives closed ids" unknown_flags=error {
         flag "-f --file" help="Ledger path. Defaults to `tasks.yaml`" {
             arg <FILE>
@@ -244,10 +253,10 @@ cmd hook display_order=12 subcommand_required=#true arg_required_else_help=#true
         complete file type=path
     }
 }
-cmd schema display_order=13 args_override_self=#false help="Write schema/tasks.schema.json from the ledger types" unknown_flags=error {
+cmd schema display_order=14 args_override_self=#false help="Write schema/tasks.schema.json from the ledger types" unknown_flags=error {
     flag "-o --out" help="Where to write it. Defaults to schema/tasks.schema.json" {
         arg <OUT>
     }
     complete out type=path
 }
-cmd instructions display_order=14 args_override_self=#false help="Print the installed-version operator contract" unknown_flags=error
+cmd instructions display_order=15 args_override_self=#false help="Print the installed-version operator contract" unknown_flags=error

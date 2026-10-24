@@ -8,7 +8,7 @@ use indoc::indoc;
 use rstest::rstest;
 
 const ONE_WRONG_VALUE: &str = indoc! {"
-    schema_version: 4
+    schema_version: 5
     prefix: QCTL
     active: null
     queue:
@@ -58,7 +58,7 @@ fn a_verb_refuses_a_ledger_it_cannot_vouch_for(#[case] verb: &[&str]) {
 /// where the two could drift apart.
 #[rstest]
 #[case::a_plan_outside_the_repository(indoc! {"
-    schema_version: 4
+    schema_version: 5
     prefix: QCTL
     active: null
     queue:

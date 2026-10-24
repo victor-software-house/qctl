@@ -13,7 +13,7 @@ The build host for every check below is the pull request's CI.
 
 ## 3. archive and keep_change_open
 
-- [ ] 3.1 Add the optional `keep_change_open` field to `ArchivedTask`, move `VERSION` to 5, teach `fmt` the 4 to 5 upgrade and the other verbs the refusal, and regenerate `schema/tasks.schema.json`. Verify the scenarios of "A ledger that may carry keep_change_open declares schema version 5" pass, and that this repository's `tasks.yaml` and `examples/` declare version 5.
+- [ ] 3.1 Add the optional `keep_change_open` field to `ArchivedTask`, move `VERSION` to 5, teach `fmt` the 4 to 5 upgrade and the other verbs the refusal, and regenerate `schema/tasks.schema.json`. Verify the scenarios of "A ledger that may carry keep_change_open declares schema version 5" pass, and that every test ledger declares version 5. This repository's own `tasks.yaml` moves to version 5 in task 6.3, because its `q check` runs the released qctl until the Version PR moves that pin.
 - [ ] 3.2 Make `archive` and `close-from-git` refuse the last row of an open change, unless `--keep-change-open` gives a reason. Verify the three scenarios of "archive refuses the last row of an open change without a reason to keep it open" pass, with mutation snapshots for the refused case and the keep_change_open case.
 
 ## 4. close-from-openspec
@@ -27,6 +27,6 @@ The build host for every check below is the pull request's CI.
 
 ## 6. Rollout
 
-- [ ] 6.1 Release qctl as a patch through the Version PR. Verify the release tag exists and its binaries are attached.
+- [ ] 6.1 Release qctl as a minor (0.6.0) through the Version PR. Verify the release tag exists and its binaries are attached.
 - [ ] 6.2 Run the released `qctl check` in each ctl repository beside an `openspec/` tree and fix what it reports in that repository's qctl bump pull request. Verify each repository's CI runs `qctl check` green on the bump.
-- [ ] 6.3 Archive this change and point QCTL-051 at the archived proposal with `qctl close-from-openspec`. Verify `qctl check` passes on this repository.
+- [ ] 6.3 After the release, run `qctl fmt` on this repository's `tasks.yaml` to reach version 5, archive this change, and point QCTL-051 at the archived proposal with `qctl close-from-openspec`. Verify `qctl check` passes on this repository.

@@ -38,7 +38,7 @@ completion bootstrap.
 |:--|:--|:--|
 | `init` | — | Write a tasks.yaml for a prefix. Does not copy a schema file |
 | `status` | — | Print the active task and the priority-ordered queue |
-| `check` | — | Validate schema, graph, and git trailers that closed still-queued ids |
+| `check` | — | Validate schema, graph, git trailers, and agreement with `openspec` changes |
 | `add` | — | Add a task to the queue, or to the horizon |
 | `start` | — | Make one unblocked queued task active (moves it to queue head) |
 | `archive` | — | Move a queued task to the archive |
@@ -46,8 +46,9 @@ completion bootstrap.
 | `promote` | — | Move a horizon row onto the queue |
 | `edit` | — | Rewrite fields or queue position of an existing row |
 | `show` | — | Print one queued, archived, or horizon task |
-| `fmt` | — | Rewrite a ledger into the style it declares. Upgrades schema 3 to 4 |
+| `fmt` | — | Rewrite a ledger into the style it declares. Upgrades schema 3 and 4 to 5 |
 | `close-from-git` | — | Archive queued ids that commit-body trailers closed |
+| `close-from-openspec` | — | Archive queued rows whose `openspec` change was archived, and repoint plans |
 | `hook` | — | Install git hooks for this ledger |
 | `schema` | — | Write schema/tasks.schema.json from the ledger types |
 | `instructions` | — | Print the installed-version operator contract |
@@ -85,8 +86,8 @@ Moving a row changes its status; it never creates another copy.
 Promote horizon → queue with `qctl promote ID -a …` after `open` is
 resolved. Do not start a horizon id.
 
-`schema_version` is 4. `notes` is a list. A schema 3 file is rewritten by
-`qctl fmt`; other verbs refuse it.
+`schema_version` is 5. `notes` is a list. A schema 3 or 4 file is upgraded
+by `qctl fmt`; other verbs refuse it.
 
 Acceptance is closure truth stated in advance: observable, demonstrably true end
 conditions written as the resulting state. For example, `The schema page names
@@ -121,6 +122,7 @@ qctl archive QCTL-001 -e 'Shipped.'
 qctl archive QCTL-002 -d dropped -e 'Superseded by QCTL-003.'
 qctl fmt
 qctl close-from-git
+qctl close-from-openspec
 qctl hook install
 ```
 
@@ -130,8 +132,15 @@ qctl hook install
 to an earlier queued row.
 
 An archived row takes only notes, evidence, links, and its plan. After its
-OpenSpec change is archived, `edit ID -l PATH` points the row at the moved
-proposal, and `-U plan` removes the plan.
+OpenSpec change is archived, `close-from-openspec` archives the queued rows
+that named it and points every such row at the moved proposal; `edit ID -l
+PATH` does it by hand, and `-U plan` removes the plan.
+
+A row names an OpenSpec change only through `plan:`. Beside an `openspec/`
+folder, `check` fails on a finished row whose change is still open, on a plan
+into a change since archived, and on an open change no row names. No flag turns
+that off. `archive` refuses the last queued row of an open change unless
+`-K/--keep-change-open REASON` says why it stays open.
 
 `--plan` must be a file next to the ledger. `add --horizon` and `park`
 write `horizon:` if the ledger omitted it. `close-from-git` archives

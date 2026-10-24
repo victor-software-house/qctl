@@ -68,7 +68,8 @@ pub fn schema_version(input: &Input) -> Option<u64> {
     input.parse::<Declared>().ok()?.schema_version
 }
 
-/// Schema 3 is rewritten by `qctl fmt`; any other version is not this binary's.
+/// Schemas 3 and 4 are upgraded by `qctl fmt`; any other version is not this
+/// binary's.
 #[must_use]
 pub fn stale_schema_message(input: &Input) -> Option<String> {
     let version = schema_version(input)?;
@@ -78,12 +79,23 @@ pub fn stale_schema_message(input: &Input) -> Option<String> {
     }
     if version == 3 {
         return Some(format!(
-            "{path}: schema_version 3; run qctl fmt to rewrite notes into a list and set schema_version 4"
+            "{path}: schema_version 3; run qctl fmt to rewrite notes into a list and set schema_version {VERSION}"
+        ));
+    }
+    if version == 4 {
+        return Some(format!(
+            "{path}: schema_version 4; run qctl fmt to set schema_version {VERSION}"
         ));
     }
     Some(format!(
         "{path}: schema_version {version} must be {VERSION}"
     ))
+}
+
+/// Whether `qctl fmt` upgrades a file that declares `version`.
+#[must_use]
+pub fn upgradable(version: u64) -> bool {
+    version == 3 || version == 4
 }
 
 /// The ledger as written, whether or not its values pass.
@@ -158,9 +170,14 @@ pub fn show(args: &crate::cli::IdArgs) -> Result<Report> {
 /// Every rule the ledger breaks that a JSON Schema cannot state: real
 /// completion stamps, id prefixes and the id corpus, the active row, blocker
 /// order, archive order, and plan files. `root` is the ledger's path; plans
-/// resolve next to it.
+/// resolve next to it. With the `openspec/` `layout` beside it, a missing plan
+/// names the archive folder its change moved into.
 #[must_use]
-pub fn graph_errors(ledger: &Ledger, root: &Path) -> Vec<String> {
+pub fn graph_errors(
+    ledger: &Ledger,
+    root: &Path,
+    layout: Option<&crate::openspec::Layout>,
+) -> Vec<String> {
     let mut errors = Vec::new();
     let prefix = &ledger.prefix;
 
@@ -253,11 +270,27 @@ pub fn graph_errors(ledger: &Ledger, root: &Path) -> Vec<String> {
         )
     {
         if !parent.join(plan).is_file() {
-            errors.push(format!("missing plan {plan}"));
+            errors.push(missing_plan(plan, parent, layout));
         }
     }
 
     errors
+}
+
+/// The problem for a plan file that does not exist, naming the archive folder
+/// its change moved into when the `openspec/` `layout` shows one.
+fn missing_plan(plan: &str, parent: &Path, layout: Option<&crate::openspec::Layout>) -> String {
+    let change = crate::openspec::named(plan).map_or(plan, crate::openspec::Named::name);
+    match layout.and_then(|layout| crate::openspec::moved(layout, parent, plan)) {
+        Some(crate::openspec::Moved::To { folder, .. }) => format!(
+            "missing plan {plan}; change {change} was archived to {folder}/; run qctl close-from-openspec"
+        ),
+        Some(crate::openspec::Moved::Ambiguous(folders)) => format!(
+            "missing plan {plan}; change {change} was archived more than once, to {}; point the plan at one with qctl edit",
+            folders.join(", ")
+        ),
+        None => format!("missing plan {plan}"),
+    }
 }
 
 fn id_matches_prefix(id: &str, prefix: &str) -> bool {
