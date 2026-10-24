@@ -133,12 +133,12 @@ fn no_flag_turns_the_rules_off() {
 #[test]
 fn the_last_finished_row_leaves_its_change_open() {
     let dir = beside(&[OPEN]);
-    dir.write(&ledger("null", "", &archived("DEMO-004", OPEN, ""), ""));
+    dir.write(&ledger("null", "", &archived("DEMO-001", OPEN, ""), ""));
     let (ok, complaint) = check(&dir);
     assert!(!ok);
     assert!(
         complaint.contains(
-            "DEMO-004 is done but its change add-thing is still open; archive the change with openspec archive and run qctl close-from-openspec, or set keep_change_open with a reason"
+            "DEMO-001 is done but its change add-thing is still open; archive the change with openspec archive and run qctl close-from-openspec, or set keep_change_open with a reason"
         ),
         "{complaint}"
     );
@@ -149,8 +149,8 @@ fn a_shared_change_stays_open_while_a_row_still_needs_it() {
     let dir = beside(&[OPEN]);
     dir.write(&ledger(
         "null",
-        &queued("DEMO-005", OPEN),
-        &archived("DEMO-004", OPEN, ""),
+        &queued("DEMO-002", OPEN),
+        &archived("DEMO-001", OPEN, ""),
         "",
     ));
     let (ok, complaint) = check(&dir);
@@ -163,8 +163,8 @@ fn a_parked_row_keeps_its_change_open_too() {
     dir.write(&ledger(
         "null",
         "",
-        &archived("DEMO-004", OPEN, ""),
-        &on_the_horizon("DEMO-006", OPEN),
+        &archived("DEMO-001", OPEN, ""),
+        &on_the_horizon("DEMO-002", OPEN),
     ));
     let (ok, complaint) = check(&dir);
     assert!(ok, "{complaint}");
@@ -177,7 +177,7 @@ fn a_reason_keeps_the_change_open() {
         "null",
         "",
         &archived(
-            "DEMO-004",
+            "DEMO-001",
             OPEN,
             "keep_change_open: The change continues under another ledger.",
         ),
@@ -193,7 +193,7 @@ fn an_empty_reason_is_refused() {
     dir.write(&ledger(
         "null",
         "",
-        &archived("DEMO-004", OPEN, "keep_change_open: ''"),
+        &archived("DEMO-001", OPEN, "keep_change_open: ''"),
         "",
     ));
     let (ok, complaint) = check(&dir);
@@ -218,7 +218,7 @@ fn a_change_no_row_names_is_reported() {
 #[test]
 fn a_plan_into_an_archived_change_names_the_archive() {
     let dir = beside(&[ARCHIVED]);
-    dir.write(&ledger("null", &queued("DEMO-005", OPEN), "", ""));
+    dir.write(&ledger("null", &queued("DEMO-001", OPEN), "", ""));
     let (ok, complaint) = check(&dir);
     assert!(!ok);
     assert!(
@@ -235,7 +235,7 @@ fn a_change_archived_twice_names_both_folders() {
         ARCHIVED,
         "openspec/changes/archive/2026-09-01-add-thing/proposal.md",
     ]);
-    dir.write(&ledger("null", &queued("DEMO-005", OPEN), "", ""));
+    dir.write(&ledger("null", &queued("DEMO-001", OPEN), "", ""));
     let (ok, complaint) = check(&dir);
     assert!(!ok);
     assert!(
@@ -247,16 +247,16 @@ fn a_change_archived_twice_names_both_folders() {
 #[test]
 fn archive_refuses_the_last_row_of_an_open_change() {
     let dir = beside(&[OPEN]);
-    let body = ledger("null", &queued("DEMO-005", OPEN), "", "");
+    let body = ledger("null", &queued("DEMO-001", OPEN), "", "");
     dir.write(&body);
     let output = run(
         &dir,
-        &["archive", "DEMO-005", "-e", "https://example.com/pull/1"],
+        &["archive", "DEMO-001", "-e", "https://example.com/pull/1"],
     );
     assert!(!output.status.success());
     assert!(
         stderr(&output).contains(
-            "DEMO-005 is the last row naming open change add-thing; archive the change first (openspec archive add-thing, then qctl close-from-openspec), or pass --keep-change-open REASON"
+            "DEMO-001 is the last row naming open change add-thing; archive the change first (openspec archive add-thing, then qctl close-from-openspec), or pass --keep-change-open REASON"
         ),
         "{}",
         stderr(&output)
@@ -267,12 +267,12 @@ fn archive_refuses_the_last_row_of_an_open_change() {
 #[test]
 fn archive_with_a_reason_keeps_the_change_open() {
     let dir = beside(&[OPEN]);
-    dir.write(&ledger("null", &queued("DEMO-005", OPEN), "", ""));
+    dir.write(&ledger("null", &queued("DEMO-001", OPEN), "", ""));
     let output = run(
         &dir,
         &[
             "archive",
-            "DEMO-005",
+            "DEMO-001",
             "-e",
             "https://example.com/pull/1",
             "--keep-change-open",
@@ -293,11 +293,11 @@ fn archive_with_a_reason_keeps_the_change_open() {
 #[test]
 fn archive_takes_one_row_of_a_shared_change() {
     let dir = beside(&[OPEN]);
-    let rows = format!("{}{}", queued("DEMO-004", OPEN), queued("DEMO-005", OPEN));
+    let rows = format!("{}{}", queued("DEMO-001", OPEN), queued("DEMO-002", OPEN));
     dir.write(&ledger("null", &rows, "", ""));
     let output = run(
         &dir,
-        &["archive", "DEMO-004", "-e", "https://example.com/pull/1"],
+        &["archive", "DEMO-001", "-e", "https://example.com/pull/1"],
     );
     assert!(output.status.success(), "{}", stderr(&output));
     let (ok, complaint) = check(&dir);
@@ -309,16 +309,16 @@ fn close_from_openspec_closes_and_repoints() {
     let dir = beside(&[ARCHIVED]);
     dir.write(&ledger(
         "null",
-        &queued("DEMO-005", OPEN),
-        &archived("DEMO-004", OPEN, ""),
+        &queued("DEMO-002", OPEN),
+        &archived("DEMO-001", OPEN, ""),
         "",
     ));
     let output = run(&dir, &["close-from-openspec", "--format", "json"]);
     assert!(output.status.success(), "{}", stderr(&output));
     let report: serde_json::Value =
         serde_json::from_str(&stdout(&output)).unwrap_or_else(|error| panic!("{error}"));
-    assert_eq!(report["archived"], serde_json::json!(["DEMO-005"]));
-    assert_eq!(report["repointed"], serde_json::json!(["DEMO-004"]));
+    assert_eq!(report["archived"], serde_json::json!(["DEMO-002"]));
+    assert_eq!(report["repointed"], serde_json::json!(["DEMO-001"]));
     assert_eq!(report["left"], serde_json::json!([]));
 
     let body = dir.read();
@@ -335,7 +335,7 @@ fn close_from_openspec_closes_and_repoints() {
 #[test]
 fn close_from_openspec_with_nothing_to_close_writes_nothing() {
     let dir = beside(&[OPEN]);
-    let body = ledger("null", &queued("DEMO-005", OPEN), "", "");
+    let body = ledger("null", &queued("DEMO-001", OPEN), "", "");
     dir.write(&body);
     let output = run(&dir, &["close-from-openspec", "--format", "json"]);
     assert!(output.status.success(), "{}", stderr(&output));
@@ -345,26 +345,26 @@ fn close_from_openspec_with_nothing_to_close_writes_nothing() {
 #[test]
 fn close_from_openspec_leaves_a_parked_row() {
     let dir = beside(&[ARCHIVED]);
-    let body = ledger("null", "", "", &on_the_horizon("DEMO-006", OPEN));
+    let body = ledger("null", "", "", &on_the_horizon("DEMO-001", OPEN));
     dir.write(&body);
     let output = run(&dir, &["close-from-openspec", "--format", "json"]);
     assert!(output.status.success(), "{}", stderr(&output));
     let report: serde_json::Value =
         serde_json::from_str(&stdout(&output)).unwrap_or_else(|error| panic!("{error}"));
-    assert_eq!(report["left"], serde_json::json!(["DEMO-006"]));
+    assert_eq!(report["left"], serde_json::json!(["DEMO-001"]));
     assert_eq!(dir.read(), body);
 }
 
 #[test]
 fn close_from_openspec_refuses_to_close_the_active_row() {
     let dir = beside(&[ARCHIVED]);
-    let body = ledger("DEMO-005", &queued("DEMO-005", OPEN), "", "");
+    let body = ledger("DEMO-001", &queued("DEMO-001", OPEN), "", "");
     dir.write(&body);
     let output = run(&dir, &["close-from-openspec"]);
     assert!(!output.status.success());
     assert!(
         stderr(&output).contains(
-            "active DEMO-005 names archived change add-thing; set active to another row first"
+            "active DEMO-001 names archived change add-thing; set active to another row first"
         ),
         "{}",
         stderr(&output)
@@ -415,7 +415,7 @@ fn git(root: &std::path::Path, args: &[&str]) {
 #[test]
 fn a_trailer_cannot_close_the_last_row_of_an_open_change() {
     let dir = beside(&[OPEN]);
-    dir.write(&ledger("null", &queued("DEMO-005", OPEN), "", ""));
+    dir.write(&ledger("null", &queued("DEMO-001", OPEN), "", ""));
     let root = dir.parent();
     git(root, &["init", "-q"]);
     git(root, &["config", "user.email", "t@example.com"]);
@@ -429,7 +429,7 @@ fn a_trailer_cannot_close_the_last_row_of_an_open_change() {
             "-m",
             "feat: the thing",
             "-m",
-            "Closes DEMO-005",
+            "Closes DEMO-001",
         ],
     );
 
@@ -438,12 +438,12 @@ fn a_trailer_cannot_close_the_last_row_of_an_open_change() {
     let report: serde_json::Value =
         serde_json::from_str(&stdout(&output)).unwrap_or_else(|error| panic!("{error}"));
     assert_eq!(report["archived"], serde_json::json!([]));
-    assert_eq!(report["refused"], serde_json::json!(["DEMO-005"]));
+    assert_eq!(report["refused"], serde_json::json!(["DEMO-001"]));
 
     let check = common::qctl_in(root, &["check"]);
     assert!(!check.status.success());
     assert!(
-        stderr(&check).contains("but its change add-thing is still open; archive the change with openspec archive and run qctl close-from-openspec, or run qctl archive DEMO-005 --keep-change-open REASON"),
+        stderr(&check).contains("but its change add-thing is still open; archive the change with openspec archive and run qctl close-from-openspec, or run qctl archive DEMO-001 --keep-change-open REASON"),
         "{}",
         stderr(&check)
     );
