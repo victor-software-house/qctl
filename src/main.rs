@@ -35,6 +35,7 @@ fn execute(cli: Cli) -> Result<Report> {
         Command::Show(args) => ledger::show(&args),
         Command::Fmt(args) => qctl::format::run(&args),
         Command::CloseFromGit(args) => mutate::close_from_git(&args),
+        Command::CloseFromOpenspec(args) => mutate::close_from_openspec(&args),
         Command::Hook(args) => match args.command {
             HookCommand::Install(args) => qctl::hooks::install(&args),
         },

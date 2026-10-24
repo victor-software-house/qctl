@@ -50,6 +50,14 @@
 					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",
 					"type": "string"
 				},
+				"keep_change_open": {
+					"description": "Why the `openspec` change its plan names stays open after it finished.",
+					"minLength": 1,
+					"type": [
+						"string",
+						"null"
+					]
+				},
 				"links": {
 					"description": "Anything outside this repository worth following.",
 					"items": {
@@ -483,7 +491,7 @@
 			"type": "array"
 		},
 		"schema_version": {
-			"const": 4,
+			"const": 5,
 			"description": "Ledger schema version, the one this qctl writes and accepts. Increment\nonly with a coordinated schema and ledger migration.",
 			"format": "uint32",
 			"minimum": 0,

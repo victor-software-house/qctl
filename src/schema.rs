@@ -232,6 +232,12 @@ pub struct ArchivedTask {
     #[schemars(pattern(PLAN_PATTERN))]
     pub plan: Option<String>,
 
+    /// Why the `openspec` change its plan names stays open after it finished.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[garde(inner(length(min = 1)))]
+    #[schemars(length(min = 1))]
+    pub keep_change_open: Option<String>,
+
     /// Anything outside this repository worth following.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[garde(inner(length(min = 1)))]

@@ -95,6 +95,7 @@ impl Strings<'_> {
             disposition,
             patch,
             plan,
+            keep_change_open,
             links,
             notes,
         } = task;
@@ -110,6 +111,7 @@ impl Strings<'_> {
                 ("disposition", disposition.as_ref()),
                 ("patch", patch.as_ref()),
                 ("plan", plan.as_ref()),
+                ("keep_change_open", keep_change_open.as_ref()),
             ],
             &[("evidence", evidence), ("links", links), ("notes", notes)],
         )

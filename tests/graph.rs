@@ -15,14 +15,14 @@ fn errors(body: &str) -> Vec<String> {
     let path = root.path().join("tasks.yaml");
     fs::write(&path, body).expect("write");
     let ledger = load(&path).expect("parse");
-    graph_errors(&ledger, &path)
+    graph_errors(&ledger, &path, None)
 }
 
 #[test]
 fn empty_ledger_is_clean() {
     assert_eq!(
         errors(indoc! {"
-            schema_version: 4
+            schema_version: 5
             prefix: QCTL
             active: null
             queue: []
@@ -39,7 +39,7 @@ fn missing_horizon_defaults_to_empty() {
     fs::write(
         &path,
         indoc! {"
-            schema_version: 4
+            schema_version: 5
             prefix: VER
             active: null
             queue: []
@@ -54,7 +54,7 @@ fn missing_horizon_defaults_to_empty() {
 #[test]
 fn rejects_an_id_from_another_repository() {
     let found = errors(indoc! {"
-        schema_version: 4
+        schema_version: 5
         prefix: QCTL
         active: null
         queue:
@@ -79,7 +79,7 @@ fn refuses_a_malformed_id_before_the_graph_sees_it() {
     fs::write(
         &path,
         indoc! {"
-            schema_version: 4
+            schema_version: 5
             prefix: QCTL
             active: null
             queue:
@@ -100,7 +100,7 @@ fn refuses_a_malformed_id_before_the_graph_sees_it() {
 #[test]
 fn rejects_duplicate_ids_across_lists() {
     let found = errors(indoc! {"
-        schema_version: 4
+        schema_version: 5
         prefix: QCTL
         active: null
         queue:
@@ -135,7 +135,7 @@ fn rejects_duplicate_ids_across_lists() {
 #[test]
 fn rejects_duplicate_ids_within_one_status() {
     let found = errors(indoc! {"
-        schema_version: 4
+        schema_version: 5
         prefix: QCTL
         active: null
         queue:
@@ -163,7 +163,7 @@ fn rejects_duplicate_ids_within_one_status() {
 #[test]
 fn rejects_gaps_across_the_combined_corpus() {
     let found = errors(indoc! {"
-        schema_version: 4
+        schema_version: 5
         prefix: QCTL
         active: null
         queue:
@@ -198,7 +198,7 @@ fn rejects_gaps_across_the_combined_corpus() {
 #[test]
 fn statuses_partition_one_continuous_corpus() {
     let found = errors(indoc! {"
-        schema_version: 4
+        schema_version: 5
         prefix: QCTL
         active: null
         queue:
@@ -233,7 +233,7 @@ fn rejects_ids_outside_the_bounded_space_without_enumerating_them() {
     fs::write(
         &path,
         indoc! {"
-            schema_version: 4
+            schema_version: 5
             prefix: QCTL
             active: null
             queue:
@@ -249,7 +249,7 @@ fn rejects_ids_outside_the_bounded_space_without_enumerating_them() {
     .expect("write");
     assert!(load(&path).is_err(), "validated load must refuse the id");
     let ledger = read(&path).expect("parse without validation");
-    let found = graph_errors(&ledger, &path);
+    let found = graph_errors(&ledger, &path, None);
     assert!(
         found
             .iter()
@@ -269,7 +269,7 @@ fn next_id_refuses_the_valid_maximum() {
     fs::write(
         &path,
         indoc! {"
-            schema_version: 4
+            schema_version: 5
             prefix: QCTL
             active: null
             queue:
@@ -295,7 +295,7 @@ fn next_id_ignores_an_already_invalid_overflowing_id() {
     fs::write(
         &path,
         indoc! {"
-            schema_version: 4
+            schema_version: 5
             prefix: QCTL
             active: null
             queue:
@@ -317,7 +317,7 @@ fn next_id_ignores_an_already_invalid_overflowing_id() {
 #[test]
 fn rejects_active_that_is_not_queue_head() {
     let found = errors(indoc! {"
-        schema_version: 4
+        schema_version: 5
         prefix: QCTL
         active: QCTL-002
         queue:
@@ -341,7 +341,7 @@ fn rejects_active_that_is_not_queue_head() {
 #[test]
 fn rejects_blocked_active() {
     let found = errors(indoc! {"
-        schema_version: 4
+        schema_version: 5
         prefix: QCTL
         active: QCTL-002
         queue:
@@ -365,7 +365,7 @@ fn rejects_blocked_active() {
 #[test]
 fn rejects_horizon_active() {
     let found = errors(indoc! {"
-        schema_version: 4
+        schema_version: 5
         prefix: QCTL
         active: QCTL-009
         queue: []
@@ -384,7 +384,7 @@ fn rejects_horizon_active() {
 #[test]
 fn rejects_blocker_not_earlier_or_missing() {
     let found = errors(indoc! {"
-        schema_version: 4
+        schema_version: 5
         prefix: QCTL
         active: null
         queue:
@@ -409,7 +409,7 @@ fn rejects_blocker_not_earlier_or_missing() {
 #[test]
 fn rejects_archive_not_newest_first() {
     let found = errors(indoc! {"
-        schema_version: 4
+        schema_version: 5
         prefix: QCTL
         active: null
         queue: []
@@ -433,7 +433,7 @@ fn rejects_archive_not_newest_first() {
 #[test]
 fn rejects_missing_plan_path() {
     let found = errors(indoc! {"
-        schema_version: 4
+        schema_version: 5
         prefix: QCTL
         active: null
         queue:
@@ -456,7 +456,7 @@ fn next_id_skips_horizon_and_archive() {
     fs::write(
         &path,
         indoc! {"
-            schema_version: 4
+            schema_version: 5
             prefix: QCTL
             active: null
             queue: []

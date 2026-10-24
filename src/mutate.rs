@@ -1,5 +1,5 @@
 //! The verbs that write a ledger: `init`, `add`, `start`, `park`, `promote`,
-//! `archive`, and `close-from-git`.
+//! `archive`, `close-from-git`, and `close-from-openspec`.
 
 use std::collections::HashSet;
 use std::fs;
@@ -12,11 +12,13 @@ use time::macros::format_description;
 use time::{OffsetDateTime, UtcOffset};
 
 use crate::cli::{
-    AddArgs, ArchiveArgs, CloseFromGitArgs, Disposition, InitArgs, ParkArgs, PromoteArgs,
+    AddArgs, ArchiveArgs, CloseFromGitArgs, Disposition, InitArgs, LedgerArgs, ParkArgs,
+    PromoteArgs,
 };
 use crate::document::{Change, Document};
 use crate::ledger::order::{self, Row};
 use crate::ledger::{load, next_id, resolve_path};
+use crate::openspec::{self, Layout, Moved};
 use crate::report::{Destination, Report};
 use crate::schema::{HorizonTask, ListItems, QueuedTask, Style};
 use crate::trailers;
@@ -332,17 +334,19 @@ pub fn promote(args: &PromoteArgs) -> Result<Report> {
 /// # Errors
 ///
 /// Fails when the ledger does not [`load`], when the id is not queued, when
-/// the ledger's `timezone` is not an offset from UTC, or when the file cannot
-/// be written.
+/// the row is the last one naming an `openspec` change that is still open and
+/// `--keep-change-open` gives no reason, when the ledger's `timezone` is not
+/// an offset from UTC, or when the file cannot be written.
 pub fn archive(args: &ArchiveArgs) -> Result<Report> {
-    let path = archive_row(args)?;
+    let path = archive_row(args, None)?;
     Ok(Report::Archived {
         path,
         id: args.id.clone(),
     })
 }
 
-fn archive_row(args: &ArchiveArgs) -> Result<String> {
+/// Archive one queued row, pointing its plan at `plan` when one is given.
+fn archive_row(args: &ArchiveArgs, plan: Option<&str>) -> Result<String> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
     ensure!(
@@ -350,23 +354,39 @@ fn archive_row(args: &ArchiveArgs) -> Result<String> {
         "{} is not queued",
         args.id
     );
+    let keep_change_open = args.keep_change_open.as_deref();
+    if let Some(reason) = keep_change_open {
+        ensure!(
+            !reason.trim().is_empty(),
+            "--keep-change-open needs a reason"
+        );
+    } else if let Some(layout) = Layout::read(&path)?
+        && let Some(change) = openspec::left_open(&ledger, &layout, &args.id)
+    {
+        bail!(
+            "{id} is the last row naming open change {change}; archive the change first (openspec archive {change}, then qctl close-from-openspec), or pass --keep-change-open REASON",
+            id = args.id
+        );
+    }
     let now = now_in(&ledger.style.timezone)?;
 
+    let mut changes = vec![
+        Change::unset("blocked_by"),
+        Change::unset("acceptance"),
+        Change::set("completed", now.as_str()),
+        Change::items("evidence", &args.evidence),
+        Change::set("disposition", args.disposition.as_str()),
+    ];
+    if let Some(plan) = plan {
+        changes.push(Change::set("plan", plan));
+    }
+    if let Some(reason) = keep_change_open {
+        changes.push(Change::set("keep_change_open", reason));
+    }
     let mut document = read(&path, &ledger.style)?;
     // The row loses what only a queued row carries and gains what only an
     // archived one does on the way across, while it stands alone.
-    document.move_between(
-        "queue",
-        "archive",
-        &args.id,
-        &[
-            Change::unset("blocked_by"),
-            Change::unset("acceptance"),
-            Change::set("completed", now.as_str()),
-            Change::items("evidence", &args.evidence),
-            Change::set("disposition", args.disposition.as_str()),
-        ],
-    )?;
+    document.move_between("queue", "archive", &args.id, &changes)?;
     // A blocker is only resolved against the queue, so a row still naming this
     // id would fail `check` the moment this verb returns. What each row keeps
     // comes from the ledger this verb already validated, not from reading its
@@ -390,13 +410,15 @@ fn archive_row(args: &ArchiveArgs) -> Result<String> {
 }
 
 /// `qctl close-from-git`: archive every queued id a commit-body trailer
-/// closed, with the commit as its evidence.
+/// closed, with the commit as its evidence. An id that is the last row of an
+/// `openspec` change still open stays queued and is reported as refused.
 ///
 /// # Errors
 ///
 /// Fails when git cannot scan the history, when the pre-push input cannot be
-/// read or holds a malformed line, when an id fails to [`archive`], or when
-/// `active` still names a closed id afterwards.
+/// read or holds a malformed line, when the `openspec/` folder cannot be
+/// listed, when an id fails to [`archive`], or when `active` still names an
+/// archived id afterwards.
 pub fn close_from_git(args: &CloseFromGitArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let root = path.parent().unwrap_or(&path);
@@ -409,24 +431,38 @@ pub fn close_from_git(args: &CloseFromGitArgs) -> Result<Report> {
         trailers::closed_ids_rev(root, &[])?
     };
     let ledger = load(&path)?;
+    let layout = Layout::read(&path)?;
     let queued: HashSet<String> = ledger.queue.iter().map(|task| task.id.clone()).collect();
     let mut seen = HashSet::new();
     let mut archived = Vec::new();
+    let mut refused = Vec::new();
     for (id, sha) in closed {
         if !queued.contains(&id) || !seen.insert(id.clone()) {
             continue;
         }
-        archive_row(&ArchiveArgs {
-            id: id.clone(),
-            ledger: args.ledger.clone(),
-            evidence: vec![sha],
-            disposition: Disposition::Completed,
-        })?;
+        if layout
+            .as_ref()
+            .and_then(|layout| openspec::left_open(&ledger, layout, &id))
+            .is_some()
+        {
+            refused.push(id);
+            continue;
+        }
+        archive_row(
+            &ArchiveArgs {
+                id: id.clone(),
+                ledger: args.ledger.clone(),
+                evidence: vec![sha],
+                disposition: Disposition::Completed,
+                keep_change_open: None,
+            },
+            None,
+        )?;
         archived.push(id);
     }
     let ledger = load(&path)?;
     if let Some(active) = &ledger.active
-        && seen.contains(active)
+        && archived.contains(active)
     {
         bail!("active {active} still names a closed id");
     }
@@ -434,6 +470,106 @@ pub fn close_from_git(args: &CloseFromGitArgs) -> Result<Report> {
         path: path.display().to_string(),
         retry_push: args.pre_push && !archived.is_empty(),
         archived,
+        refused,
+    })
+}
+
+/// `qctl close-from-openspec`: archive each queued row whose `openspec` change
+/// was archived, with the archive folder as its evidence, and point every row
+/// that named the change at the same file inside that folder.
+///
+/// A horizon row and a row whose change was archived more than once are left
+/// unchanged and listed for the operator.
+///
+/// # Errors
+///
+/// Fails when the ledger does not [`load`], when the `openspec/` folder cannot
+/// be listed, when `active` names a row this would archive, or when a row
+/// fails to archive or the file cannot be written.
+pub fn close_from_openspec(args: &LedgerArgs) -> Result<Report> {
+    let path = resolve_path(args);
+    let ledger = load(&path)?;
+    let root = path.parent().unwrap_or(Path::new(".")).to_path_buf();
+    let mut archived = Vec::new();
+    let mut repointed = Vec::new();
+    let mut left = Vec::new();
+    let Some(layout) = Layout::read(&path)? else {
+        return Ok(Report::ClosedFromOpenspec {
+            path: path.display().to_string(),
+            archived,
+            repointed,
+            left,
+        });
+    };
+    let moved = |plan: Option<&str>| plan.and_then(|plan| openspec::moved(&layout, &root, plan));
+
+    let mut to_archive = Vec::new();
+    for task in &ledger.queue {
+        match moved(task.plan.as_deref()) {
+            Some(Moved::To { folder, plan }) => {
+                if ledger.active.as_deref() == Some(task.id.as_str()) {
+                    let change = task
+                        .plan
+                        .as_deref()
+                        .and_then(openspec::named)
+                        .map_or("", openspec::Named::name);
+                    bail!(
+                        "active {} names archived change {change}; set active to another row first",
+                        task.id
+                    );
+                }
+                to_archive.push((task.id.clone(), folder, plan));
+            }
+            Some(Moved::Ambiguous(_)) => left.push(task.id.clone()),
+            None => {}
+        }
+    }
+    for task in &ledger.horizon {
+        if moved(task.plan.as_deref()).is_some() {
+            left.push(task.id.clone());
+        }
+    }
+    let mut to_repoint = Vec::new();
+    for task in &ledger.archive {
+        match moved(task.plan.as_deref()) {
+            Some(Moved::To { plan, .. }) => to_repoint.push((task.id.clone(), plan)),
+            Some(Moved::Ambiguous(_)) => left.push(task.id.clone()),
+            None => {}
+        }
+    }
+
+    for (id, folder, plan) in to_archive {
+        archive_row(
+            &ArchiveArgs {
+                id: id.clone(),
+                ledger: args.clone(),
+                evidence: vec![format!("{folder}/")],
+                disposition: Disposition::Completed,
+                keep_change_open: None,
+            },
+            Some(&plan),
+        )?;
+        archived.push(id);
+    }
+    if !to_repoint.is_empty() {
+        let ledger = load(&path)?;
+        let mut document = read(&path, &ledger.style)?;
+        for (id, plan) in to_repoint {
+            let index = ledger
+                .archive
+                .iter()
+                .position(|task| task.id == id)
+                .with_context(|| format!("{id} left the archive"))?;
+            document.revise("archive", index, &[Change::set("plan", plan.as_str())])?;
+            repointed.push(id);
+        }
+        write(&path, document)?;
+    }
+    Ok(Report::ClosedFromOpenspec {
+        path: path.display().to_string(),
+        archived,
+        repointed,
+        left,
     })
 }
 

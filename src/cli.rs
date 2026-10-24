@@ -38,7 +38,8 @@ pub enum Command {
     Init(InitArgs),
     /// Print the active task and the priority-ordered queue.
     Status(LedgerArgs),
-    /// Validate schema, graph, and git trailers that closed still-queued ids.
+    /// Validate schema, graph, git trailers, and agreement with `openspec`
+    /// changes.
     Check(CheckArgs),
     /// Add a task to the queue, or to the horizon.
     Add(Box<AddArgs>),
@@ -54,10 +55,14 @@ pub enum Command {
     Edit(Box<EditArgs>),
     /// Print one queued, archived, or horizon task.
     Show(IdArgs),
-    /// Rewrite a ledger into the style it declares. Upgrades schema 3 to 4.
+    /// Rewrite a ledger into the style it declares. Upgrades schema 3 and 4 to
+    /// 5.
     Fmt(FmtArgs),
     /// Archive queued ids that commit-body trailers closed.
     CloseFromGit(CloseFromGitArgs),
+    /// Archive queued rows whose `openspec` change was archived, and repoint
+    /// plans.
+    CloseFromOpenspec(LedgerArgs),
     /// Install git hooks for this ledger.
     Hook(HookArgs),
     /// Write schema/tasks.schema.json from the ledger types.
@@ -251,6 +256,11 @@ pub struct ArchiveArgs {
     /// Whether the work was done or dropped.
     #[arg(short = 'd', long, value_enum, default_value = "completed")]
     pub disposition: Disposition,
+    /// Why the `openspec` change the row's plan names stays open after the row
+    /// is archived. Needed when no other queued or horizon row names that
+    /// change.
+    #[arg(short = 'K', long, value_name = "REASON")]
+    pub keep_change_open: Option<String>,
 }
 
 /// Arguments of `qctl park`.

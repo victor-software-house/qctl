@@ -20,9 +20,10 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   break, and `fmt` writes older block items on one line. Never insert
   mechanical sentence wraps.
 - Schema is types + schemars (QCTL-001). Generated JSON lives only here.
-  Consumers pin a `$schema` URL and run `qctl check`. `schema_version` is 4:
-  `notes` is a list, a ledger declares its `style`, and `completed` is a moment
-  in the zone that block names. A schema 3 file is rewritten by `qctl fmt`.
+  Consumers pin a `$schema` URL and run `qctl check`. `schema_version` is 5:
+  `notes` is a list, a ledger declares its `style`, `completed` is a moment
+  in the zone that block names, and an archived row may carry
+  `keep_change_open`. A schema 3 or 4 file is upgraded by `qctl fmt`.
   A rule that both `check` and the verbs must agree on is stated
   once, as a `#[garde(...)]` attribute — schemars reads those, so a second
   `#[schemars(...)]` copy is drift waiting to happen.
@@ -109,6 +110,10 @@ test fixtures and assertions.
 
 - `qctl check` does not skip a git trailer scan that failed. A scratch
   ledger that is not in the current repository needs `--no-git`.
+- Beside an `openspec/` folder, `qctl check` holds every row to the change its
+  `plan:` names (`src/openspec.rs`). No flag turns that off; an archived row's
+  `keep_change_open` reason is the only way past a finished row whose change
+  is still open.
 
 ## Ownership and Design
 

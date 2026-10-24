@@ -4,7 +4,7 @@ description: "qctl promote DEMO-002 --acceptance \"It holds.\" --blocked-by DEMO
 ---
 # -4 +7
  # yaml-language-server: $schema=./schema/tasks.schema.json
- schema_version: 4
+ schema_version: 5
  prefix: DEMO
  active: DEMO-001
  

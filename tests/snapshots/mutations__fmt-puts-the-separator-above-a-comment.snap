@@ -4,7 +4,7 @@ description: qctl fmt
 ---
 # -0 +1
  # yaml-language-server: $schema=./schema/tasks.schema.json
- schema_version: 4
+ schema_version: 5
  prefix: DEMO
  style:
    row_spacing: blank_line

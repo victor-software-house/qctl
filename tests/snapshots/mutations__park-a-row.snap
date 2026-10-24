@@ -4,7 +4,7 @@ description: "qctl park DEMO-001 --kind research --open \"The fact is missing.\"
 ---
 # -6 +5
  # yaml-language-server: $schema=./schema/tasks.schema.json
- schema_version: 4
+ schema_version: 5
  prefix: DEMO
  active: null
 -queue:

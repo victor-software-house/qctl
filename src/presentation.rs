@@ -31,8 +31,15 @@ impl Present for Report {
             Self::ClosedFromGit {
                 path,
                 archived,
+                refused,
                 retry_push,
-            } => closed_from_git(path, archived, *retry_push),
+            } => closed_from_git(path, archived, refused, *retry_push),
+            Self::ClosedFromOpenspec {
+                path,
+                archived,
+                repointed,
+                left,
+            } => closed_from_openspec(path, archived, repointed, left),
             Self::Formatted {
                 path,
                 changed,
@@ -74,6 +81,7 @@ impl Present for Report {
             | Self::Edited { .. }
             | Self::Promoted { .. }
             | Self::ClosedFromGit { .. }
+            | Self::ClosedFromOpenspec { .. }
             | Self::Formatted { .. }
             | Self::HookInstalled { .. }
             | Self::SchemaWritten { .. }
@@ -189,17 +197,31 @@ fn wrote(path: &str) -> Document {
     Document::new().paragraph(Text::new().success("wrote").then(" ").token(path))
 }
 
-fn closed_from_git(path: &str, archived: &[String], retry_push: bool) -> Document {
-    if archived.is_empty() {
+fn closed_from_git(
+    path: &str,
+    archived: &[String],
+    refused: &[String],
+    retry_push: bool,
+) -> Document {
+    if archived.is_empty() && refused.is_empty() {
         return Document::new();
     }
-    let mut table = Table::new(["archived"]).id_column(0);
-    for id in archived {
-        table = table.row([id.as_str()]);
+    let mut document = Document::new().fields(Fields::new().row("ledger", path));
+    if !archived.is_empty() {
+        let mut table = Table::new(["archived"]).id_column(0);
+        for id in archived {
+            table = table.row([id.as_str()]);
+        }
+        document = document.table(table);
     }
-    let mut document = Document::new()
-        .fields(Fields::new().row("ledger", path))
-        .table(table);
+    for id in refused {
+        document = document.notice(Notice::new(
+            NoticeLevel::Warning,
+            Text::new()
+                .id(id)
+                .then(" stays queued: its OpenSpec change is still open; see qctl check"),
+        ));
+    }
     if retry_push {
         document = document.notice(Notice::new(
             NoticeLevel::Error,
@@ -207,6 +229,30 @@ fn closed_from_git(path: &str, archived: &[String], retry_push: bool) -> Documen
         ));
     }
     document
+}
+
+fn closed_from_openspec(
+    path: &str,
+    archived: &[String],
+    repointed: &[String],
+    left: &[String],
+) -> Document {
+    if archived.is_empty() && repointed.is_empty() && left.is_empty() {
+        return Document::new();
+    }
+    let mut table = Table::new(["id", "result"]).id_column(0);
+    for id in archived {
+        table = table.row([id.as_str(), "archived, plan repointed"]);
+    }
+    for id in repointed {
+        table = table.row([id.as_str(), "plan repointed"]);
+    }
+    for id in left {
+        table = table.row([id.as_str(), "left for the operator"]);
+    }
+    Document::new()
+        .fields(Fields::new().row("ledger", path))
+        .table(table)
 }
 
 fn formatted(path: &str, changed: bool, check: bool, differences: &[String]) -> Document {
