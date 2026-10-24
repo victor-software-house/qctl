@@ -270,28 +270,27 @@ pub fn graph_errors(
         )
     {
         if !parent.join(plan).is_file() {
-            let moved = layout.and_then(|layout| crate::openspec::moved(layout, parent, plan));
-            errors.push(match moved {
-                Some(crate::openspec::Moved::To { folder, .. }) => format!(
-                    "missing plan {plan}; change {} was archived to {folder}/; run qctl close-from-openspec",
-                    change_name(plan)
-                ),
-                Some(crate::openspec::Moved::Ambiguous(folders)) => format!(
-                    "missing plan {plan}; change {} was archived more than once, to {}; point the plan at one with qctl edit",
-                    change_name(plan),
-                    folders.join(", ")
-                ),
-                None => format!("missing plan {plan}"),
-            });
+            errors.push(missing_plan(plan, parent, layout));
         }
     }
 
     errors
 }
 
-/// The change a plan names, for a message about it.
-fn change_name(plan: &str) -> &str {
-    crate::openspec::named(plan).map_or(plan, crate::openspec::Named::name)
+/// The problem for a plan file that does not exist, naming the archive folder
+/// its change moved into when the `openspec/` `layout` shows one.
+fn missing_plan(plan: &str, parent: &Path, layout: Option<&crate::openspec::Layout>) -> String {
+    let change = crate::openspec::named(plan).map_or(plan, crate::openspec::Named::name);
+    match layout.and_then(|layout| crate::openspec::moved(layout, parent, plan)) {
+        Some(crate::openspec::Moved::To { folder, .. }) => format!(
+            "missing plan {plan}; change {change} was archived to {folder}/; run qctl close-from-openspec"
+        ),
+        Some(crate::openspec::Moved::Ambiguous(folders)) => format!(
+            "missing plan {plan}; change {change} was archived more than once, to {}; point the plan at one with qctl edit",
+            folders.join(", ")
+        ),
+        None => format!("missing plan {plan}"),
+    }
 }
 
 fn id_matches_prefix(id: &str, prefix: &str) -> bool {
