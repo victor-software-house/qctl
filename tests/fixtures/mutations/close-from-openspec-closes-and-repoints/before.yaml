@@ -1,0 +1,23 @@
+schema_version: 5
+prefix: DEMO
+active: null
+queue:
+  - id: DEMO-002
+    title: Add the thing
+    scope: demo
+    outcome: The thing exists.
+    blocked_by: []
+    acceptance:
+      - The thing exists.
+    plan: openspec/changes/add-thing/proposal.md
+archive:
+  - id: DEMO-001
+    title: Add the thing
+    scope: demo
+    outcome: The thing exists.
+    completed: 2026-10-20T10:00:00
+    evidence:
+      - https://example.com/pull/1
+    plan: openspec/changes/add-thing/proposal.md
+    disposition: completed
+horizon: []

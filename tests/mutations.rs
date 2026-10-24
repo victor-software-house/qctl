@@ -1,11 +1,13 @@
 //! What each verb does to a file, as one reviewed record per scenario.
 //!
-//! A case is a directory under `fixtures/mutations` holding the two things a
-//! person writes: `before.yaml`, the ledger going in, and `command`, the line
-//! they would type. What comes out is not written by hand. It is recorded as
-//! the whole resulting file with every line marked `-` removed, `+` added, or
-//! unchanged — so one artifact is both the exact result and the diff that
-//! explains it, and a scenario is read once rather than twice.
+//! A case is a directory under `fixtures/mutations` holding what a person
+//! writes: `before.yaml`, the ledger going in, and `command`, the line
+//! they would type, plus `changes` when the ledger sits beside an `openspec/`
+//! tree: one proposal path per line. What comes out is not written by hand.
+//! It is recorded as the whole resulting file with every line marked `-`
+//! removed, `+` added, or unchanged — so one artifact is both the exact
+//! result and the diff that explains it, and a scenario is read once rather
+//! than twice.
 //!
 //! The count at the top says how many lines moved before anything is scrolled.
 //! Any change to what a verb writes changes it, and `cargo insta review` shows
@@ -37,6 +39,12 @@ fn a_verb_changes_only_what_it_must(
 
     let dir = LedgerDir::empty();
     dir.write(&before);
+    if case.join("changes").exists() {
+        dir.plant("openspec/config.yaml", "schema: spec-driven\n");
+        for change in read(&case, "changes").lines() {
+            dir.plant(change, "# Proposal\n");
+        }
+    }
     let path = dir.path.to_string_lossy().into_owned();
     let mut args: Vec<&str> = argv.iter().map(String::as_str).collect();
     args.extend(["--file", &path]);
@@ -59,11 +67,14 @@ fn a_verb_changes_only_what_it_must(
         stderr(&checked)
     );
 
-    // The instant `archive` stamps is the one value a case cannot pin, so it is
-    // the one held loosely — on a line that verb wrote, in a case that runs it.
+    // The instant `archive` and `close-from-openspec` stamp is the one value a
+    // case cannot pin, so it is the one held loosely — on a line that verb
+    // wrote, in a case that runs it.
     // `fmt` only ever moves a stamp somebody else wrote, and a filter that
     // could not tell the difference would stop asserting the value it moved.
-    let stamped = argv.first().is_some_and(|verb| verb == "archive");
+    let stamped = argv
+        .first()
+        .is_some_and(|verb| verb == "archive" || verb == "close-from-openspec");
     insta::with_settings!({
         filters => if stamped {
             vec![(r"(?m)^(\+\s*completed: )\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$", "${1}[NOW]")]
