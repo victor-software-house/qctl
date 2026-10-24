@@ -86,7 +86,7 @@ qctl SHALL offer no flag or variable that turns them off; a row's `keep_change_o
 ### Requirement: A ledger that may carry keep_change_open declares schema version 5
 
 qctl SHALL write and accept `schema_version: 5`.
-`qctl fmt` SHALL upgrade a schema 4 ledger by setting `schema_version: 5` and changing no other byte.
+`qctl fmt` SHALL upgrade a schema 4 ledger by setting `schema_version: 5`, and SHALL apply the declared style as it does on every run; on a ledger already in its declared style, no other line changes.
 Every other verb SHALL refuse a schema 4 ledger, writing nothing, with `tasks.yaml: schema_version 4; run qctl fmt to set schema_version 5`, and `qctl check` SHALL report that line as its only problem.
 
 #### Scenario: Upgrading a schema 4 ledger
@@ -118,6 +118,13 @@ With `--keep-change-open REASON`, or `QCTL_KEEP_CHANGE_OPEN`, it SHALL archive t
 
 - **WHEN** the operator runs `qctl archive DEMO-005 -e https://example.com/pull/1 --keep-change-open "The change continues under another ledger."`
 - **THEN** `DEMO-005` is archived with `keep_change_open: The change continues under another ledger.`
+
+#### Scenario: A trailer closes the last row of an open change
+
+- **WHEN** a commit body says `Closes DEMO-005`, and `DEMO-005` is the only row naming the open change `add-thing`
+- **AND** the operator runs `qctl close-from-git`
+- **THEN** `DEMO-005` stays queued and the report lists it as refused
+- **AND** `qctl check` reports `DEMO-005 is closed by <sha> but its change add-thing is still open; archive the change with openspec archive and run qctl close-from-openspec, or run qctl archive DEMO-005 --keep-change-open REASON`
 
 #### Scenario: Archiving one row of a shared change
 

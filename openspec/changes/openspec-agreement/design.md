@@ -67,6 +67,7 @@ A row's `keep_change_open` (decision 5) is the only override (decision 7).
 `QCTL-051 is the last row naming open change openspec-agreement; archive the change first (openspec archive openspec-agreement, then qctl close-from-openspec), or pass --keep-change-open REASON`.
 When another row still names the change, `archive` proceeds and the row keeps its `plan:`, which still resolves.
 `close-from-git` goes through the same refusal, so a trailer cannot close a row whose change is open; it reports the refused id and archives the rest.
+`check` keeps reporting the row as closed by a trailer but still queued. For such a row the problem names the way out instead of pointing back at `close-from-git`: `QCTL-051 is closed by <sha> but its change openspec-agreement is still open; archive the change with openspec archive and run qctl close-from-openspec, or run qctl archive QCTL-051 --keep-change-open REASON`.
 
 ### 5. `keep_change_open` holds the reason on the archived row
 
@@ -123,7 +124,7 @@ Moving to version 5 makes the older qctl say `schema_version 5 must be 4` instea
 
 What each verb does, following the version 3 to 4 precedent:
 
-1. `qctl fmt` upgrades a schema 4 ledger by setting `schema_version: 5` and changes nothing else, because version 5 only adds an optional field. A schema 3 ledger is rewritten to 4 as today, then set to 5.
+1. `qctl fmt` upgrades a schema 4 ledger by setting `schema_version: 5`. Version 5 only adds an optional field, so the upgrade itself rewrites nothing else; `fmt` still applies the declared style afterwards, as on every run, so a ledger that already passed `fmt --check` changes by that one line. A schema 3 ledger is rewritten to 4 as today, then set to 5.
 2. Every other verb refuses a schema 4 ledger: `tasks.yaml: schema_version 4; run qctl fmt to set schema_version 5`.
 3. `qctl check` reports that line as its only problem, as it does for schema 3.
 4. `qctl init` writes `schema_version: 5`, and `qctl schema` publishes the version 5 schema at the release's pinned `$schema` URL.
