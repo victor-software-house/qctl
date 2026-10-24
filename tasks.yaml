@@ -137,6 +137,21 @@ queue:
       - qctl writes and accepts schema_version 5, and qctl fmt upgrades a schema 4 ledger by that one line.
       - qctl archive refuses the last row of an open change unless --keep-change-open gives a reason, which the archived row keeps as keep_change_open.
     plan: openspec/changes/openspec-agreement/proposal.md
+
+  - id: QCTL-052
+    title: Let edit set keep_change_open on an archived row
+    scope: qctl edit
+    outcome: >-
+      A row archived before its OpenSpec change can close takes a keep_change_open
+      reason through qctl edit, without a hand edit of tasks.yaml.
+    blocked_by: [QCTL-030, QCTL-051]
+    acceptance:
+      - qctl edit ID --keep-change-open REASON on an archived row writes keep_change_open, and qctl check then accepts the row while its change stays open.
+      - qctl edit refuses --keep-change-open on a queued or horizon row, with a message that names qctl archive --keep-change-open.
+      - qctl edit can remove the reason again, and qctl check then reports the open change as before.
+    notes:
+      - 'Found 2026-10-24 during the 0.6.0 rollout: a templates row was already archived when its change could not archive yet, and only archive --keep-change-open sets the field, so the change was archived with --skip-specs instead.'
+      - 'This widens the archive-row edit set that QCTL-030 limits to note, evidence, and link operations, by one field: keep_change_open.'
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
