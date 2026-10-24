@@ -1,6 +1,7 @@
 # plain-json Specification
 
 ## Purpose
+
 Keep machine output plain: a caller that asks for `--format json` and pipes it to `jq` never receives an ESC byte, whatever colour variables its shell sets.
 
 ## Requirements
