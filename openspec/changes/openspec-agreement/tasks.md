@@ -27,6 +27,6 @@ The build host for every check below is the pull request's CI.
 
 ## 6. Rollout
 
-- [ ] 6.1 Release qctl as a patch through the Version PR. Verify the release tag exists and its binaries are attached.
+- [ ] 6.1 Release qctl as a minor (0.6.0) through the Version PR. Verify the release tag exists and its binaries are attached.
 - [ ] 6.2 Run the released `qctl check` in each ctl repository beside an `openspec/` tree and fix what it reports in that repository's qctl bump pull request. Verify each repository's CI runs `qctl check` green on the bump.
 - [ ] 6.3 Archive this change and point QCTL-051 at the archived proposal with `qctl close-from-openspec`. Verify `qctl check` passes on this repository.

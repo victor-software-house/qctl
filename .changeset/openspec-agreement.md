@@ -1,5 +1,5 @@
 ---
-"qctl": patch
+"qctl": minor
 ---
 
 Beside an `openspec/` folder, `qctl check` holds each row to the OpenSpec change its `plan:` names: it reports a finished row whose change is still open, a plan pointing into a change since archived (naming the archive folder), and an open change no row names.
