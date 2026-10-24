@@ -132,10 +132,10 @@ queue:
     blocked_by: []
     acceptance:
       - qctl check reports a finished row whose change is still open, a plan that points into a change since archived, and an open change that no row names.
-      - qctl archive refuses the last row of an open change unless --waiver gives a reason, which the archived row keeps.
       - qctl close-from-openspec archives the queued rows of an archived change with the archive folder as evidence and repoints every row that named it.
       - The released check runs green in every ctl repository beside an openspec tree, after that repository fixes the drift it reports.
       - qctl writes and accepts schema_version 5, and qctl fmt upgrades a schema 4 ledger by that one line.
+      - qctl archive refuses the last row of an open change unless --keep-change-open gives a reason, which the archived row keeps as keep_change_open.
     plan: openspec/changes/openspec-agreement/proposal.md
 horizon:
   - id: QCTL-019

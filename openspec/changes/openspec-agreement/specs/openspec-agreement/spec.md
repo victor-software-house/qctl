@@ -2,7 +2,7 @@
 
 ## Purpose
 
-How qctl links a queue row to an OpenSpec change through the row's `plan:` path, which disagreements between rows and changes `qctl check` reports, how `qctl archive` gates on the change, and what `qctl close-from-openspec` writes.
+How qctl links a queue row to an OpenSpec change through the row's `plan:` path, which disagreements between rows and changes `qctl check` reports, when `qctl archive` refuses a row whose change is open, and what `qctl close-from-openspec` writes.
 
 ## ADDED Requirements
 
@@ -29,23 +29,23 @@ Several rows MAY name the same change.
 
 ### Requirement: check reports a finished row whose change is still open
 
-When an `openspec/` directory sits next to the ledger, `qctl check` SHALL report a problem for each archived row that names an open change, unless a queued or horizon row names the same change or the archived row has a non-empty `waiver`.
+When an `openspec/` directory sits next to the ledger, `qctl check` SHALL report a problem for each archived row that names an open change, unless a queued or horizon row names the same change or the archived row has a non-empty `keep_change_open`.
 
 #### Scenario: The last finished row leaves its change open
 
 - **WHEN** `DEMO-004` is archived with `plan: openspec/changes/add-thing/proposal.md`
 - **AND** `openspec/changes/add-thing/` exists and no queued or horizon row names `add-thing`
 - **THEN** `qctl check` exits non-zero
-- **AND** its problems include `DEMO-004: change add-thing is still open; archive it with openspec archive, then run qctl close-from-openspec`
+- **AND** its problems include `DEMO-004 is done but its change add-thing is still open; archive the change with openspec archive and run qctl close-from-openspec, or set keep_change_open with a reason`
 
 #### Scenario: A shared change stays open while a row still needs it
 
 - **WHEN** `DEMO-004` is archived and `DEMO-005` is queued, both with `plan: openspec/changes/add-thing/proposal.md`
 - **THEN** `qctl check` reports no problem about `add-thing`
 
-#### Scenario: A waiver accepts the open change
+#### Scenario: A reason keeps the change open
 
-- **WHEN** `DEMO-004` is archived with `waiver: The change continues under another ledger.` and names the open change `add-thing`
+- **WHEN** `DEMO-004` is archived with `keep_change_open: The change continues under another ledger.` and names the open change `add-thing`
 - **THEN** `qctl check` reports no problem about `add-thing`
 
 ### Requirement: check names the archive of a change a plan still points into
@@ -71,19 +71,19 @@ When an `openspec/` directory sits next to the ledger, `qctl check` SHALL report
 ### Requirement: The agreement rules run exactly where OpenSpec does
 
 qctl SHALL apply the rules of this capability when, and only when, an `openspec/` directory sits next to the ledger.
-qctl SHALL offer no flag or variable that turns them off; a row's `waiver` is the only override.
+qctl SHALL offer no flag or variable that turns them off; a row's `keep_change_open` is the only override.
 
 #### Scenario: A ledger without OpenSpec
 
 - **WHEN** no `openspec/` directory sits next to `tasks.yaml`
 - **THEN** `qctl check` reports no agreement problem
 
-#### Scenario: No bypass flag
+#### Scenario: No flag turns the rules off
 
 - **WHEN** the operator runs `qctl check --no-openspec`
 - **THEN** the command fails as an unknown argument
 
-### Requirement: A ledger that may carry a waiver declares schema version 5
+### Requirement: A ledger that may carry keep_change_open declares schema version 5
 
 qctl SHALL write and accept `schema_version: 5`.
 `qctl fmt` SHALL upgrade a schema 4 ledger by setting `schema_version: 5` and changing no other byte.
@@ -101,23 +101,23 @@ Every other verb SHALL refuse a schema 4 ledger, writing nothing, with `tasks.ya
 - **AND** the operator runs `qctl status`
 - **THEN** the command fails with `tasks.yaml: schema_version 4; run qctl fmt to set schema_version 5`
 
-### Requirement: archive refuses the last row of an open change without a waiver
+### Requirement: archive refuses the last row of an open change without a reason to keep it open
 
-`qctl archive ID` SHALL refuse, writing nothing, when the row names an open change, no other queued or horizon row names it, and no `--waiver` is given.
-With `--waiver REASON`, or `QCTL_WAIVER`, it SHALL archive the row and write `waiver: REASON` on it.
-`qctl close-from-git` SHALL apply the same gate to each row a trailer closes, archive the rows that pass, and report the refused ids.
+`qctl archive ID` SHALL refuse, writing nothing, when the row names an open change, no other queued or horizon row names it, and no `--keep-change-open` is given.
+With `--keep-change-open REASON`, or `QCTL_KEEP_CHANGE_OPEN`, it SHALL archive the row and write `keep_change_open: REASON` on it.
+`qctl close-from-git` SHALL apply the same refusal to each row a trailer closes, archive the rows that pass, and report the refused ids.
 
 #### Scenario: Archiving before the change
 
 - **WHEN** `DEMO-005` is the only row naming the open change `add-thing`
 - **AND** the operator runs `qctl archive DEMO-005 -e https://example.com/pull/1`
-- **THEN** the command fails with `DEMO-005 names open change add-thing; archive the change first (openspec archive add-thing, then qctl close-from-openspec), or pass --waiver REASON`
+- **THEN** the command fails with `DEMO-005 is the last row naming open change add-thing; archive the change first (openspec archive add-thing, then qctl close-from-openspec), or pass --keep-change-open REASON`
 - **AND** `tasks.yaml` is unchanged
 
-#### Scenario: Archiving with a waiver
+#### Scenario: Archiving with a reason to keep the change open
 
-- **WHEN** the operator runs `qctl archive DEMO-005 -e https://example.com/pull/1 --waiver "The change continues under another ledger."`
-- **THEN** `DEMO-005` is archived with `waiver: The change continues under another ledger.`
+- **WHEN** the operator runs `qctl archive DEMO-005 -e https://example.com/pull/1 --keep-change-open "The change continues under another ledger."`
+- **THEN** `DEMO-005` is archived with `keep_change_open: The change continues under another ledger.`
 
 #### Scenario: Archiving one row of a shared change
 
