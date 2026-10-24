@@ -1081,19 +1081,33 @@ fn park_refuses_when_a_queued_row_still_names_it() {
 }
 
 /// Agent shells force colour through `CLICOLOR_FORCE`, `FORCE_COLOR`, and
-/// `COLORTERM`. JSON output, a JSON error, and a parse error under
-/// `--format json` stay plain whatever they say, so `jq` never sees an ESC.
+/// `COLORTERM`. JSON output, a JSON error, a parse error, and the problems
+/// `check` finds beside an `openspec/` tree stay plain under `--format json`
+/// whatever they say, so `jq` never sees an ESC.
 #[test]
 fn json_output_holds_no_escape_byte_under_forced_colour() {
     let good = LedgerDir::empty();
     good.write(MINIMAL);
     let bad = LedgerDir::empty();
     bad.write("nope: [\n");
+    let drifted = LedgerDir::empty();
+    drifted.write(MINIMAL);
+    drifted.plant("openspec/config.yaml", "schema: spec-driven\n");
+    drifted.plant("openspec/changes/add-thing/proposal.md", "# Proposal\n");
     let good = good.path.to_str().expect("UTF-8 path").to_owned();
     let bad_path = bad.path.to_str().expect("UTF-8 path").to_owned();
-    let cases: [&[&str]; 4] = [
+    let drifted_path = drifted.path.to_str().expect("UTF-8 path").to_owned();
+    let cases: [&[&str]; 5] = [
         &["status", "--format", "json", "--file", &good],
         &["check", "--no-git", "--format", "json", "--file", &bad_path],
+        &[
+            "check",
+            "--no-git",
+            "--format",
+            "json",
+            "--file",
+            &drifted_path,
+        ],
         &["status", "--bogus", "--format", "json"],
         &["--format=json", "nosuchverb"],
     ];
@@ -1113,6 +1127,13 @@ fn json_output_holds_no_escape_byte_under_forced_colour() {
         );
         serde_json::from_slice::<serde_json::Value>(&output.stdout)
             .unwrap_or_else(|error| panic!("{args:?}: stdout is not JSON: {error}"));
+        if args.contains(&drifted_path.as_str()) {
+            assert!(
+                stdout(&output).contains("change add-thing is named by no row"),
+                "{}",
+                stdout(&output)
+            );
+        }
     }
 }
 

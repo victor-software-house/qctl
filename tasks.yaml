@@ -122,29 +122,13 @@ queue:
       - 'Found on 2026-10-13 in qctl #112: the Template job fails on every branch because v0.0.18 changes files qctl kept at v0.0.7. The tag deletes mise-tasks/commit-msg and mise-tasks/commits and raises mise min_version from 2026.10.3 to 2026.10.9.'
       - The deleted commit-lint tasks are among the local edits AGENTS.md says survive template updates, so this row needs its own review, possibly with the session that owns the Copier templates.
 
-  - id: QCTL-051
-    title: Check that queue rows and OpenSpec changes agree
-    scope: qctl check, archive, close-from-openspec
-    outcome: >-
-      qctl check fails when a row and its OpenSpec change disagree, archive refuses
-      to leave a change open by accident, and close-from-openspec closes and repoints
-      rows after openspec archive.
-    blocked_by: []
-    acceptance:
-      - qctl check reports a finished row whose change is still open, a plan that points into a change since archived, and an open change that no row names.
-      - qctl close-from-openspec archives the queued rows of an archived change with the archive folder as evidence and repoints every row that named it.
-      - The released check runs green in every ctl repository beside an openspec tree, after that repository fixes the drift it reports.
-      - qctl writes and accepts schema_version 5, and qctl fmt upgrades a schema 4 ledger by that one line.
-      - qctl archive refuses the last row of an open change unless --keep-change-open gives a reason, which the archived row keeps as keep_change_open.
-    plan: openspec/changes/openspec-agreement/proposal.md
-
   - id: QCTL-052
     title: Let edit set keep_change_open on an archived row
     scope: qctl edit
     outcome: >-
       A row archived before its OpenSpec change can close takes a keep_change_open
       reason through qctl edit, without a hand edit of tasks.yaml.
-    blocked_by: [QCTL-030, QCTL-051]
+    blocked_by: [QCTL-030]
     acceptance:
       - qctl edit ID --keep-change-open REASON on an archived row writes keep_change_open, and qctl check then accepts the row while its change stays open.
       - qctl edit refuses --keep-change-open on a queued or horizon row, with a message that names qctl archive --keep-change-open.
@@ -185,6 +169,20 @@ horizon:
       - "2026-09-29: raised by a review of an archived row that had lost its criteria. `archive` has dropped both fields since the line-level rewrite, before the move to yamled. Rows archived by hand keep them, so a ledger such as yamled's now holds both shapes."
 
 archive:
+  - id: QCTL-051
+    title: Check that queue rows and OpenSpec changes agree
+    scope: qctl check, archive, close-from-openspec
+    outcome: >-
+      qctl check fails when a row and its OpenSpec change disagree, archive refuses
+      to leave a change open by accident, and close-from-openspec closes and repoints
+      rows after openspec archive.
+    plan: openspec/changes/archive/2026-10-24-openspec-agreement/proposal.md
+    completed: 2026-10-24T01:31:52
+    evidence:
+      - openspec/changes/archive/2026-10-24-openspec-agreement/
+      - Shipped in https://github.com/victor-software-house/qctl/pull/151, released as qctl 0.6.0 by https://github.com/victor-software-house/qctl/pull/153; every ctl repository passes its check after the 0.6.0 pull requests.
+    disposition: completed
+
   - id: QCTL-050
     title: Drop the semver window after 0.5.9
     scope: CI

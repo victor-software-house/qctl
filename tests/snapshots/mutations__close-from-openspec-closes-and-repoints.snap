@@ -1,0 +1,37 @@
+---
+source: tests/mutations.rs
+description: qctl close-from-openspec
+---
+# -7 +9
+ schema_version: 5
+ prefix: DEMO
+ active: null
+-queue:
++queue: []
++archive:
+   - id: DEMO-002
+     title: Add the thing
+     scope: demo
+     outcome: The thing exists.
+-    blocked_by: []
+-    acceptance:
+-      - The thing exists.
+-    plan: openspec/changes/add-thing/proposal.md
+-archive:
++    plan: openspec/changes/archive/2026-10-23-add-thing/proposal.md
++    completed: [NOW]
++    evidence:
++      - openspec/changes/archive/2026-10-23-add-thing/
++    disposition: completed
++
+   - id: DEMO-001
+     title: Add the thing
+     scope: demo
+     outcome: The thing exists.
+     completed: 2026-10-20T10:00:00
+     evidence:
+       - https://example.com/pull/1
+-    plan: openspec/changes/add-thing/proposal.md
++    plan: openspec/changes/archive/2026-10-23-add-thing/proposal.md
+     disposition: completed
+ horizon: []
