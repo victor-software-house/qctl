@@ -59,7 +59,7 @@ Every rule reports through the existing `problems` list, so `--format json` and 
 
 Alternative: report these as warnings.
 It lost because `check` has one severity and is the gate in hooks and CI; a warning nobody fails on is how the drift above built up.
-`--waiver` (decision 5) and `--no-openspec` (decision 7) are the overrides.
+A row's `waiver` (decision 5) is the only override (decision 7).
 
 ### 4. `archive` gates on the change
 
@@ -73,7 +73,8 @@ When another row still names the change, `archive` proceeds and the row keeps it
 `qctl archive --waiver REASON` (`QCTL_WAIVER`) writes `waiver: REASON` on the archived row.
 `ArchivedTask` gains an optional `waiver` string, documented as the reason the row's change stays open after the row finished.
 `check` accepts a finished row with an open change when its `waiver` is present and not empty.
-`schema_version` stays 4 because the field is optional; an older qctl refuses a ledger that uses it, as it does for any field it does not know.
+
+The field moves `schema_version` to 5 (decision 9).
 
 Alternative: treat `disposition: dropped` as a waiver.
 It lost because dropping a row says nothing about its change, which may still be wanted by another ledger or need deleting.
@@ -96,11 +97,14 @@ The report lists the archived ids and the repointed ids; `--format json` carries
 Alternative: fold this into `close-from-git`.
 It lost because the two read different records, and `close-from-git` runs in pre-push, where an archive folder may not be committed yet.
 
-### 7. Overrides
+### 7. The waiver is the only override
 
-`check --no-openspec` (`QCTL_NO_OPENSPEC`) skips rules 1 to 3 for one run, like `--no-git` skips the trailer scan.
-`archive --waiver` overrides the gate for one row and records why.
-A ledger with no `openspec/` directory next to it gets none of these rules and needs no flag.
+`archive --waiver` overrides the gate for one row and records why, and the same `waiver` satisfies `check` rule 1.
+A ledger with no `openspec/` directory next to it gets none of these rules, because it has no changes to agree with.
+Where the directory exists, nothing turns the rules off.
+
+Alternative: `check --no-openspec`, like `--no-git`.
+It lost because a flag that turns the gate off for a whole run becomes the habitual bypass, and leaves no record of why. `--no-git` exists for a different reason: a scratch ledger outside the repository has no history to scan, while a ledger beside `openspec/` always has changes to compare.
 
 ### 8. The layout reader lives in qctl for now
 
@@ -111,15 +115,36 @@ It returns typed values to `check` and the verbs and prints nothing.
 Alternative: a ctl-core feature shared with the future document checker.
 It lost for now because qctl is its only reader, and an abstraction for one use is drift waiting for its second user. It moves to ctl-core in the change that adds that second reader.
 
+### 9. `waiver` moves the schema to version 5
+
+Every row type is `#[serde(deny_unknown_fields)]`, and `Ledger::schema_version` is the one version a qctl writes and accepts.
+A schema 4 qctl reading a row with `waiver` fails on the field, so a ledger carrying it would break every older qctl with an error that does not name the cause.
+Moving to version 5 makes the older qctl say `schema_version 5 must be 4` instead, which tells the reader to upgrade qctl.
+
+What each verb does, following the version 3 to 4 precedent:
+
+1. `qctl fmt` upgrades a schema 4 ledger by setting `schema_version: 5` and changes nothing else, because version 5 only adds an optional field. A schema 3 ledger is rewritten to 4 as today, then set to 5.
+2. Every other verb refuses a schema 4 ledger: `tasks.yaml: schema_version 4; run qctl fmt to set schema_version 5`.
+3. `qctl check` reports that line as its only problem, as it does for schema 3.
+4. `qctl init` writes `schema_version: 5`, and `qctl schema` publishes the version 5 schema at the release's pinned `$schema` URL.
+
+Alternative: keep version 4, as the `style` options `list_items` and `quotes` did.
+It lost because those options already break an older qctl with a field error on any ledger that declares them; this change does not repeat that. It does not revisit those options either.
+
+Alternative: accept both 4 and 5, and allow `waiver` only under 5.
+It lost because `Ledger` states one accepted version, and two would mean a version check per field.
+
 ## Risks / Trade-offs
 
-1. [Ledgers fail `check` on the first run after the release] → Each ctl repository fixes its drift in the pull request that takes the release, which is how the rules prove themselves on real data. `--no-openspec` unblocks a repository that cannot fix it yet.
-2. [Most rows name their change in a note today] → Rule 3 reports those changes as orphans until a row's `plan:` names them. The fix is one `qctl edit ID -l PATH` per change, listed in the rollout.
-3. [OpenSpec changes its archive naming] → The reader is one module, and the layout has not changed from 1.13.2 to 1.15.0.
-4. [A `waiver` hides drift] → The reason is in the file, in review, and in `show`.
+1. [Ledgers fail `check` on the first run after the release] → Each ctl repository fixes its drift in the pull request that takes the release, which is how the rules prove themselves on real data. A repository that cannot fix it yet stays on the previous qctl.
+2. [Every consumer must run `qctl fmt` and move its `$schema` pin] → The upgrade is one line per ledger, made in the same pull request that bumps qctl.
+3. [Most rows name their change in a note today] → Rule 3 reports those changes as orphans until a row's `plan:` names them. The fix is one `qctl edit ID -l PATH` per change, listed in the rollout.
+4. [OpenSpec changes its archive naming] → The reader is one module, and the layout has not changed from 1.13.2 to 1.15.0.
+5. [A `waiver` hides drift] → The reason is in the file, in review, and in `show`.
 
 ## Migration Plan
 
 1. qctl ships this change as a patch, per the house rule.
-2. Each ctl repository bumps qctl, runs `qctl check`, and fixes what it reports: `openspec archive` for finished work, then `qctl close-from-openspec`; `qctl edit ID -l PATH` for changes tracked only in notes.
-3. Rollback: revert the qctl pin. A `waiver` field must be removed first, because the older qctl refuses it; everything else the new verbs write is valid for the older release.
+2. Each consumer bumps qctl, runs `qctl fmt` to reach schema 5, and moves its `$schema` pin.
+3. Each ctl repository beside an `openspec/` tree then runs `qctl check` and fixes what it reports: `openspec archive` for finished work, then `qctl close-from-openspec`; `qctl edit ID -l PATH` for changes tracked only in notes.
+4. Rollback: revert the qctl pin, remove any `waiver` field, and set `schema_version: 4` by hand. Everything else the new verbs write is valid for the older release.

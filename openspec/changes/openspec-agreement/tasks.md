@@ -8,12 +8,12 @@ The build host for every check below is the pull request's CI.
 
 ## 2. check
 
-- [ ] 2.1 Add the finished-row, archived-since, and orphan rules to `check`, skipped by `--no-openspec` and when no `openspec/` directory exists. Verify every scenario of the three `check` requirements and "The agreement rules can be turned off for one run" passes over a scratch ledger in CI.
+- [ ] 2.1 Add the finished-row, archived-since, and orphan rules to `check`, applied only when an `openspec/` directory exists. Verify every scenario of the three `check` requirements and "The agreement rules run exactly where OpenSpec does" passes over a scratch ledger in CI.
 - [ ] 2.2 Verify `qctl check --format json` carries the new problems with `CLICOLOR_FORCE=1` set and no ESC byte, in the existing plain-JSON test.
 
 ## 3. archive and the waiver
 
-- [ ] 3.1 Add the optional `waiver` field to `ArchivedTask` and regenerate `schema/tasks.schema.json`. Verify the schema test passes and `schema_version` is still 4.
+- [ ] 3.1 Add the optional `waiver` field to `ArchivedTask`, move `VERSION` to 5, teach `fmt` the 4 to 5 upgrade and the other verbs the refusal, and regenerate `schema/tasks.schema.json`. Verify the scenarios of "A ledger that may carry a waiver declares schema version 5" pass, and that this repository's `tasks.yaml` and `examples/` declare version 5.
 - [ ] 3.2 Gate `archive` and `close-from-git` on the change, with `--waiver`. Verify the three scenarios of "archive refuses the last row of an open change without a waiver" pass, with mutation snapshots for the refused and waived cases.
 
 ## 4. close-from-openspec
@@ -22,7 +22,7 @@ The build host for every check below is the pull request's CI.
 
 ## 5. Contracts
 
-- [ ] 5.1 Update `src/instructions.md`, `skills/qctl/SKILL.md`, the `.ctl/operator/` templates, and `AGENTS.md` for the link rule, the new rules, `--waiver`, `--no-openspec`, and `close-from-openspec`. Verify `operator_docs` passes in CI.
+- [ ] 5.1 Update `src/instructions.md`, `skills/qctl/SKILL.md`, the `.ctl/operator/` templates, and `AGENTS.md` for the link rule, the new rules, `--waiver`, schema version 5, and `close-from-openspec`. Verify `operator_docs` passes in CI.
 - [ ] 5.2 Verify `openspec validate openspec-agreement --strict` passes in CI.
 
 ## 6. Rollout

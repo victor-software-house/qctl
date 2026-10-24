@@ -68,21 +68,38 @@ When an `openspec/` directory sits next to the ledger, `qctl check` SHALL report
 - **WHEN** `openspec/changes/toml-input/` exists and a row mentions `toml-input` only in its notes
 - **THEN** `qctl check` reports `change toml-input is named by no row; point a row's plan at openspec/changes/toml-input/proposal.md`
 
-### Requirement: The agreement rules can be turned off for one run
+### Requirement: The agreement rules run exactly where OpenSpec does
 
-`qctl check --no-openspec`, and `QCTL_NO_OPENSPEC=true`, SHALL skip every rule of this capability for that run.
-A ledger with no `openspec/` directory next to it SHALL get none of these rules.
-
-#### Scenario: A repository that cannot fix its drift yet
-
-- **WHEN** a ledger has a finished row whose change is open
-- **AND** the operator runs `qctl check --no-openspec`
-- **THEN** no agreement problem is reported, and every other rule still runs
+qctl SHALL apply the rules of this capability when, and only when, an `openspec/` directory sits next to the ledger.
+qctl SHALL offer no flag or variable that turns them off; a row's `waiver` is the only override.
 
 #### Scenario: A ledger without OpenSpec
 
 - **WHEN** no `openspec/` directory sits next to `tasks.yaml`
 - **THEN** `qctl check` reports no agreement problem
+
+#### Scenario: No bypass flag
+
+- **WHEN** the operator runs `qctl check --no-openspec`
+- **THEN** the command fails as an unknown argument
+
+### Requirement: A ledger that may carry a waiver declares schema version 5
+
+qctl SHALL write and accept `schema_version: 5`.
+`qctl fmt` SHALL upgrade a schema 4 ledger by setting `schema_version: 5` and changing no other byte.
+Every other verb SHALL refuse a schema 4 ledger, writing nothing, with `tasks.yaml: schema_version 4; run qctl fmt to set schema_version 5`, and `qctl check` SHALL report that line as its only problem.
+
+#### Scenario: Upgrading a schema 4 ledger
+
+- **WHEN** `tasks.yaml` declares `schema_version: 4`
+- **AND** the operator runs `qctl fmt`
+- **THEN** the only changed line is `schema_version: 5`
+
+#### Scenario: A verb on a schema 4 ledger
+
+- **WHEN** `tasks.yaml` declares `schema_version: 4`
+- **AND** the operator runs `qctl status`
+- **THEN** the command fails with `tasks.yaml: schema_version 4; run qctl fmt to set schema_version 5`
 
 ### Requirement: archive refuses the last row of an open change without a waiver
 
