@@ -2,7 +2,7 @@
 # the asset build. The `ver` task the release workflow runs is in mise.toml.
 
 [tools]
-"github:victor-software-house/verctl" = "0.5.1"
+"github:victor-software-house/verctl" = "0.7.0"
 
 # assets.build in .ctl/ver.yaml: the stock build, and the ledger schema
 # attached to the Release from the linux-x64 build only, so one job uploads it.
