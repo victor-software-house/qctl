@@ -1,5 +1,6 @@
 //! What a horizon row may say.
 
+#[path = "common/fixtures.rs"]
 mod common;
 
 use common::{on_the_horizon, refused};

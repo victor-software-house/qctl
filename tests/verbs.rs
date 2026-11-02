@@ -1,6 +1,7 @@
 //! The verbs at their boundary: what they refuse to edit, and whether the two
 //! engines that read the contract still agree.
 
+#[path = "common/fixtures.rs"]
 mod common;
 
 use common::{LedgerDir, check_in, qctl};

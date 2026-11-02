@@ -13,6 +13,7 @@
 //! Any change to what a verb writes changes it, and `cargo insta review` shows
 //! the snapshot's own before and after when the change is intended.
 
+#[path = "common/fixtures.rs"]
 mod common;
 
 use std::fs;

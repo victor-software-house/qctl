@@ -1,6 +1,7 @@
 //! Commit trailers that close ids, and the `check` failure they cause while
 //! the id is still queued.
 
+#[path = "common/fixtures.rs"]
 mod common;
 
 use std::fs;

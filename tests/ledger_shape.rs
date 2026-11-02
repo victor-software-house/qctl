@@ -1,6 +1,7 @@
 //! The shape of the ledger itself: its root keys, and the ledgers that are
 //! whole. Row-level rules live in the rows_* suites.
 
+#[path = "common/fixtures.rs"]
 mod common;
 
 use common::{LedgerDir, accepted, check, check_in, refused};

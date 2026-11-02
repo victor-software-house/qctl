@@ -2,6 +2,7 @@
 //! `archive` will not leave a change open by accident, and
 //! `close-from-openspec` closes and repoints rows after `openspec archive`.
 
+#[path = "common/fixtures.rs"]
 mod common;
 
 use std::process::Command;

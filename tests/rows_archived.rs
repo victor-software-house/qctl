@@ -1,5 +1,6 @@
 //! What an archived row may say.
 
+#[path = "common/fixtures.rs"]
 mod common;
 
 use common::{archived, refused};
