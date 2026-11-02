@@ -72,7 +72,8 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   every push to `main`: it publishes each version commit not yet fully
   released to crates.io, builds the tarballs (the linux-x64 build attaches
   `schema/tasks.schema.json`, task `release:qctl` in `mise.release.toml`), and
-  opens the Version PR on `verctl/release/main` with auto-merge. Bump its pin
+  opens the Version PR on `verctl/release/main`. Only the operator merges the
+  Version PR, so no release happens on its own. Bump its pin
   with the verctl pin in `mise.release.toml` and the `ver` include in
   `mise.toml`.
 - This repo's release declarations live in `.ctl/ver.yaml`; `.ctl/` is the
