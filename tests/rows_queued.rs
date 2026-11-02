@@ -1,5 +1,6 @@
 //! What a queued row may say, one case per way of saying it wrong.
 
+#[path = "common/fixtures.rs"]
 mod common;
 
 use common::{queued, refused};

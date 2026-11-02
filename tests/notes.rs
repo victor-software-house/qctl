@@ -1,6 +1,7 @@
 //! List items through `add`, `edit`, and `fmt`, in each declared layout
 //! and quotes.
 
+#[path = "common/fixtures.rs"]
 mod common;
 
 use common::{LedgerDir, qctl, stderr};

@@ -1,5 +1,6 @@
 //! Hidden `--usage-spec` and the served-task mount line.
 
+#[path = "common/fixtures.rs"]
 mod common;
 
 use std::fs;

@@ -1,5 +1,6 @@
 //! Schema 3 ledgers: `fmt` upgrades them, and every other verb refuses them.
 
+#[path = "common/fixtures.rs"]
 mod common;
 
 use common::{LedgerDir, qctl, stderr};

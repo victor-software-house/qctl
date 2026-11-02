@@ -1,5 +1,6 @@
 //! `close-from-git` and `hook install`.
 
+#[path = "common/fixtures.rs"]
 mod common;
 
 use std::fs;
@@ -271,7 +272,7 @@ fn hook_install_prefers_lefthook_and_mise_q() {
     let before = fs::read_to_string(root.path().join("lefthook.yml")).expect("before");
     let output = qctl(&["hook", "install", "-f", path.to_str().expect("utf-8")]);
     assert!(!output.status.success(), "{}", stderr(&output));
-    assert_eq!(output.stdout, &[] as &[u8]);
+    assert_eq!(output.stdout, Vec::<u8>::new());
     assert!(
         stderr(&output).contains("hook not installed"),
         "{}",
@@ -342,7 +343,7 @@ fn hook_install_sees_lefthook_yaml() {
     let before = fs::read_to_string(root.path().join("lefthook.yaml")).expect("before");
     let output = qctl(&["hook", "install", "-f", path.to_str().expect("utf-8")]);
     assert!(!output.status.success(), "{}", stderr(&output));
-    assert_eq!(output.stdout, &[] as &[u8]);
+    assert_eq!(output.stdout, Vec::<u8>::new());
     assert!(
         stderr(&output).contains("hook not installed"),
         "{}",

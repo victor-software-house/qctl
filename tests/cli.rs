@@ -1,5 +1,6 @@
 //! Binary contract: init, check, add, start, archive, park, promote.
 
+#[path = "common/fixtures.rs"]
 mod common;
 
 use common::{LedgerDir, MINIMAL, qctl, stderr, stdout};
@@ -655,7 +656,7 @@ fn start_refuses_blocked_or_horizon() {
 fn instructions_prints_the_installed_contract_exactly() {
     let output = qctl(&["instructions"]);
     assert!(output.status.success(), "{}", stderr(&output));
-    assert_eq!(output.stderr, &[] as &[u8]);
+    assert_eq!(output.stderr, Vec::<u8>::new());
     let expected =
         std::fs::read(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/instructions.md"))
             .unwrap();
@@ -922,7 +923,7 @@ fn status_and_check_share_typed_json_output() {
 
     let status = qctl(&["status", "-f", path, "--format", "json"]);
     assert!(status.status.success(), "{}", stderr(&status));
-    assert_eq!(status.stderr, &[] as &[u8]);
+    assert_eq!(status.stderr, Vec::<u8>::new());
     assert!(!status.stdout.contains(&b'\x1b'));
     let status_json: serde_json::Value = serde_json::from_slice(&status.stdout).unwrap();
     assert_eq!(status_json["type"], "status");
@@ -932,7 +933,7 @@ fn status_and_check_share_typed_json_output() {
 
     let check = qctl(&["check", "-f", path, "--no-git", "--format", "json"]);
     assert!(check.status.success(), "{}", stderr(&check));
-    assert_eq!(check.stderr, &[] as &[u8]);
+    assert_eq!(check.stderr, Vec::<u8>::new());
     let check_json: serde_json::Value = serde_json::from_slice(&check.stdout).unwrap();
     assert_eq!(check_json["type"], "check");
     assert_eq!(check_json["problems"], serde_json::json!([]));
@@ -958,7 +959,7 @@ fn failed_check_is_a_json_problem_array_on_stdout() {
         "json",
     ]);
     assert!(!output.status.success());
-    assert_eq!(output.stderr, &[] as &[u8]);
+    assert_eq!(output.stderr, Vec::<u8>::new());
     assert!(!output.stdout.contains(&b'\x1b'));
     let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(report["type"], "check");
@@ -978,12 +979,12 @@ fn quiet_suppresses_only_successful_human_output() {
 
     let quiet = qctl(&["status", "-f", path, "--quiet"]);
     assert!(quiet.status.success(), "{}", stderr(&quiet));
-    assert_eq!(quiet.stdout, &[] as &[u8]);
-    assert_eq!(quiet.stderr, &[] as &[u8]);
+    assert_eq!(quiet.stdout, Vec::<u8>::new());
+    assert_eq!(quiet.stderr, Vec::<u8>::new());
 
     let json = qctl(&["status", "-f", path, "--quiet", "--format", "json"]);
     assert!(json.status.success(), "{}", stderr(&json));
-    assert_eq!(json.stderr, &[] as &[u8]);
+    assert_eq!(json.stderr, Vec::<u8>::new());
     assert_eq!(
         serde_json::from_slice::<serde_json::Value>(&json.stdout).unwrap()["type"],
         "status"
@@ -991,7 +992,7 @@ fn quiet_suppresses_only_successful_human_output() {
 
     let failed = qctl(&["show", "QCTL-999", "-f", path, "--quiet"]);
     assert!(!failed.status.success());
-    assert_eq!(failed.stdout, &[] as &[u8]);
+    assert_eq!(failed.stdout, Vec::<u8>::new());
     assert!(stderr(&failed).contains("no task QCTL-999"));
 }
 
@@ -1004,8 +1005,8 @@ fn colorless_flags_render_the_same_document() {
     let no_color = qctl(&["status", "-f", path, "--no-color"]);
     assert!(color.status.success(), "{}", stderr(&color));
     assert!(no_color.status.success(), "{}", stderr(&no_color));
-    assert_eq!(color.stderr, &[] as &[u8]);
-    assert_eq!(no_color.stderr, &[] as &[u8]);
+    assert_eq!(color.stderr, Vec::<u8>::new());
+    assert_eq!(no_color.stderr, Vec::<u8>::new());
     assert_eq!(color.stdout, no_color.stdout);
     assert!(!color.stdout.contains(&b'\x1b'));
 }
