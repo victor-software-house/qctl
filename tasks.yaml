@@ -136,6 +136,20 @@ queue:
     notes:
       - 'Found 2026-10-24 during the 0.6.0 rollout: a templates row was already archived when its change could not archive yet, and only archive --keep-change-open sets the field, so the change was archived with --skip-specs instead.'
       - 'This widens the archive-row edit set that QCTL-030 limits to note, evidence, and link operations, by one field: keep_change_open.'
+
+  - id: QCTL-054
+    title: Close an OpenSpec row whose successor it blocks
+    scope: close-from-openspec, start, skills/qctl
+    outcome: >-
+      Closing the active row from its archived OpenSpec change works in one
+      documented sequence, including when the next queued row is blocked by the row being closed.
+    blocked_by: []
+    acceptance:
+      - A fixture with an active row A, archived through OpenSpec, and a queued row B blocked by A closes A and makes B startable without a manual qctl archive.
+      - skills/qctl/SKILL.md states the order for closing a row from OpenSpec and starting the next one.
+    notes:
+      - 'Seen in shephrd-sh/shephrd on 2026-11-03 with qctl 0.6.0, closing SPD-004 and SPD-005: close-from-openspec refuses while active names the row (openspec-agreement spec), and start refuses the next row while its blocker is still on the queue, so a successor blocked by the closing row deadlocks both verbs.'
+      - 'Options seen: close-from-openspec advances active itself, or start accepts a blocker whose plan points into an archived change.'
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
