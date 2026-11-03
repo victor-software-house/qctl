@@ -169,6 +169,17 @@ horizon:
       - "2026-09-29: raised by a review of an archived row that had lost its criteria. `archive` has dropped both fields since the line-level rewrite, before the move to yamled. Rows archived by hand keep them, so a ledger such as yamled's now holds both shapes."
 
 archive:
+  - id: QCTL-053
+    title: Only the operator merges the Version PR
+    scope: .github/workflows/release.yml, AGENTS.md
+    outcome: "No qctl release happens on its own: the release workflow never arms auto-merge on the Version PR."
+    notes:
+      - Operator decision 2026-11-02, no repository releases on its own.
+    completed: 2026-11-02T14:28:12
+    evidence:
+      - This pull request drops auto-merge from release.yml and states in AGENTS.md that only the operator merges the Version PR.
+    disposition: completed
+
   - id: QCTL-051
     title: Check that queue rows and OpenSpec changes agree
     scope: qctl check, archive, close-from-openspec
