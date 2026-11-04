@@ -73,7 +73,7 @@ includes = [
   # the workflow's pin.
   "git::https://github.com/victor-software-house/verctl.git//tasks/ver?ref=v0.7.2",
   # The shared Rust tasks, at actions main, 2026-11-02.
-  "git::https://github.com/victor-software-house/actions.git//tasks/rust.toml?ref=6e9dd33a97807e6e7437cb06b9c0310d674534ea",
+  "git::https://github.com/victor-software-house/actions.git//tasks/rust.toml?ref=67afb32031d0a76a87ff6528ac148ecced490627",
   # template:check, template:off, and template:on, at actions main, 2026-11-02.
-  "git::https://github.com/victor-software-house/actions.git//tasks/template.toml?ref=6e9dd33a97807e6e7437cb06b9c0310d674534ea",
+  "git::https://github.com/victor-software-house/actions.git//tasks/template.toml?ref=67afb32031d0a76a87ff6528ac148ecced490627",
 ]
