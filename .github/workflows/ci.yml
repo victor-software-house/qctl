@@ -9,7 +9,9 @@ on:
     - cron: "37 8 * * *"
   workflow_dispatch:
 
+# The shared Verify job reads this run and the runs that replaced it.
 permissions:
+  actions: read
   contents: read
   pull-requests: read
 
@@ -37,7 +39,7 @@ jobs:
 
   verify:
     if: ${{ !github.event.pull_request.draft && github.event_name != 'schedule' }}
-    uses: victor-software-house/actions/.github/workflows/rust-ci.yml@6e9dd33a97807e6e7437cb06b9c0310d674534ea # main, 2026-11-02
+    uses: victor-software-house/actions/.github/workflows/rust-ci.yml@67afb32031d0a76a87ff6528ac148ecced490627 # main, 2026-11-02
     with:
       mise-version: 2026.10.25
       advisories: true
