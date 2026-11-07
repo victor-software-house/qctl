@@ -168,6 +168,18 @@ horizon:
     notes:
       - "2026-09-29: raised by a review of an archived row that had lost its criteria. `archive` has dropped both fields since the line-level rewrite, before the move to yamled. Rows archived by hand keep them, so a ledger such as yamled's now holds both shapes."
 
+  - id: QCTL-054
+    title: Say how important a row is, beyond its place in the queue
+    scope: qctl
+    outcome: >-
+      A ledger states each row's priority explicitly, so horizon rows and long queues
+      can be ranked and filtered.
+    kind: research
+    open: "Which model fits is undecided: queue order alone, a priority field, or ranked horizon buckets."
+    notes:
+      - '2026-11-07, operator remark while adopting qctl in firescale: the one missing thing is prioritization, though queue order implies it and the horizon bucket exists.'
+      - Horizon order carries no priority today, so research and deferred rows cannot be ranked.
+
 archive:
   - id: QCTL-053
     title: Only the operator merges the Version PR
