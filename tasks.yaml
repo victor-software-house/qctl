@@ -136,6 +136,20 @@ queue:
     notes:
       - 'Found 2026-10-24 during the 0.6.0 rollout: a templates row was already archived when its change could not archive yet, and only archive --keep-change-open sets the field, so the change was archived with --skip-specs instead.'
       - 'This widens the archive-row edit set that QCTL-030 limits to note, evidence, and link operations, by one field: keep_change_open.'
+
+  - id: QCTL-055
+    title: Take add and edit input as a JSON or YAML document, from a file or stdin
+    scope: qctl
+    outcome: >-
+      A whole row, or a batch of rows, goes into the ledger from one structured
+      document instead of a long flag list.
+    blocked_by: []
+    acceptance:
+      - qctl add and qctl edit accept --input FILE or --input -, in JSON or YAML, through ctl-core's structured input (ctl-core CTC-030), and a golden test adds a row from a JSON file.
+      - A batch of rows in one document is added in order, and a failing row adds none.
+    notes:
+      - '2026-11-07, operator, watching an agent add firescale rows with many repeated -a, -n and -O flags: qctl should take nicer input formats, such as JSON or from files; mostly a ctl-core thing; the same way output has several formats.'
+      - Blocked on ctl-core CTC-030 (victor-software-house/ctl-core#179).
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
@@ -167,6 +181,18 @@ horizon:
       whether `check` requires each evidence line to answer a criterion.
     notes:
       - "2026-09-29: raised by a review of an archived row that had lost its criteria. `archive` has dropped both fields since the line-level rewrite, before the move to yamled. Rows archived by hand keep them, so a ledger such as yamled's now holds both shapes."
+
+  - id: QCTL-054
+    title: Say how important a row is, beyond its place in the queue
+    scope: qctl
+    outcome: >-
+      A ledger states each row's priority explicitly, so horizon rows and long queues
+      can be ranked and filtered.
+    kind: research
+    open: "Which model fits is undecided: queue order alone, a priority field, or ranked horizon buckets."
+    notes:
+      - '2026-11-07, operator remark while adopting qctl in firescale: the one missing thing is prioritization, though queue order implies it and the horizon bucket exists.'
+      - Horizon order carries no priority today, so research and deferred rows cannot be ranked.
 
 archive:
   - id: QCTL-053
