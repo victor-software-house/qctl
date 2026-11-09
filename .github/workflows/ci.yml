@@ -16,7 +16,8 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name }}
+  # A draft run gets a group of its own, so it never cancels the ready run.
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name }}${{ github.event.pull_request.draft && '-draft' || '' }}
   cancel-in-progress: true
 
 jobs:
@@ -39,7 +40,7 @@ jobs:
 
   verify:
     if: ${{ !github.event.pull_request.draft && github.event_name != 'schedule' }}
-    uses: victor-software-house/actions/.github/workflows/rust-ci.yml@67afb32031d0a76a87ff6528ac148ecced490627 # main, 2026-11-02
+    uses: victor-software-house/actions/.github/workflows/rust-ci.yml@ed26bdf6dd82740d0be3e38942c6ecc638322cd8 # main, 2026-11-09
     with:
       mise-version: 2026.10.25
       advisories: true

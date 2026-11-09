@@ -27,13 +27,6 @@ mr-boxington = "1.29.1"
 "github:bnjbvr/cargo-machete" = "0.9.2"
 "github:obi1kenobi/cargo-semver-checks" = "0.51.0"
 jq = "1.8.2"
-# The repository checks (mise-tasks/check/repo.sh).
-taplo = "0.10.0"
-rumdl = "0.3.2"
-typos = "1.51.1"
-actionlint = "1.7.12"
-# OpenSpec's standalone release binary; it needs no node.
-"github:Fission-AI/OpenSpec" = "1.16.0"
 
 # The shared Rust tasks read their toolchains from here and name none.
 [env]
@@ -72,8 +65,8 @@ includes = [
   # run. Bump the ref together with the verctl pin in mise.release.toml and
   # the workflow's pin.
   "git::https://github.com/victor-software-house/verctl.git//tasks/ver?ref=v0.7.2",
-  # The shared Rust tasks, at actions main, 2026-11-02.
-  "git::https://github.com/victor-software-house/actions.git//tasks/rust.toml?ref=67afb32031d0a76a87ff6528ac148ecced490627",
-  # template:check, template:off, and template:on, at actions main, 2026-11-02.
-  "git::https://github.com/victor-software-house/actions.git//tasks/template.toml?ref=67afb32031d0a76a87ff6528ac148ecced490627",
+  # The shared Rust tasks, at actions main, 2026-11-09.
+  "git::https://github.com/victor-software-house/actions.git//tasks/rust.toml?ref=ed26bdf6dd82740d0be3e38942c6ecc638322cd8",
+  # template:check, template:off, and template:on, at actions main, 2026-11-09.
+  "git::https://github.com/victor-software-house/actions.git//tasks/template.toml?ref=ed26bdf6dd82740d0be3e38942c6ecc638322cd8",
 ]
