@@ -17,7 +17,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: template-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name }}
+  # A draft run gets a group of its own, so it never cancels the ready run.
+  group: template-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name }}${{ github.event.pull_request.draft && '-draft' || '' }}
   cancel-in-progress: true
 
 jobs:
@@ -28,7 +29,7 @@ jobs:
   # takes that App's key and no other secret.
   template:
     if: ${{ !github.event.pull_request.draft }}
-    uses: victor-software-house/actions/.github/workflows/template-check.yml@67afb32031d0a76a87ff6528ac148ecced490627 # main, 2026-11-02
+    uses: victor-software-house/actions/.github/workflows/template-check.yml@ed26bdf6dd82740d0be3e38942c6ecc638322cd8 # main, 2026-11-09
     permissions:
       contents: read
       issues: write
