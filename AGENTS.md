@@ -20,10 +20,13 @@ Rust policy CLI for in-repo `tasks.yaml` work queues.
   break, and `fmt` writes older block items on one line. Never insert
   mechanical sentence wraps.
 - Schema is types + schemars (QCTL-001). Generated JSON lives only here.
-  Consumers pin a `$schema` URL and run `qctl check`. `schema_version` is 5:
+  Consumers pin a `$schema` URL and run `qctl check`. `schema_version` is 6:
   `notes` is a list, a ledger declares its `style`, `completed` is a moment
-  in the zone that block names, and an archived row may carry
-  `keep_change_open`. A schema 3 or 4 file is upgraded by `qctl fmt`.
+  in the zone that block names, an archived row may carry
+  `keep_change_open`, and a horizon row says why it waits in `reason`.
+  A schema 3, 4, or 5 file is upgraded by `qctl fmt`, which renames the
+  horizon key `kind` to `reason` in place
+  (`document::rename_row_keys`); no other path reads `kind`.
   A rule that both `check` and the verbs must agree on is stated
   once, as a `#[garde(...)]` attribute — schemars reads those, so a second
   `#[schemars(...)]` copy is drift waiting to happen.

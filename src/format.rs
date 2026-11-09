@@ -17,7 +17,7 @@ use anyhow::{Context, Result, bail};
 use ctl_core::input::Input;
 
 use crate::cli::FmtArgs;
-use crate::document::{Document, KeyShape, must_still_parse};
+use crate::document::{Document, KeyShape, must_still_parse, rename_row_keys};
 use crate::ledger::{Ledger, resolve_path};
 use crate::report::Report;
 use crate::schema::{ArchiveOrder, RowSpacing, Section, Style, VERSION};
@@ -222,8 +222,9 @@ fn push_blank(out: &mut String, blank_run: &mut usize, after_key: bool) {
 
 /// `qctl fmt`: write the ledger in its declared style, or with `--check` say
 /// what is not in it and leave the file alone. An older file is upgraded
-/// first: schema 3's scalar `notes` become lists of paragraphs, and schemas 3
-/// and 4 are set to the current version, which only added an optional field.
+/// first: schema 3's scalar `notes` become lists of paragraphs, each horizon
+/// row's `kind` key becomes `reason`, and `schema_version` is set to the
+/// current version.
 ///
 /// # Errors
 ///
@@ -274,23 +275,29 @@ fn changes(source: &str, wanted: &str) -> Vec<String> {
 }
 
 /// An older ledger becomes the current version. Schema 3's scalar `notes`
-/// are split on blank-line paragraphs; schema 4 needs only its version set,
-/// because 5 added one optional field. A current-version file is returned
-/// unchanged. Other versions are refused.
+/// are split on blank-line paragraphs. Schemas 3 to 5 call a horizon row's
+/// reason `kind`, which 6 renamed, and nothing else in them needs to change.
+/// A current-version file is returned unchanged. Other versions are refused.
 fn upgrade(source: &str) -> Result<String> {
     match peek_schema_version(source) {
         Some(version) if version == u64::from(VERSION) => Ok(source.to_owned()),
-        Some(3) => rewrite_v3_notes(source),
-        Some(4) => {
-            let mut document = Document::new(source.to_owned(), &declared_style(source)?)?;
-            document.set("schema_version", &VERSION)?;
-            Ok(document.into_source())
-        }
+        Some(3) => to_current(&rewrite_v3_notes(source)?),
+        Some(4 | 5) => to_current(source),
         Some(version) => {
-            bail!("schema_version {version} must be {VERSION} (or 3 or 4, which fmt upgrades)")
+            bail!("schema_version {version} must be {VERSION} (or 3, 4, or 5, which fmt upgrades)")
         }
         None => Ok(source.to_owned()),
     }
+}
+
+/// Rename each horizon row's `kind` to `reason` where it is written, and set
+/// the current version.
+fn to_current(source: &str) -> Result<String> {
+    let renamed = rename_row_keys(source, "horizon", "kind", "reason")?;
+    let style = declared_style(&renamed)?;
+    let mut document = Document::new(renamed, &style)?;
+    document.set("schema_version", &VERSION)?;
+    Ok(document.into_source())
 }
 
 /// The `style` block of a ledger not yet read as the current version.
@@ -331,7 +338,6 @@ fn rewrite_v3_notes(source: &str) -> Result<String> {
             }
         }
     }
-    document.set("schema_version", &VERSION)?;
     Ok(document.into_source())
 }
 

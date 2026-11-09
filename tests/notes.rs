@@ -143,7 +143,7 @@ fn the_automatic_layout_keeps_line_breaks() {
 fn single_quotes_when_the_ledger_asks() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         style:
           quotes: single
@@ -180,7 +180,7 @@ fn single_quotes_when_the_ledger_asks() {
 fn edit_uses_the_same_item_writer() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: null
         queue:
@@ -209,7 +209,7 @@ fn edit_uses_the_same_item_writer() {
     ]);
     assert!(output.status.success(), "{}", stderr(&output));
     let expected = indoc! {r#"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: null
         queue:
@@ -237,7 +237,7 @@ fn edit_uses_the_same_item_writer() {
 fn fmt_keeps_every_value_and_settles() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {r#"
-        schema_version: 5
+        schema_version: 6
         prefix: "QCTL"
         active: QCTL-001
         queue:
@@ -341,7 +341,7 @@ const QUEUED: &str = indoc! {"
 
 /// An empty ledger that writes its list items in the automatic layout.
 const AUTO: &str = indoc! {"
-    schema_version: 5
+    schema_version: 6
     prefix: QCTL
     style:
       list_items: auto

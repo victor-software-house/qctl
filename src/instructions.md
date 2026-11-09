@@ -28,7 +28,7 @@ completion bootstrap.
 | `promote` | — | Move a horizon row onto the queue |
 | `edit` | — | Rewrite fields or queue position of an existing row |
 | `show` | — | Print one queued, archived, or horizon task |
-| `fmt` | — | Rewrite a ledger into the style it declares. Upgrades schema 3 and 4 to 5 |
+| `fmt` | — | Rewrite a ledger into the style it declares. Upgrades schema 3, 4, and 5 to 6 |
 | `close-from-git` | — | Archive queued ids that commit-body trailers closed |
 | `close-from-openspec` | — | Archive queued rows whose `openspec` change was archived, and repoint plans |
 | `hook` | — | Install git hooks for this ledger |
@@ -90,8 +90,9 @@ is not empty.
 | `archive` | Finished or dropped. Newest `completed` first. IDs never reused. `notes` stay. |
 | `horizon` | Mapped but not startable: research, evaluations, deferred. File order is not priority. `active` must never name a horizon id. |
 
-Horizon rows require `kind` (`research` / `evaluation` / `deferred`) and
-`open` (the missing start condition or the question). Promote to `queue`
+Horizon rows require `reason` (`research` / `evaluation` / `deferred`), which
+says why the row waits, and `open` (the missing start condition or the
+question), which names what would end the wait. Promote to `queue`
 only when `open` is resolved and the row has `acceptance` and `blocked_by`.
 
 IDs are `{prefix}-NNN` (three to six digits), never reused, and never encode
@@ -100,12 +101,13 @@ priority. Queue, horizon, and archive partition one task corpus: every id from
 move changes status without creating a second copy; `qctl check` reports every
 gap and every id claimed by more than one status.
 
-`schema_version` is `5`. `notes` is a list of strings on every row, and an
-archived row may carry `keep_change_open`. A schema 4 ledger needs only its
-version raised: run `qctl fmt` once. A schema 3 ledger still has scalar notes:
-`qctl fmt` splits those on blank-line paragraphs and sets version 5. Other
-verbs refuse versions 3 and 4 and name that command. A ledger on an earlier
-version is not rewritten.
+`schema_version` is `6`. `notes` is a list of strings on every row, an
+archived row may carry `keep_change_open`, and a horizon row names its
+`reason`. A schema 4 or 5 ledger still calls that field `kind`: run `qctl fmt`
+once, which renames the key in place and sets version 6. A schema 3 ledger also
+has scalar notes: `qctl fmt` splits those on blank-line paragraphs as well.
+Other verbs refuse versions 3, 4, and 5 and name that command. A ledger on an
+earlier version is not rewritten.
 
 Acceptance is closure truth stated in advance. Each line names an observable,
 demonstrably true end condition and reads as the resulting state, for example:
@@ -196,7 +198,7 @@ names a row it would archive. qctl reads folder names itself and never runs
    `-b/--blocked-by`, `-l/--plan` and `-L/--link` fill the fields a hand edit
    used to. `-A/--after ID` / `-B/--before ID` place it; the tail is the
    default. A blocker that would not sit earlier than the new row is
-   refused. `-H/--horizon -k KIND -O OPEN` writes a horizon row
+   refused. `-H/--horizon -r REASON -O OPEN` writes a horizon row
    instead. `--plan` must name a file next to the ledger, the same
    rule `check` uses. A tail add to an empty queue is allowed even
    when `active` is set; it does not invent a `--before`.
@@ -213,16 +215,16 @@ names a row it would archive. qctl reads folder names itself and never runs
    for `pre-push.commands` and does not edit `lefthook.yml`. Until that command
    is in Lefthook, install exits non-zero. Without Lefthook it writes
    `.git/hooks/pre-push`. `-F/--force` overwrites the git hook only.
-6. `qctl park ID -k KIND -O OPEN` demotes a queued row onto the horizon,
+6. `qctl park ID -r REASON -O OPEN` demotes a queued row onto the horizon,
    dropping `acceptance` and `blocked_by`. It refuses if another queued
    row still names that id as a blocker. Parking `active` nulls `active`.
    `qctl promote ID -a 'The decision record names the selected storage.'`
-   moves a horizon row onto the queue tail, dropping kind and open. It does
+   moves a horizon row onto the queue tail, dropping reason and open. It does
    not become active. `--blocked-by` must name a queued id. `add --horizon`
    creates an unfleshed horizon row; `park` no longer creates. Both write a
    `horizon:` key if the ledger omitted it. `fmt` still never inserts a key.
 7. `qctl edit ID` rewrites named fields on a queued, horizon, or archived
-   row. Scalars replace (`-t/-s/-o`, `-k/-O`, `-P/-l`, `-U/--unset
+   row. Scalars replace (`-t/-s/-o`, `-r/-O`, `-P/-l`, `-U/--unset
    patch|plan`). Lists append (`-a/-n/-L/-b/-e`). Repeatable
    `-x/--remove field:index|exact-text` drops notes, acceptance, links,
    blockers, or evidence; the field names are `note`, `acceptance`, `link`,

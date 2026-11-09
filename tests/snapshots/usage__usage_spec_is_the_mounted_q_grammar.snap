@@ -92,8 +92,8 @@ cmd add display_order=3 args_override_self=#false help="Add a task to the queue,
         arg <BEFORE>
     }
     flag "-H --horizon" help="Write a horizon row instead of a queue row"
-    flag "-k --kind" help="Why it is on the horizon. Required with --horizon" {
-        arg <KIND>
+    flag "-r --reason" help="Why it waits on the horizon: research, evaluation, or deferred. Required with --horizon" {
+        arg <REASON>
     }
     flag "-O --open" help="The missing start condition. Required with --horizon" {
         arg <OPEN>
@@ -132,8 +132,8 @@ cmd park display_order=6 args_override_self=#false help="Demote a queued task on
     flag "-f --file" help="Ledger path. Defaults to `tasks.yaml`" {
         arg <FILE>
     }
-    flag "-k --kind" help="Why it goes on the horizon: research, evaluation, or deferred" required=#true {
-        arg <KIND>
+    flag "-r --reason" help="Why it waits on the horizon: research, evaluation, or deferred" required=#true {
+        arg <REASON>
     }
     flag "-O --open" help="The missing start condition" required=#true {
         arg <OPEN>
@@ -167,8 +167,8 @@ cmd edit display_order=8 args_override_self=#false help="Rewrite fields or queue
     flag "-o --outcome" help="New outcome" {
         arg <OUTCOME>
     }
-    flag "-k --kind" help="New horizon kind: research, evaluation, or deferred" {
-        arg <KIND>
+    flag "-r --reason" help="New reason a horizon row waits: research, evaluation, or deferred" {
+        arg <REASON>
     }
     flag "-O --open" help="New missing start condition of a horizon row" {
         arg <OPEN>
@@ -221,7 +221,7 @@ cmd show display_order=9 args_override_self=#false help="Print one queued, archi
     arg <ID> help="The task id, such as QCTL-001"
     complete file type=path
 }
-cmd fmt display_order=10 args_override_self=#false help="Rewrite a ledger into the style it declares. Upgrades schema 3 and 4 to 5" unknown_flags=error {
+cmd fmt display_order=10 args_override_self=#false help="Rewrite a ledger into the style it declares. Upgrades schema 3, 4, and 5 to 6" unknown_flags=error {
     flag "-f --file" help="Ledger path. Defaults to `tasks.yaml`" {
         arg <FILE>
     }

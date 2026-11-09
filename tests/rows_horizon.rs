@@ -8,18 +8,18 @@ use indoc::indoc;
 use rstest::rstest;
 
 #[rstest]
-#[case::a_kind_it_has_no_word_for(
+#[case::a_reason_it_has_no_word_for(
     indoc! {"
         - id: QCTL-900
           title: Someday
           scope: qctl
           outcome: Something would be true.
-          kind: someday
+          reason: someday
           open: Nobody knows yet.
     "},
-    "kind"
+    "reason"
 )]
-#[case::no_kind_at_all(
+#[case::no_reason_at_all(
     indoc! {"
         - id: QCTL-900
           title: Someday
@@ -27,7 +27,7 @@ use rstest::rstest;
           outcome: Something would be true.
           open: Nobody knows yet.
     "},
-    "kind"
+    "reason"
 )]
 #[case::nothing_left_open(
     indoc! {r#"
@@ -35,7 +35,7 @@ use rstest::rstest;
           title: Someday
           scope: qctl
           outcome: Something would be true.
-          kind: research
+          reason: research
           open: ""
     "#},
     "open"

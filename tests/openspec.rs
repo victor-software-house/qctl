@@ -17,7 +17,7 @@ const ARCHIVED: &str = "openspec/changes/archive/2026-10-23-add-thing/proposal.m
 /// its YAML items or `[]`.
 fn ledger(active: &str, queue: &str, archive: &str, horizon: &str) -> String {
     formatdoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: DEMO
         active: {active}
         queue:{queue}
@@ -75,7 +75,7 @@ fn on_the_horizon(id: &str, plan: &str) -> String {
           title: Add the thing later
           scope: demo
           outcome: The thing exists.
-          kind: deferred
+          reason: deferred
           open: Not now.
           plan: {plan}
     "}
@@ -388,7 +388,9 @@ fn fmt_upgrades_schema_4_by_one_line() {
     let status = run(&dir, &["status"]);
     assert!(!status.status.success());
     assert!(
-        stderr(&status).contains("schema_version 4; run qctl fmt to set schema_version 5"),
+        stderr(&status).contains(
+            "schema_version 4; run qctl fmt to rename the horizon key kind to reason and set schema_version 6"
+        ),
         "{}",
         stderr(&status)
     );
@@ -396,7 +398,7 @@ fn fmt_upgrades_schema_4_by_one_line() {
     assert!(output.status.success(), "{}", stderr(&output));
     assert_eq!(
         dir.read(),
-        body.replace("schema_version: 4", "schema_version: 5")
+        body.replace("schema_version: 4", "schema_version: 6")
     );
 }
 

@@ -9,7 +9,7 @@ use indoc::indoc;
 use rstest::rstest;
 
 const ONE_WRONG_VALUE: &str = indoc! {"
-    schema_version: 5
+    schema_version: 6
     prefix: QCTL
     active: null
     queue:
@@ -36,7 +36,7 @@ const ONE_WRONG_VALUE: &str = indoc! {"
 #[rstest]
 #[case::start(&["start", "QCTL-002"])]
 #[case::add(&["add", "-t", "t", "-s", "s", "-o", "o", "-a", "a"])]
-#[case::park(&["park", "QCTL-002", "--kind", "research", "--open", "missing"])]
+#[case::park(&["park", "QCTL-002", "--reason", "research", "--open", "missing"])]
 #[case::promote(&["promote", "QCTL-002", "-a", "a"])]
 #[case::edit(&["edit", "QCTL-002", "-t", "changed"])]
 fn a_verb_refuses_a_ledger_it_cannot_vouch_for(#[case] verb: &[&str]) {
@@ -59,7 +59,7 @@ fn a_verb_refuses_a_ledger_it_cannot_vouch_for(#[case] verb: &[&str]) {
 /// where the two could drift apart.
 #[rstest]
 #[case::a_plan_outside_the_repository(indoc! {"
-    schema_version: 5
+    schema_version: 6
     prefix: QCTL
     active: null
     queue:

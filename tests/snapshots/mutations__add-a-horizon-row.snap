@@ -1,10 +1,10 @@
 ---
 source: tests/mutations.rs
-description: "qctl add --title \"Find the missing fact\" --scope demo --outcome \"The question has an answer.\" --horizon --kind research --open \"The fact is missing.\""
+description: "qctl add --title \"Find the missing fact\" --scope demo --outcome \"The question has an answer.\" --horizon --reason research --open \"The fact is missing.\""
 ---
 # -1 +7
  # yaml-language-server: $schema=./schema/tasks.schema.json
- schema_version: 5
+ schema_version: 6
  prefix: DEMO
  active: null
  queue: []
@@ -15,5 +15,5 @@ description: "qctl add --title \"Find the missing fact\" --scope demo --outcome 
 +    title: Find the missing fact
 +    scope: demo
 +    outcome: The question has an answer.
-+    kind: research
++    reason: research
 +    open: The fact is missing.

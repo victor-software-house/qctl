@@ -3,7 +3,7 @@ source: tests/mutations.rs
 description: qctl close-from-openspec
 ---
 # -7 +9
- schema_version: 5
+ schema_version: 6
  prefix: DEMO
  active: null
 -queue:

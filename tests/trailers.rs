@@ -50,7 +50,7 @@ fn repo_closing_a_queued_id() -> TempDir {
     fs::write(
         root.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 5
+            schema_version: 6
             prefix: CTC
             active: CTC-001
             queue:
@@ -112,7 +112,7 @@ fn check_ok_with_no_git() {
     fs::write(
         root.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 5
+            schema_version: 6
             prefix: CTC
             active: null
             queue: []
@@ -141,7 +141,7 @@ fn check_reports_when_the_ledger_is_outside_the_cwd_repo() {
     fs::write(
         ledger_repo.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 5
+            schema_version: 6
             prefix: CTC
             active: null
             queue: []
@@ -171,7 +171,7 @@ fn check_without_no_git_does_not_pass_a_scratch_ledger() {
     fs::write(
         dir.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 5
+            schema_version: 6
             prefix: CTC
             active: null
             queue: []
@@ -193,7 +193,7 @@ fn check_accepts_an_unborn_head() {
     fs::write(
         root.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 5
+            schema_version: 6
             prefix: CTC
             active: null
             queue: []
@@ -213,7 +213,7 @@ fn check_reports_when_git_cannot_run() {
     fs::write(
         root.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 5
+            schema_version: 6
             prefix: CTC
             active: null
             queue: []
@@ -243,7 +243,7 @@ fn check_default_path_scans_the_cwd_repo() {
     fs::write(
         root.path().join("tasks.yaml"),
         indoc! {"
-            schema_version: 5
+            schema_version: 6
             prefix: CTC
             active: null
             queue: []

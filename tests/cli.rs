@@ -91,7 +91,7 @@ fn a_duplicate_key_is_refused_on_its_line() {
 fn check_accepts_archive_notes() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: null
         queue: []
@@ -117,7 +117,7 @@ fn check_accepts_archive_notes() {
 fn show_reads_a_stamp_without_moving_it() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         style:
           timezone: \"-03:00\"
@@ -145,7 +145,7 @@ fn show_reads_a_stamp_without_moving_it() {
 fn piped_show_without_columns_stays_within_80_columns() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: null
         queue: []
@@ -175,7 +175,7 @@ fn piped_show_without_columns_stays_within_80_columns() {
 fn archive_stamps_in_the_zone_the_ledger_declares() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         style:
           timezone: \"-03:00\"
@@ -223,7 +223,7 @@ fn archive_stamps_in_the_zone_the_ledger_declares() {
 fn fmt_check_names_the_line_and_writes_nothing() {
     let dir = LedgerDir::empty();
     let untidy = indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: null
         queue: []
@@ -258,7 +258,7 @@ fn fmt_check_names_the_line_and_writes_nothing() {
 fn fmt_check_refuses_a_lost_row_separator() {
     let dir = LedgerDir::empty();
     let tight = indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         style:
           row_spacing: blank_line
@@ -302,7 +302,7 @@ fn fmt_check_refuses_a_lost_row_separator() {
 fn fmt_moves_lists_around_a_comment_that_belongs_to_none() {
     let dir = LedgerDir::empty();
     let orphaned = indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         style:
           section_order: [queue, horizon, archive]
@@ -318,7 +318,7 @@ fn fmt_moves_lists_around_a_comment_that_belongs_to_none() {
     let output = qctl(&["fmt", "-f", dir.path.to_str().unwrap()]);
     assert!(output.status.success(), "{}", stderr(&output));
     let expected = indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         style:
           section_order: [queue, horizon, archive]
@@ -337,7 +337,7 @@ fn fmt_moves_lists_around_a_comment_that_belongs_to_none() {
 fn check_rejects_unknown_field() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: null
         queue: []
@@ -462,7 +462,7 @@ fn add_writes_notes_blockers_plan_and_links() {
 fn add_refuses_a_blocker_that_would_not_sit_earlier() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: QCTL-001
         queue:
@@ -510,7 +510,7 @@ fn add_refuses_a_blocker_that_would_not_sit_earlier() {
 fn add_refuses_to_become_queue_head_while_active_is_set() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: QCTL-001
         queue:
@@ -546,7 +546,7 @@ fn add_refuses_to_become_queue_head_while_active_is_set() {
 fn promote_refuses_a_queued_id() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: QCTL-001
         queue:
@@ -579,7 +579,7 @@ fn promote_refuses_a_queued_id() {
 fn promote_keeps_active_on_the_queue_head() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: QCTL-001
         queue:
@@ -595,7 +595,7 @@ fn promote_keeps_active_on_the_queue_head() {
             title: Parked
             scope: s
             outcome: o
-            kind: research
+            reason: research
             open: missing
     "});
     let output = qctl(&[
@@ -609,7 +609,7 @@ fn promote_keeps_active_on_the_queue_head() {
     assert!(output.status.success(), "{}", stderr(&output));
     let body = dir.read();
     assert!(body.contains("active: QCTL-001"), "{body}");
-    assert!(!body.contains("kind: research"), "{body}");
+    assert!(!body.contains("reason: research"), "{body}");
     let check = qctl(&["check", "-f", dir.path.to_str().unwrap(), "--no-git"]);
     assert!(check.status.success(), "{}", stderr(&check));
 }
@@ -618,7 +618,7 @@ fn promote_keeps_active_on_the_queue_head() {
 fn start_refuses_blocked_or_horizon() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: null
         queue:
@@ -640,7 +640,7 @@ fn start_refuses_blocked_or_horizon() {
             title: later
             scope: s
             outcome: o
-            kind: research
+            reason: research
             open: unknown
     "});
     let blocked = qctl(&["start", "QCTL-002", "-f", dir.path.to_str().unwrap()]);
@@ -667,7 +667,7 @@ fn instructions_prints_the_installed_contract_exactly() {
 fn status_lists_horizon() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: QCTL-001
         queue:
@@ -683,7 +683,7 @@ fn status_lists_horizon() {
             title: later
             scope: s
             outcome: o
-            kind: evaluation
+            reason: evaluation
             open: wait
     "});
     let output = qctl(&["status", "-f", dir.path.to_str().unwrap()]);
@@ -698,7 +698,7 @@ fn status_lists_horizon() {
 fn park_demotes_a_queued_row_and_writes_a_missing_horizon_key() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: QCTL-001
         queue:
@@ -715,7 +715,7 @@ fn park_demotes_a_queued_row_and_writes_a_missing_horizon_key() {
         "QCTL-001",
         "-f",
         dir.path.to_str().unwrap(),
-        "-k",
+        "-r",
         "research",
         "-O",
         "wait",
@@ -723,9 +723,45 @@ fn park_demotes_a_queued_row_and_writes_a_missing_horizon_key() {
     assert!(output.status.success(), "{}", stderr(&output));
     let body = dir.read();
     assert!(body.contains("horizon:"), "{body}");
-    assert!(body.contains("kind: research"), "{body}");
+    assert!(body.contains("reason: research"), "{body}");
     assert!(body.contains("active: null"), "{body}");
     assert!(!body.contains("acceptance:"), "{body}");
+}
+
+#[test]
+fn park_reads_its_reason_from_qctl_reason_and_refuses_kind() {
+    let dir = LedgerDir::empty();
+    let body = indoc! {"
+        schema_version: 6
+        prefix: QCTL
+        active: null
+        queue:
+          - id: QCTL-001
+            title: later
+            scope: s
+            outcome: o
+            blocked_by: []
+            acceptance: [It holds.]
+        archive: []
+        horizon: []
+    "};
+    dir.write(body);
+    let path = dir.path.to_str().unwrap();
+
+    let old = qctl(&[
+        "park", "QCTL-001", "-f", path, "--kind", "research", "-O", "wait",
+    ]);
+    assert!(!old.status.success());
+    assert!(stderr(&old).contains("--kind"), "{}", stderr(&old));
+    assert_eq!(dir.read(), body);
+
+    let output = common::binary()
+        .args(["park", "QCTL-001", "-f", path, "-O", "wait"])
+        .env("QCTL_REASON", "deferred")
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert!(dir.read().contains("reason: deferred"), "{}", dir.read());
 }
 
 #[test]
@@ -871,7 +907,7 @@ fn add_accepts_a_plan_whose_name_contains_dotdot() {
 fn add_to_an_empty_queue_does_not_invent_before() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: QCTL-099
         queue: []
@@ -900,7 +936,7 @@ fn add_to_an_empty_queue_does_not_invent_before() {
 fn status_and_check_share_typed_json_output() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: QCTL-001
         queue:
@@ -916,7 +952,7 @@ fn status_and_check_share_typed_json_output() {
             title: later
             scope: qctl
             outcome: mapped
-            kind: research
+            reason: research
             open: missing fact
     "});
     let path = dir.path.to_str().unwrap();
@@ -929,7 +965,7 @@ fn status_and_check_share_typed_json_output() {
     assert_eq!(status_json["type"], "status");
     assert_eq!(status_json["ledger"]["active"], "QCTL-001");
     assert_eq!(status_json["ledger"]["queue"][0]["title"], "now");
-    assert_eq!(status_json["ledger"]["horizon"][0]["kind"], "research");
+    assert_eq!(status_json["ledger"]["horizon"][0]["reason"], "research");
 
     let check = qctl(&["check", "-f", path, "--no-git", "--format", "json"]);
     assert!(check.status.success(), "{}", stderr(&check));
@@ -943,7 +979,7 @@ fn status_and_check_share_typed_json_output() {
 fn failed_check_is_a_json_problem_array_on_stdout() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: null
         queue: []
@@ -1044,7 +1080,7 @@ fn notes_flag_is_note_not_notes() {
 fn park_refuses_when_a_queued_row_still_names_it() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: QCTL-001
         queue:
@@ -1068,7 +1104,7 @@ fn park_refuses_when_a_queued_row_still_names_it() {
         "QCTL-001",
         "-f",
         dir.path.to_str().unwrap(),
-        "-k",
+        "-r",
         "research",
         "-O",
         "wait",

@@ -68,8 +68,8 @@ pub fn schema_version(input: &Input) -> Option<u64> {
     input.parse::<Declared>().ok()?.schema_version
 }
 
-/// Schemas 3 and 4 are upgraded by `qctl fmt`; any other version is not this
-/// binary's.
+/// Schemas 3, 4, and 5 are upgraded by `qctl fmt`; any other version is not
+/// this binary's.
 #[must_use]
 pub fn stale_schema_message(input: &Input) -> Option<String> {
     let version = schema_version(input)?;
@@ -79,12 +79,12 @@ pub fn stale_schema_message(input: &Input) -> Option<String> {
     }
     if version == 3 {
         return Some(format!(
-            "{path}: schema_version 3; run qctl fmt to rewrite notes into a list and set schema_version {VERSION}"
+            "{path}: schema_version 3; run qctl fmt to rewrite notes into a list, rename the horizon key kind to reason, and set schema_version {VERSION}"
         ));
     }
-    if version == 4 {
+    if version == 4 || version == 5 {
         return Some(format!(
-            "{path}: schema_version 4; run qctl fmt to set schema_version {VERSION}"
+            "{path}: schema_version {version}; run qctl fmt to rename the horizon key kind to reason and set schema_version {VERSION}"
         ));
     }
     Some(format!(
@@ -95,7 +95,7 @@ pub fn stale_schema_message(input: &Input) -> Option<String> {
 /// Whether `qctl fmt` upgrades a file that declares `version`.
 #[must_use]
 pub fn upgradable(version: u64) -> bool {
-    version == 3 || version == 4
+    (3..=5).contains(&version)
 }
 
 /// The ledger as written, whether or not its values pass.

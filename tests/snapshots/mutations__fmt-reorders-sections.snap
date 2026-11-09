@@ -4,7 +4,7 @@ description: qctl fmt
 ---
 # -7 +7
  # yaml-language-server: $schema=./schema/tasks.schema.json
- schema_version: 5
+ schema_version: 6
  prefix: DEMO
  
  style:
@@ -25,7 +25,7 @@ description: qctl fmt
 +    title: Someday
 +    scope: demo
 +    outcome: Something would be true.
-+    kind: research
++    reason: research
 +    open: Nobody knows yet.
  archive:
    # This comment belongs to DEMO-001 and travels with it.
@@ -41,5 +41,5 @@ description: qctl fmt
 -    title: Someday
 -    scope: demo
 -    outcome: Something would be true.
--    kind: research
+-    reason: research
 -    open: Nobody knows yet.
