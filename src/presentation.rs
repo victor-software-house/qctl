@@ -1,7 +1,7 @@
 //! Each report as a ctl-core document, which ctl-core renders as pretty text.
 //! `--format json` serializes the report itself. Nothing here prints.
 
-use ctl_core::{Document, Fields, MessageKind, Notice, NoticeLevel, Present, Section, Table, Text};
+use ctl_core::{Document, Fields, Notice, NoticeLevel, Outcome, Present, Section, Table, Text};
 
 use crate::report::{HookOutcome, Report, Task};
 
@@ -55,9 +55,9 @@ impl Present for Report {
         }
     }
 
-    fn message_kind(&self) -> MessageKind {
+    fn outcome(&self) -> Outcome {
         match self {
-            Self::Check { problems, .. } if !problems.is_empty() => MessageKind::Error,
+            Self::Check { problems, .. } if !problems.is_empty() => Outcome::Error,
             Self::ClosedFromGit {
                 retry_push: true, ..
             }
@@ -69,7 +69,7 @@ impl Present for Report {
             | Self::HookInstalled {
                 outcome: HookOutcome::NeedsConfiguration | HookOutcome::ForceNotApplicable,
                 ..
-            } => MessageKind::Error,
+            } => Outcome::Error,
             Self::Status { .. }
             | Self::Check { .. }
             | Self::Show { .. }
@@ -85,7 +85,7 @@ impl Present for Report {
             | Self::Formatted { .. }
             | Self::HookInstalled { .. }
             | Self::SchemaWritten { .. }
-            | Self::Instructions { .. } => MessageKind::Success,
+            | Self::Instructions { .. } => Outcome::Success,
         }
     }
 }
