@@ -36,7 +36,7 @@ impl RowKind {
                 Field::Title,
                 Field::Scope,
                 Field::Outcome,
-                Field::Kind,
+                Field::Reason,
                 Field::Open,
                 Field::Patch,
                 Field::Plan,
@@ -53,7 +53,7 @@ pub(super) enum Field {
     Title,
     Scope,
     Outcome,
-    Kind,
+    Reason,
     Open,
     Patch,
     Plan,
@@ -71,7 +71,7 @@ impl Field {
             Self::Title => "--title",
             Self::Scope => "--scope",
             Self::Outcome => "--outcome",
-            Self::Kind => "--kind",
+            Self::Reason => "--reason",
             Self::Open => "--open",
             Self::Patch => "--patch/--unset patch",
             Self::Plan => "--plan/--unset plan",
@@ -103,7 +103,7 @@ pub(super) fn requested(args: &EditArgs) -> Vec<Field> {
     push_if(&mut fields, args.title.is_some(), Field::Title);
     push_if(&mut fields, args.scope.is_some(), Field::Scope);
     push_if(&mut fields, args.outcome.is_some(), Field::Outcome);
-    push_if(&mut fields, args.kind.is_some(), Field::Kind);
+    push_if(&mut fields, args.reason.is_some(), Field::Reason);
     push_if(&mut fields, args.open.is_some(), Field::Open);
     push_if(&mut fields, args.patch.is_some(), Field::Patch);
     push_if(&mut fields, args.plan.is_some(), Field::Plan);

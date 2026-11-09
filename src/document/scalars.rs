@@ -1,5 +1,5 @@
 //! `fmt`'s rewrite of a ledger's strings into the layout and quotes its
-//! `style` declares, record kind by record kind.
+//! `style` declares, one row type at a time: queued, archived, and horizon.
 
 use anyhow::{Context, Result};
 use serde::Serialize;
@@ -123,14 +123,14 @@ impl Strings<'_> {
             title,
             scope,
             outcome,
-            kind,
+            reason,
             open,
             patch,
             plan,
             links,
             notes,
         } = task;
-        let kind = variant(kind)?;
+        let reason = variant(reason)?;
         self.row(
             row,
             &[
@@ -138,7 +138,7 @@ impl Strings<'_> {
                 ("title", Some(title)),
                 ("scope", Some(scope)),
                 ("outcome", Some(outcome)),
-                ("kind", Some(&kind)),
+                ("reason", Some(&reason)),
                 ("open", Some(open)),
                 ("patch", patch.as_ref()),
                 ("plan", plan.as_ref()),

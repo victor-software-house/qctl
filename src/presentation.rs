@@ -117,12 +117,12 @@ fn status(path: &str, ledger: &crate::schema::Ledger) -> Document {
     document = document.section(Section::new("queue", queue_body));
 
     if !ledger.horizon.is_empty() {
-        let mut horizon = Table::new(["id", "kind", "title"])
+        let mut horizon = Table::new(["id", "reason", "title"])
             .id_column(0)
             .stacked_below(80, 2);
         for task in &ledger.horizon {
-            let kind = task.kind.to_string();
-            horizon = horizon.row([task.id.as_str(), kind.as_str(), task.title.as_str()]);
+            let reason = task.reason.to_string();
+            horizon = horizon.row([task.id.as_str(), reason.as_str(), task.title.as_str()]);
         }
         document = document.section(Section::new("horizon", Document::new().table(horizon)));
     }
@@ -182,7 +182,7 @@ fn show(task: &Task) -> Document {
                     .id(&task.id)
                     .then("  ")
                     .then(&task.title)
-                    .muted(format!("  (horizon {})", task.kind)),
+                    .muted(format!("  (horizon {})", task.reason)),
             )
             .fields(
                 Fields::new()

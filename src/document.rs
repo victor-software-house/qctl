@@ -376,6 +376,32 @@ fn section(name: &str) -> Path {
     Path::root().key(name)
 }
 
+/// `source` with the key `from` renamed to `to` on every row of the `name`
+/// list. Each key is rewritten where it is written, so its value, its quotes,
+/// and every comment keep their bytes. Used by `fmt` when it upgrades a ledger
+/// whose horizon rows still say `kind`.
+///
+/// # Errors
+///
+/// Fails when `source`, or the text with the keys renamed, is not YAML qctl
+/// can edit.
+pub fn rename_row_keys(source: &str, name: &str, from: &str, to: &str) -> Result<String> {
+    let yaml = yamled::Document::parse(source).context("this ledger is not YAML qctl can edit")?;
+    let rows = yaml.node(&section(name)).map_or(0, |list| list.len());
+    let mut keys: Vec<std::ops::Range<usize>> = (0..rows)
+        .filter_map(|index| yaml.node(&section(name).index(index).key(from))?.key())
+        .map(|key| key.start..key.end)
+        .collect();
+    keys.sort_unstable_by_key(|key| std::cmp::Reverse(key.start));
+    let mut renamed = source.to_owned();
+    for key in keys {
+        renamed.replace_range(key, to);
+    }
+    yamled::Document::parse(renamed.as_str())
+        .with_context(|| format!("rename {name} key {from} to {to}"))?;
+    Ok(renamed)
+}
+
 /// Fail rather than write something the next verb cannot read.
 ///
 /// # Errors

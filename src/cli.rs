@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use ctl_core::{ColorLong, EnvPrefix, FormatLong};
 
-use crate::schema::Kind;
+use crate::schema::Reason;
 
 /// The whole command line. Every long option also reads `QCTL_<LONG>`, such
 /// as `QCTL_FILE` or `QCTL_FORMAT`; the command line wins over the variable.
@@ -55,8 +55,8 @@ pub enum Command {
     Edit(Box<EditArgs>),
     /// Print one queued, archived, or horizon task.
     Show(IdArgs),
-    /// Rewrite a ledger into the style it declares. Upgrades schema 3 and 4 to
-    /// 5.
+    /// Rewrite a ledger into the style it declares. Upgrades schema 3, 4, and 5
+    /// to 6.
     Fmt(FmtArgs),
     /// Archive queued ids that commit-body trailers closed.
     CloseFromGit(CloseFromGitArgs),
@@ -211,23 +211,24 @@ pub struct AddArgs {
     #[arg(short = 'B', long, conflicts_with_all = ["after", "horizon"])]
     pub before: Option<String>,
     /// Write a horizon row instead of a queue row.
-    #[arg(short = 'H', long, requires_all = ["kind", "open"])]
+    #[arg(short = 'H', long, requires_all = ["reason", "open"])]
     pub horizon: bool,
-    /// Why it is on the horizon. Required with --horizon.
-    #[arg(short = 'k', long, value_parser = parse_kind)]
-    pub kind: Option<Kind>,
+    /// Why it waits on the horizon: research, evaluation, or deferred.
+    /// Required with --horizon.
+    #[arg(short = 'r', long, value_parser = parse_reason)]
+    pub reason: Option<Reason>,
     /// The missing start condition. Required with --horizon.
     #[arg(short = 'O', long)]
     pub open: Option<String>,
 }
 
-fn parse_kind(raw: &str) -> Result<Kind, String> {
+fn parse_reason(raw: &str) -> Result<Reason, String> {
     match raw {
-        "research" => Ok(Kind::Research),
-        "evaluation" => Ok(Kind::Evaluation),
-        "deferred" => Ok(Kind::Deferred),
+        "research" => Ok(Reason::Research),
+        "evaluation" => Ok(Reason::Evaluation),
+        "deferred" => Ok(Reason::Deferred),
         other => Err(format!(
-            "kind must be research, evaluation, or deferred (got {other})"
+            "reason must be research, evaluation, or deferred (got {other})"
         )),
     }
 }
@@ -271,9 +272,9 @@ pub struct ParkArgs {
     /// The ledger that holds the row.
     #[command(flatten)]
     pub ledger: LedgerArgs,
-    /// Why it goes on the horizon: research, evaluation, or deferred.
-    #[arg(short = 'k', long, value_parser = parse_kind)]
-    pub kind: Kind,
+    /// Why it waits on the horizon: research, evaluation, or deferred.
+    #[arg(short = 'r', long, value_parser = parse_reason)]
+    pub reason: Reason,
     /// The missing start condition.
     #[arg(short = 'O', long)]
     pub open: String,
@@ -313,9 +314,9 @@ pub struct EditArgs {
     /// New outcome.
     #[arg(short = 'o', long)]
     pub outcome: Option<String>,
-    /// New horizon kind: research, evaluation, or deferred.
-    #[arg(short = 'k', long, value_parser = parse_kind)]
-    pub kind: Option<Kind>,
+    /// New reason a horizon row waits: research, evaluation, or deferred.
+    #[arg(short = 'r', long, value_parser = parse_reason)]
+    pub reason: Option<Reason>,
     /// New missing start condition of a horizon row.
     #[arg(short = 'O', long)]
     pub open: Option<String>,

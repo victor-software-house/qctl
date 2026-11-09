@@ -12,7 +12,7 @@ use rstest::rstest;
 /// first queued row in block style with every optional field, the second with
 /// only what is required and its lists inline.
 const WHOLE: &str = indoc! {r#"
-    schema_version: 5
+    schema_version: 6
     prefix: QCTL
     active: QCTL-001
     queue:
@@ -50,7 +50,7 @@ const WHOLE: &str = indoc! {r#"
         title: Someday
         scope: qctl
         outcome: Something would be true.
-        kind: research
+        reason: research
         open: Nobody knows the answer yet.
 "#};
 
@@ -76,14 +76,14 @@ fn refuses_a_plan_that_was_never_written() {
 
 #[rstest]
 #[case::a_paused_ledger(indoc! {"
-    schema_version: 5
+    schema_version: 6
     prefix: QCTL
     active: null
     queue: []
     archive: []
 "})]
 #[case::a_ledger_with_no_horizon_section(indoc! {"
-    schema_version: 5
+    schema_version: 6
     prefix: QCTL
     active: QCTL-001
     queue:
@@ -96,7 +96,7 @@ fn refuses_a_plan_that_was_never_written() {
     archive: []
 "})]
 #[case::an_archived_row_without_a_disposition(indoc! {"
-    schema_version: 5
+    schema_version: 6
     prefix: QCTL
     active: null
     queue: []
@@ -115,7 +115,7 @@ fn accepts_a_ledger(#[case] ledger: &str) {
 #[rstest]
 #[case::a_key_the_root_does_not_have(
     indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: null
         owner: me
@@ -145,7 +145,7 @@ fn accepts_a_ledger(#[case] ledger: &str) {
 )]
 #[case::a_lowercase_prefix(
     indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: qctl
         active: null
         queue: []
@@ -155,7 +155,7 @@ fn accepts_a_ledger(#[case] ledger: &str) {
 )]
 #[case::a_prefix_longer_than_the_ids_allow(
     indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTLQCTLQ
         active: null
         queue: []
@@ -165,7 +165,7 @@ fn accepts_a_ledger(#[case] ledger: &str) {
 )]
 #[case::no_active_line(
     indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         queue: []
         archive: []
@@ -174,7 +174,7 @@ fn accepts_a_ledger(#[case] ledger: &str) {
 )]
 #[case::an_active_that_is_not_an_id(
     indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: whatever
         queue: []
@@ -184,7 +184,7 @@ fn accepts_a_ledger(#[case] ledger: &str) {
 )]
 #[case::no_queue(
     indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: null
         archive: []
@@ -193,7 +193,7 @@ fn accepts_a_ledger(#[case] ledger: &str) {
 )]
 #[case::no_archive(
     indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: null
         queue: []
@@ -202,7 +202,7 @@ fn accepts_a_ledger(#[case] ledger: &str) {
 )]
 #[case::a_plan_with_a_backslash_parent(
     indoc! {r#"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: null
         queue:
@@ -219,7 +219,7 @@ fn accepts_a_ledger(#[case] ledger: &str) {
 )]
 #[case::a_row_spacing_qctl_does_not_know(
     indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         style:
           row_spacing: double
@@ -231,7 +231,7 @@ fn accepts_a_ledger(#[case] ledger: &str) {
 )]
 #[case::a_list_layout_qctl_does_not_know(
     indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         style:
           list_items: folded
@@ -243,7 +243,7 @@ fn accepts_a_ledger(#[case] ledger: &str) {
 )]
 #[case::quotes_qctl_does_not_know(
     indoc! {"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         style:
           quotes: backtick
@@ -272,7 +272,7 @@ fn refuses_a_ledger(#[case] ledger: &str, #[case] field: &str) {
 #[test]
 fn reports_every_defect_in_one_pass() {
     let ledger = indoc! {r#"
-        schema_version: 5
+        schema_version: 6
         prefix: QCTL
         active: null
         queue:

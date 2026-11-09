@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=./schema/tasks.schema.json
-schema_version: 5
+schema_version: 6
 prefix: QCTL
 
 style:
@@ -140,7 +140,7 @@ horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
     scope: qctl
-    kind: evaluation
+    reason: evaluation
     open: >-
       QCTL-020 lets a row say it waits on VER-025 and stops there, on purpose.
       Reading that row — is it archived yet — means fetching another repository
@@ -155,7 +155,7 @@ horizon:
   - id: QCTL-041
     title: Decide what an archived row keeps so its evidence can be checked
     scope: qctl archive and park
-    kind: research
+    reason: research
     open: >-
       `archive` and `park` drop `blocked_by` and `acceptance`. Evidence exists
       to answer the acceptance criteria, and without them nobody can check it
@@ -172,7 +172,7 @@ archive:
   - id: QCTL-053
     title: Only the operator merges the Version PR
     scope: .github/workflows/release.yml, AGENTS.md
-    outcome: "No qctl release happens on its own: the release workflow never arms auto-merge on the Version PR."
+    outcome: 'No qctl release happens on its own: the release workflow never arms auto-merge on the Version PR.'
     notes:
       - Operator decision 2026-11-02, no repository releases on its own.
     completed: 2026-11-02T14:28:12

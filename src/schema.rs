@@ -28,8 +28,9 @@ use serde_json::{Value, json};
 /// The one version of this shape a ledger may declare. 3 gave a ledger a
 /// `style` block and moved the zone out of every `completed` stamp into it.
 /// 4 made `notes` a list on every row. 5 let an archived row keep its
-/// `openspec` change open with `keep_change_open`.
-pub const VERSION: u32 = 5;
+/// `openspec` change open with `keep_change_open`. 6 renamed a horizon row's
+/// `kind` to `reason`.
+pub const VERSION: u32 = 6;
 
 /// The published identity of the generated schema.
 const SCHEMA_ID: &str =
@@ -273,9 +274,9 @@ pub struct HorizonTask {
     #[garde(length(min = 1))]
     pub outcome: String,
 
-    /// Why it is not on the queue.
+    /// Why it waits on the horizon instead of the queue.
     #[garde(skip)]
-    pub kind: Kind,
+    pub reason: Reason,
 
     /// The missing start condition, or the question that keeps it off the
     /// queue.
@@ -506,7 +507,7 @@ pub enum Disposition {
 /// Why a task sits on the horizon instead of the queue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
-pub enum Kind {
+pub enum Reason {
     /// Facts are missing.
     Research,
     /// The options are known, but nothing says when to choose.
@@ -515,7 +516,7 @@ pub enum Kind {
     Deferred,
 }
 
-impl std::fmt::Display for Kind {
+impl std::fmt::Display for Reason {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let word = match self {
             Self::Research => "research",

@@ -125,8 +125,8 @@ Filed as **QCTL-027**.
 Writing their first archived row by hand, their first attempt used a string
 where `evidence` takes an array. The error was good and specific —
 `/archive/0/evidence: "Shipped." is not of type "array"` — but they found it by
-trial. `init` writes an empty ledger, and there is no fully populated row of each
-kind anywhere to copy from.
+trial. `init` writes an empty ledger, and there is no fully populated queue,
+archive, or horizon row anywhere to copy from.
 
 They name verctl's live, test-parsed `examples/ver.yaml` as the pattern, and call
 it the best thing in that project's documentation.

@@ -1,1 +1,1 @@
-add --title "Find the missing fact" --scope demo --outcome "The question has an answer." --horizon --kind research --open "The fact is missing."
+add --title "Find the missing fact" --scope demo --outcome "The question has an answer." --horizon --reason research --open "The fact is missing."

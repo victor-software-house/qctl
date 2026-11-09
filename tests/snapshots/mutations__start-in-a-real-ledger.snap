@@ -4,7 +4,7 @@ description: qctl start QCTL-009
 ---
 # -30 +30
  # yaml-language-server: $schema=./schema/tasks.schema.json
- schema_version: 5
+ schema_version: 6
  prefix: QCTL
 -active: QCTL-002
 +active: QCTL-009
@@ -236,7 +236,7 @@ description: qctl start QCTL-009
    - id: QCTL-007
      title: Optional per-user daemon sharing one session and view
      scope: ctl-core
-     kind: evaluation
+     reason: evaluation
      outcome: >-
        Multiple *ctl clients can attach to one local session the way
        skill-cli does (Unix socket, NDJSON protocol, one dispatcher).

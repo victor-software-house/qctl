@@ -46,7 +46,7 @@ completion bootstrap.
 | `promote` | — | Move a horizon row onto the queue |
 | `edit` | — | Rewrite fields or queue position of an existing row |
 | `show` | — | Print one queued, archived, or horizon task |
-| `fmt` | — | Rewrite a ledger into the style it declares. Upgrades schema 3 and 4 to 5 |
+| `fmt` | — | Rewrite a ledger into the style it declares. Upgrades schema 3, 4, and 5 to 6 |
 | `close-from-git` | — | Archive queued ids that commit-body trailers closed |
 | `close-from-openspec` | — | Archive queued rows whose `openspec` change was archived, and repoint plans |
 | `hook` | — | Install git hooks for this ledger |
@@ -75,8 +75,9 @@ no short `-f`. Every long option also reads `QCTL_<LONG>`, such as
 
 - **queue** — short-term. File order is priority. `active` is `queue[0]` or `null`.
 - **archive** — done or dropped. Newest first. IDs never reused.
-- **horizon** — mapped work with no start condition (`research`, `evaluation`,
-  `deferred`). `open` names the missing condition. Not priority. Never `active`.
+- **horizon** — mapped work with no start condition. `reason` says why it
+  waits (`research`, `evaluation`, `deferred`); `open` names what would end
+  the wait. Not priority. Never `active`.
 
 The three lists partition one global task corpus. Every id from `PREFIX-001`
 through the highest id exists exactly once across them. `qctl check` reports
@@ -86,8 +87,9 @@ Moving a row changes its status; it never creates another copy.
 Promote horizon → queue with `qctl promote ID -a …` after `open` is
 resolved. Do not start a horizon id.
 
-`schema_version` is 5. `notes` is a list. A schema 3 or 4 file is upgraded
-by `qctl fmt`; other verbs refuse it.
+`schema_version` is 6. `notes` is a list. A schema 3, 4, or 5 file is
+upgraded by `qctl fmt`, which renames each horizon row's `kind` key to
+`reason`; other verbs refuse it.
 
 Acceptance is closure truth stated in advance: observable, demonstrably true end
 conditions written as the resulting state. For example, `The schema page names
@@ -112,8 +114,8 @@ fields and queue position on an existing row.
 ```sh
 qctl add -t 'Document the schema' -s docs -o 'Readers can verify every row field.' -a 'The schema page names the queue, archive, and horizon fields.'
 qctl add -t 'Document the schema' -s docs -o 'Readers can verify every row field.' -a 'The schema page names every row field.' -n 'The type definitions are authoritative.' -b QCTL-001 -A QCTL-001
-qctl add -t 'Choose storage' -s design -o 'One storage decision is recorded.' -H -k research -O 'The benchmark result is missing.'
-qctl park QCTL-001 -k research -O 'The benchmark result is missing.'
+qctl add -t 'Choose storage' -s design -o 'One storage decision is recorded.' -H -r research -O 'The benchmark result is missing.'
+qctl park QCTL-001 -r research -O 'The benchmark result is missing.'
 qctl promote QCTL-001 -a 'The decision record names the selected storage.'
 qctl edit QCTL-001 -n 'An addendum' -t 'New title'
 qctl edit QCTL-001 -x note:1 -p before:QCTL-002

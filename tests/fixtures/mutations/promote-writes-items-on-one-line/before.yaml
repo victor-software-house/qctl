@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=./schema/tasks.schema.json
-schema_version: 5
+schema_version: 6
 prefix: DEMO
 active: DEMO-001
 
@@ -18,7 +18,7 @@ horizon:
     title: Parked
     scope: demo
     outcome: It is ready to start.
-    kind: research
+    reason: research
     open: The fact was missing.
     notes:
       - Keep this.

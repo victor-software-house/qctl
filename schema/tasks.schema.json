@@ -142,10 +142,6 @@
 					"pattern": "^[A-Z][A-Z0-9]{1,7}-[0-9]{3,6}$",
 					"type": "string"
 				},
-				"kind": {
-					"$ref": "#/$defs/Kind",
-					"description": "Why it is not on the queue."
-				},
 				"links": {
 					"description": "Anything outside this repository worth following.",
 					"items": {
@@ -190,6 +186,10 @@
 						"null"
 					]
 				},
+				"reason": {
+					"$ref": "#/$defs/Reason",
+					"description": "Why it waits on the horizon instead of the queue."
+				},
 				"scope": {
 					"description": "Where the work would land.",
 					"minLength": 1,
@@ -206,30 +206,10 @@
 				"title",
 				"scope",
 				"outcome",
-				"kind",
+				"reason",
 				"open"
 			],
 			"type": "object"
-		},
-		"Kind": {
-			"description": "Why a task sits on the horizon instead of the queue.",
-			"oneOf": [
-				{
-					"const": "research",
-					"description": "Facts are missing.",
-					"type": "string"
-				},
-				{
-					"const": "evaluation",
-					"description": "The options are known, but nothing says when to choose.",
-					"type": "string"
-				},
-				{
-					"const": "deferred",
-					"description": "The start condition is explicit and not met.",
-					"type": "string"
-				}
-			]
 		},
 		"ListItems": {
 			"description": "How a list item is laid out.",
@@ -350,6 +330,26 @@
 				{
 					"const": "double",
 					"description": "Double quotes.",
+					"type": "string"
+				}
+			]
+		},
+		"Reason": {
+			"description": "Why a task sits on the horizon instead of the queue.",
+			"oneOf": [
+				{
+					"const": "research",
+					"description": "Facts are missing.",
+					"type": "string"
+				},
+				{
+					"const": "evaluation",
+					"description": "The options are known, but nothing says when to choose.",
+					"type": "string"
+				},
+				{
+					"const": "deferred",
+					"description": "The start condition is explicit and not met.",
 					"type": "string"
 				}
 			]
@@ -491,7 +491,7 @@
 			"type": "array"
 		},
 		"schema_version": {
-			"const": 5,
+			"const": 6,
 			"description": "Ledger schema version, the one this qctl writes and accepts. Increment\nonly with a coordinated schema and ledger migration.",
 			"format": "uint32",
 			"minimum": 0,

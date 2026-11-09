@@ -4,7 +4,7 @@ description: qctl fmt
 ---
 # -9 +9
  # yaml-language-server: $schema=./schema/tasks.schema.json
- schema_version: 5
+ schema_version: 6
 -prefix: "DEMO"
 -active: 'DEMO-001'
 +prefix: DEMO
@@ -48,6 +48,6 @@ description: qctl fmt
      title: Later
      scope: demo
      outcome: It is ready to start.
--    kind: 'research'
-+    kind: research
+-    reason: 'research'
++    reason: research
      open: The fact was missing.

@@ -85,8 +85,8 @@ pub fn add(args: &AddArgs) -> Result<Report> {
         add_horizon(args)
     } else {
         ensure!(
-            args.kind.is_none() && args.open.is_none(),
-            "--kind and --open belong to --horizon"
+            args.reason.is_none() && args.open.is_none(),
+            "--reason and --open belong to --horizon"
         );
         add_queue(args)
     }
@@ -158,7 +158,7 @@ fn add_queue(args: &AddArgs) -> Result<Report> {
 }
 
 fn add_horizon(args: &AddArgs) -> Result<Report> {
-    let kind = args.kind.context("--horizon needs --kind")?;
+    let reason = args.reason.context("--horizon needs --reason")?;
     let open = args.open.as_deref().context("--horizon needs --open")?;
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
@@ -170,7 +170,7 @@ fn add_horizon(args: &AddArgs) -> Result<Report> {
         title: args.title.clone(),
         scope: args.scope.clone(),
         outcome: args.outcome.clone(),
-        kind,
+        reason,
         open: open.to_owned(),
         patch: args.patch.clone(),
         plan: args.plan.clone(),
@@ -232,7 +232,7 @@ pub fn start(args: &crate::cli::IdArgs) -> Result<Report> {
     })
 }
 
-/// `qctl park`: move a queued row to the end of the horizon with its `kind`
+/// `qctl park`: move a queued row to the end of the horizon with its `reason`
 /// and `open`, dropping `acceptance` and `blocked_by`. Parking the active row
 /// clears `active`.
 ///
@@ -266,7 +266,7 @@ pub fn park(args: &ParkArgs) -> Result<Report> {
         &[
             Change::unset("blocked_by"),
             Change::unset("acceptance"),
-            Change::set("kind", args.kind.to_string()),
+            Change::set("reason", args.reason.to_string()),
             Change::set("open", args.open.as_str()),
         ],
     )?;
@@ -281,7 +281,7 @@ pub fn park(args: &ParkArgs) -> Result<Report> {
 }
 
 /// `qctl promote`: move a horizon row to the end of the queue with its
-/// acceptance and blockers, dropping `kind` and `open`.
+/// acceptance and blockers, dropping `reason` and `open`.
 ///
 /// # Errors
 ///
@@ -314,7 +314,7 @@ pub fn promote(args: &PromoteArgs) -> Result<Report> {
         "queue",
         &args.id,
         &[
-            Change::unset("kind"),
+            Change::unset("reason"),
             Change::unset("open"),
             Change::items("blocked_by", &args.blocked_by),
             Change::items("acceptance", &args.acceptance),

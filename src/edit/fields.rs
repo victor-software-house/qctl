@@ -30,8 +30,8 @@ pub(super) fn changes(args: &EditArgs, path: &Path, lists: &[ListEdit<'_>]) -> R
     push_scalar(&mut changes, "title", args.title.as_deref())?;
     push_scalar(&mut changes, "scope", args.scope.as_deref())?;
     push_scalar(&mut changes, "outcome", args.outcome.as_deref())?;
-    if let Some(kind) = args.kind {
-        changes.push(Change::set("kind", kind.to_string()));
+    if let Some(reason) = args.reason {
+        changes.push(Change::set("reason", reason.to_string()));
     }
     push_scalar(&mut changes, "open", args.open.as_deref())?;
     push_optional(
