@@ -169,6 +169,22 @@ horizon:
       - "2026-09-29: raised by a review of an archived row that had lost its criteria. `archive` has dropped both fields since the line-level rewrite, before the move to yamled. Rows archived by hand keep them, so a ledger such as yamled's now holds both shapes."
 
 archive:
+  - id: QCTL-054
+    title: Adopt ctl-core 0.7.0
+    scope: Cargo.toml, Cargo.lock, src/presentation.rs, usage-spec snapshot
+    outcome: >-
+      qctl builds on ctl-core 0.7.0 with every 0.7.0 break migrated, links one
+      serde-saphyr, and its output changes only where ctl-core 0.7.0 changed it.
+    notes:
+      - 2026-11-09, the operator asked for this adoption, which is ctl-core's terminal-render-engine task 8.1.
+    completed: 2026-11-09T14:27:24
+    evidence:
+      - 2026-11-09, mise run verify passed at c83115f on a NixOS Linux VM (8 vCPUs, 16 GiB).
+      - 2026-11-09, cargo tree -d lists vsh-serde-saphyr 0.0.3 as the only serde-saphyr.
+      - '2026-11-09, release builds of 48ac1dd and c83115f: unknown and missing arguments are byte-identical; help differs in the colour-flag wording, a 2-cell empty column, and a commands table that narrows to its widest line.'
+      - 2026-11-09, the release binary went from 5,639,160 to 5,175,912 bytes, and .text from 3,999,862 to 3,579,478.
+    disposition: completed
+
   - id: QCTL-053
     title: Only the operator merges the Version PR
     scope: .github/workflows/release.yml, AGENTS.md
