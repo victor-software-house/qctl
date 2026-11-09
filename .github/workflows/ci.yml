@@ -40,7 +40,7 @@ jobs:
 
   verify:
     if: ${{ !github.event.pull_request.draft && github.event_name != 'schedule' }}
-    uses: victor-software-house/actions/.github/workflows/rust-ci.yml@ed26bdf6dd82740d0be3e38942c6ecc638322cd8 # main, 2026-11-09
+    uses: victor-software-house/actions/.github/workflows/rust-ci.yml@c5ea40a355cb9e5ae9429827ccc1048d333c23b1 # main, 2026-11-09
     with:
       mise-version: 2026.10.25
       advisories: true
@@ -50,3 +50,5 @@ jobs:
       read-only-runner: '["ubuntu-latest"]'
       light-runner: ubuntu-latest
       cache-volume: false
+    secrets:
+      release-mirror-token: ${{ secrets.RELEASE_MIRROR_TOKEN }}
