@@ -71,17 +71,6 @@ queue:
     notes:
       - "docs/adoption-report.md §1 — they call it the cheapest item on their whole list and the most valuable for adoption, because it is a document rather than code. They proved `check` subsumes their 209 lines of Rego and Bun policy by writing ten defect ledgers by hand, one per rule, and running each through `qctl check --no-git`. All seven of their Rego deny rules and both halves of their script matched, and qctl was strictly wider: their script read queue and archive only, so a horizon row's `plan:` went unchecked. Their point is that the hour they spent is the hour every migrating consumer faces, and most will skip it and either keep both validators forever or delete on faith. `qctl check --help` at HEAD offers only --file and --no-git."
 
-  - id: QCTL-027
-    title: One problem is reported once
-    scope: qctl
-    outcome: A ledger with ten problems prints ten lines, each readable in a terminal.
-    blocked_by: []
-    acceptance:
-      - check prints one line per problem and a bail that counts them, not both.
-      - The --no-git help text names the scratch-file case that makes it necessary.
-    notes:
-      - docs/adoption-report.md §5. src/check.rs:40 prints each problem on its own line, then line 42 bails with all of them joined — twenty lines for ten facts, and the joined form is the one that wraps badly. Keep the per-line output and reduce the bail to the count and the path.
-
   - id: QCTL-028
     title: The example catalog shows a whole row of each kind
     scope: qctl
@@ -93,42 +82,13 @@ queue:
     notes:
       - 'docs/adoption-report.md §6. Writing their first horizon row by hand, their first attempt used `evidence: Shipped.` on an archive fixture. The error was good and specific — `/archive/0/evidence: "Shipped." is not of type "array"` — but they found it by trial. `qctl init` writes an empty ledger, and examples/ at HEAD holds only mise.toml. They name verctl''s examples/ver.yaml plus tests/examples.rs as the pattern to copy and call it the best thing in verctl''s documentation. Distinct from QCTL-018, which is about the catalog declaring a second qctl pin.'
 
-  - id: QCTL-030
-    title: Let a verb update fields on an existing row
-    scope: qctl
-    outcome: Notes, acceptance, title, scope, outcome, plan, and links on a queued or horizon row can be changed without splicing YAML.
-    blocked_by: []
-    acceptance:
-      - qctl edit ID rewrites only the named fields on that row and leaves unrelated rows byte-identical.
-      - Notes append without replacing existing items; notes can be removed by index or exact text and reordered by one permutation.
-      - A missing id fails; archive rows accept only note, evidence, and link operations; id and completed are never editable.
-      - Queue positioning is one parameter and refuses any move that would place a row before its blocker or a dependent before the edited row.
-      - Help, instructions, the bundled skill, fixtures, and snapshots describe the same edit and park grammar.
-    notes:
-      - 'Operator, 2026-08-26: how do we just update metadata on an existing task? add --notes is create-time only. Do not cover this with a second ledger skill or a blessed YAML splice. Document::set already patches a top-level scalar; the verb needs the same surgical rewrite on a row.'
-      - '2026-09-12 recovery: preserved the inherited dirty implementation without reset, restore, stash, or clean; tracked diff SHA-256 3a353b12517300ba40f217de3d8f8641953050d574e47f8ae6333eff30faae1d.'
-      - '2026-09-12 operator decisions: both releases are patch bumps; edit collapses position and removal flags; Rust code follows nested feature modules; qctl is reviewed as a PR stack.'
-    plan: goals/row-edit/plan.md
-
-  - id: QCTL-048
-    title: Take the shared template at v0.0.18
-    scope: qctl template
-    outcome: qctl records template v0.0.18, and the CI Template job passes again.
-    blocked_by: []
-    acceptance:
-      - .copier-answers.yml records v0.0.18, and the Template job passes on main.
-      - The commit-lint behaviour AGENTS.md keeps as a local edit (the push-range lint, and mise-tasks/commits taking several commits) still holds, or AGENTS.md records why it changed.
-    notes:
-      - 'Found on 2026-10-13 in qctl #112: the Template job fails on every branch because v0.0.18 changes files qctl kept at v0.0.7. The tag deletes mise-tasks/commit-msg and mise-tasks/commits and raises mise min_version from 2026.10.3 to 2026.10.9.'
-      - The deleted commit-lint tasks are among the local edits AGENTS.md says survive template updates, so this row needs its own review, possibly with the session that owns the Copier templates.
-
   - id: QCTL-052
     title: Let edit set keep_change_open on an archived row
     scope: qctl edit
     outcome: >-
       A row archived before its OpenSpec change can close takes a keep_change_open
       reason through qctl edit, without a hand edit of tasks.yaml.
-    blocked_by: [QCTL-030]
+    blocked_by: []
     acceptance:
       - qctl edit ID --keep-change-open REASON on an archived row writes keep_change_open, and qctl check then accepts the row while its change stays open.
       - qctl edit refuses --keep-change-open on a queued or horizon row, with a message that names qctl archive --keep-change-open.
@@ -169,6 +129,43 @@ horizon:
       - "2026-09-29: raised by a review of an archived row that had lost its criteria. `archive` has dropped both fields since the line-level rewrite, before the move to yamled. Rows archived by hand keep them, so a ledger such as yamled's now holds both shapes."
 
 archive:
+  - id: QCTL-048
+    title: Take the shared template at v0.0.18
+    scope: qctl template
+    outcome: qctl records template v0.0.18, and the CI Template job passes again.
+    notes:
+      - 'Found on 2026-10-13 in qctl #112: the Template job fails on every branch because v0.0.18 changes files qctl kept at v0.0.7. The tag deletes mise-tasks/commit-msg and mise-tasks/commits and raises mise min_version from 2026.10.3 to 2026.10.9.'
+      - The deleted commit-lint tasks are among the local edits AGENTS.md says survive template updates, so this row needs its own review, possibly with the session that owns the Copier templates.
+    completed: 2026-11-10T19:31:09
+    evidence:
+      - qctl#114 (2db03e2) took template v0.0.18; the repository now records v0.0.93 and its Template job passes.
+    disposition: completed
+
+  - id: QCTL-030
+    title: Let a verb update fields on an existing row
+    scope: qctl
+    outcome: Notes, acceptance, title, scope, outcome, plan, and links on a queued or horizon row can be changed without splicing YAML.
+    notes:
+      - 'Operator, 2026-08-26: how do we just update metadata on an existing task? add --notes is create-time only. Do not cover this with a second ledger skill or a blessed YAML splice. Document::set already patches a top-level scalar; the verb needs the same surgical rewrite on a row.'
+      - '2026-09-12 recovery: preserved the inherited dirty implementation without reset, restore, stash, or clean; tracked diff SHA-256 3a353b12517300ba40f217de3d8f8641953050d574e47f8ae6333eff30faae1d.'
+      - '2026-09-12 operator decisions: both releases are patch bumps; edit collapses position and removal flags; Rust code follows nested feature modules; qctl is reviewed as a PR stack.'
+    plan: goals/row-edit/plan.md
+    completed: 2026-11-10T19:31:09
+    evidence:
+      - qctl edit shipped in 6eae9b4 and 8ecc7f1; tests/edit.rs covers each acceptance item, and the skill, the instructions and the edit fixtures describe it.
+    disposition: completed
+
+  - id: QCTL-027
+    title: One problem is reported once
+    scope: qctl
+    outcome: A ledger with ten problems prints ten lines, each readable in a terminal.
+    notes:
+      - docs/adoption-report.md §5. src/check.rs:40 prints each problem on its own line, then line 42 bails with all of them joined — twenty lines for ten facts, and the joined form is the one that wraps badly. Keep the per-line output and reduce the bail to the count and the path.
+    completed: 2026-11-10T19:31:08
+    evidence:
+      - qctl#55 (73724b5) made check print one table row per problem plus a count notice, and qctl#51 (d8bcb56) named the scratch-ledger case in the --no-git help.
+    disposition: completed
+
   - id: QCTL-054
     title: Adopt ctl-core 0.7.0
     scope: Cargo.toml, Cargo.lock, src/presentation.rs, usage-spec snapshot
