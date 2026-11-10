@@ -1,5 +1,15 @@
 # Changelog
 
+## qctl 0.7.0
+
+- qctl builds on ctl-core 0.7.0, which renders through its own terminal engine and links one serde-saphyr with yamled 0.0.12.
+The help of `--color` and its values, `--no-color`, and the `pretty` format takes ctl-core's colour wording, and in help tables an empty column is 2 cells wide and a wrapped column narrows to its widest line ([#179](https://github.com/victor-software-house/qctl/pull/179)).
+- A horizon row now says why it waits in `reason` instead of `kind`, beside `open`, which names what would end the wait. The values stay `research`, `evaluation`, and `deferred`.
+`-r/--reason` replaces `-k/--kind` on `add --horizon`, `park`, and `edit`, so the variable `QCTL_KIND` becomes `QCTL_REASON`. JSON output, the `status` horizon table, and error messages say `reason`.
+`schema_version` is now 6. `qctl fmt` upgrades a schema 5 ledger in place, renaming each horizon row's `kind` key to `reason` and keeping its value, quotes, and comments; it upgrades schema 3 and 4 the same way. Other verbs refuse schema 5 until `qctl fmt` runs.
+Library API break: `qctl::schema::Kind` is now `qctl::schema::Reason`, and the `kind` field of `HorizonTask`, `AddArgs`, `ParkArgs`, and `EditArgs` is now `reason` ([#174](https://github.com/victor-software-house/qctl/pull/174)).
+- Releases now carry a `linux_arm64` tarball: a static aarch64 musl binary, cross-built on the x64 runner ([#182](https://github.com/victor-software-house/qctl/pull/182)).
+
 ## qctl 0.6.0
 
 - Beside an `openspec/` folder, `qctl check` holds each row to the OpenSpec change its `plan:` names: it reports a finished row whose change is still open, a plan pointing into a change since archived (naming the archive folder), and an open change no row names.
