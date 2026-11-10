@@ -14,8 +14,11 @@ packages:
 # from verctl — this repo is public, so those defaults are the free hosted
 # runners it wants. PR CI never builds these.
 # The build is a task in mise.release.toml: the stock cargo build, and the
-# ledger schema attached to the Release from linux-x64.
+# ledger schema attached to the Release from linux-x64. A custom build drops
+# verctl's stock prepare, so prepare adds the target's standard library; for
+# the native targets above it is already installed.
 assets:
+  prepare: [rustup, target, add, "{triple}"]
   build: [mise, run, "release:qctl", "{triple}"]
   darwin-arm64: {}
   linux-x64: {}
