@@ -9,19 +9,28 @@ packages:
   - name: qctl
     path: Cargo.toml
 
+runners:
+  x64:
+    labels: [ubuntu-latest]
+
 # One key per host binary; the name is the job, the tarball, and the platform.
-# Both are built-in records, so the runner labels, os, arch, and triple come
-# from verctl — this repo is public, so those defaults are the free hosted
-# runners it wants. PR CI never builds these.
+# darwin-arm64 and linux-x64 are built-in records, so the runner labels, os,
+# arch, and triple come from verctl — this repo is public, so those defaults
+# are the free hosted runners it wants. linux-arm64 is cross-built on the x64
+# runner and linked by rust-lld (.cargo/config.toml). PR CI never builds these.
 # The build is a task in mise.release.toml: the stock cargo build, and the
 # ledger schema attached to the Release from linux-x64. A custom build drops
-# verctl's stock prepare, so prepare adds the target's standard library; for
-# the native targets above it is already installed.
+# verctl's stock prepare, so prepare adds the target's standard library.
 assets:
   prepare: [rustup, target, add, "{triple}"]
   build: [mise, run, "release:qctl", "{triple}"]
   darwin-arm64: {}
   linux-x64: {}
+  linux-arm64:
+    runner: x64
+    os: linux
+    arch: arm64
+    triple: aarch64-unknown-linux-musl
 
 # tasks/q/q and examples/mise.toml are served from .ctl/templates, so they need
 # no entry here: a rendered file cannot drift. README is written by hand, and
