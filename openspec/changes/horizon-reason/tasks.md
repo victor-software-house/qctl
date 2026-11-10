@@ -25,10 +25,11 @@ The build host for every check below is the pull request's CI.
 
 ## 4. Rollout
 
-- [x] 4.1 Upgrade this repository's `tasks.yaml` to version 6 with the built binary's `qctl fmt`. Verify the diff renames the 2 horizon `kind:` keys and the version line and nothing else.
-  Evidence, 2026-11-10: [#174][qctl#174] moved `tasks.yaml` to version 6 and renamed both horizon keys; its diff also re-quoted one unrelated line.
+- [x] 4.1 Upgrade this repository's `tasks.yaml` to version 6 with the built binary's `qctl fmt`. Verify the diff renames the 2 horizon `kind:` keys and the version line, and changes no other value.
+  Evidence, 2026-11-10: [#174][qctl#174] moved `tasks.yaml` to version 6 and renamed both horizon keys; its one other line re-quotes an outcome without changing its value, as `qctl fmt` does by design ([`src/format.rs`][format-rs]).
 - [ ] 4.2 File the queue row that names this change once the open ledger pull requests merge. Verify `qctl check` passes on this repository.
 - [ ] 4.3 After the release, archive this change and archive its row with `qctl close-from-openspec`. Verify `qctl check` passes on this repository.
 
 [qctl#174]: https://github.com/victor-software-house/qctl/pull/174
+[format-rs]: ../../../src/format.rs
 [qctl-main-ci]: https://github.com/victor-software-house/qctl/actions/runs/42856092183
