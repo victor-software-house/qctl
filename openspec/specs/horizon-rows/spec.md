@@ -1,6 +1,7 @@
 # horizon-rows Specification
 
 ## Purpose
+
 What a horizon row stores about why it waits, the flags that write it, and how `qctl fmt` upgrades a ledger that still says `kind`.
 
 ## Requirements
