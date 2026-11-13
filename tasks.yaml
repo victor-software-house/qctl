@@ -128,6 +128,23 @@ horizon:
     notes:
       - "2026-09-29: raised by a review of an archived row that had lost its criteria. `archive` has dropped both fields since the line-level rewrite, before the move to yamled. Rows archived by hand keep them, so a ledger such as yamled's now holds both shapes."
 
+  - id: QCTL-055
+    title: Archive a row in the pull request that meets its acceptance
+    scope: ledger
+    outcome: >-
+      A row whose acceptance holds is archived in the pull request that makes it hold, because qctl check fails that pull request until the row is archived, as it fails a duplicate id.
+    reason: research
+    open: >-
+      Acceptance is prose, so no check can tell whether it holds; nobody has designed a checkable form for it, or how a merge archives the row.
+    notes:
+      - 'templates audit, 2026-11-13: of 28 queued rows, 4 had shipped and 4 more had shipped behaviour with open OpenSpec boxes; 2 rows named checks that no longer exist.'
+      - 'The shipping pull requests, such as templates#98, #125, #197 and #200, named their row in the body, and no commit body carried a Closes trailer, so close-from-git never fired.'
+      - 'The goal is a hard failure built into how every repository works: CI on each pull request runs qctl check, so a done row left in the queue fails like any other ledger rule (operator, 2026-11-13).'
+      - 'Parts to design: a checkable form for each acceptance line, such as a task that must pass, a path that must exist, a plan change archived or a pull request merged; and how check evaluates them offline, or with network only in CI.'
+      - 'Also design how the archive happens: qctl archives the row in the same pull request, through a hook, a fix mode of check or a bot commit, so no follow-up pull request exists only to archive.'
+      - 'Existing pieces to build on: close-from-git for Closes trailers, close-from-openspec for archived changes, and check, which CI already runs on every pull request.'
+      - 'Research first: survey trackers that close work from code state, then write the design for the operator before any code (operator, 2026-11-13).'
+
 archive:
   - id: QCTL-048
     title: Take the shared template at v0.0.18
