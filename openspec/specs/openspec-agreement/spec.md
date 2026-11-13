@@ -83,24 +83,6 @@ qctl SHALL offer no flag or variable that turns them off; a row's `keep_change_o
 - **WHEN** the operator runs `qctl check --no-openspec`
 - **THEN** the command fails as an unknown argument
 
-### Requirement: A ledger that may carry keep_change_open declares schema version 5
-
-qctl SHALL write and accept `schema_version: 5`.
-`qctl fmt` SHALL upgrade a schema 4 ledger by setting `schema_version: 5`, and SHALL apply the declared style as it does on every run; on a ledger already in its declared style, no other line changes.
-Every other verb SHALL refuse a schema 4 ledger, writing nothing, with `tasks.yaml: schema_version 4; run qctl fmt to set schema_version 5`, and `qctl check` SHALL report that line as its only problem.
-
-#### Scenario: Upgrading a schema 4 ledger
-
-- **WHEN** `tasks.yaml` declares `schema_version: 4`
-- **AND** the operator runs `qctl fmt`
-- **THEN** the only changed line is `schema_version: 5`
-
-#### Scenario: A verb on a schema 4 ledger
-
-- **WHEN** `tasks.yaml` declares `schema_version: 4`
-- **AND** the operator runs `qctl status`
-- **THEN** the command fails with `tasks.yaml: schema_version 4; run qctl fmt to set schema_version 5`
-
 ### Requirement: archive refuses the last row of an open change without a reason to keep it open
 
 `qctl archive ID` SHALL refuse, writing nothing, when the row names an open change, no other queued or horizon row names it, and no `--keep-change-open` is given.

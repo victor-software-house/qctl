@@ -27,9 +27,14 @@ The build host for every check below is the pull request's CI.
 
 - [x] 4.1 Upgrade this repository's `tasks.yaml` to version 6 with the built binary's `qctl fmt`. Verify the diff renames the 2 horizon `kind:` keys and the version line, and changes no other value.
   Evidence, 2026-11-10: [#174][qctl#174] moved `tasks.yaml` to version 6 and renamed both horizon keys; its one other line re-quotes an outcome without changing its value, as `qctl fmt` does by design ([`src/format.rs`][format-rs]).
-- [ ] 4.2 File the queue row that names this change once the open ledger pull requests merge. Verify `qctl check` passes on this repository.
-- [ ] 4.3 After the release, archive this change and archive its row with `qctl close-from-openspec`. Verify `qctl check` passes on this repository.
+- [x] 4.2 File the queue row that names this change once the open ledger pull requests merge. Verify `qctl check` passes on this repository.
+  Evidence, 2026-11-13: `QCTL-059` names this change; the open ledger pull requests [qctl#168] and [qctl#171] are replayed beside it as `QCTL-056` to `QCTL-058`.
+- [x] 4.3 After the release, archive this change and archive its row with `qctl close-from-openspec`. Verify `qctl check` passes on this repository.
+  Evidence, 2026-11-13: [qctl 0.7.0][qctl-0.7.0] shipped the change; it is archived here, and `close-from-openspec` archived `QCTL-059`.
 
 [qctl#174]: https://github.com/victor-software-house/qctl/pull/174
-[format-rs]: ../../../src/format.rs
+[format-rs]: ../../../../src/format.rs
 [qctl-main-ci]: https://github.com/victor-software-house/qctl/actions/runs/42856092183
+[qctl-0.7.0]: https://github.com/victor-software-house/qctl/releases/tag/v0.7.0
+[qctl#168]: https://github.com/victor-software-house/qctl/pull/168
+[qctl#171]: https://github.com/victor-software-house/qctl/pull/171
