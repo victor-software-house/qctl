@@ -5,19 +5,16 @@
 mod common;
 
 use std::fs;
+use std::path::Path;
 use std::process::Command;
 
 use common::{qctl, qctl_in, stderr};
 use indoc::indoc;
-use qctl::cli::CheckArgs;
-use qctl::trailers;
+use qctl::cli::{CheckArgs, LedgerArgs};
+use qctl::{check, trailers};
 use tempfile::TempDir;
 
-#[expect(
-    clippy::expect_used,
-    reason = "a helper that cannot run git fails its test"
-)]
-fn git(root: &std::path::Path, args: &[&str]) {
+fn git(root: &Path, args: &[&str]) {
     let status = Command::new("git")
         .args(["-C", &root.display().to_string()])
         .args(args)
@@ -38,10 +35,6 @@ fn parse_log_needs_body_trailer() {
 
 /// A repository whose last commit closes `CTC-001`, which its ledger still
 /// queues.
-#[expect(
-    clippy::expect_used,
-    reason = "a helper that cannot build its repository fails its test"
-)]
 fn repo_closing_a_queued_id() -> TempDir {
     let root = TempDir::new().expect("tmp");
     git(root.path(), &["init"]);
@@ -121,12 +114,12 @@ fn check_ok_with_no_git() {
     )
     .expect("ledger");
     let args = CheckArgs {
-        ledger: qctl::cli::LedgerArgs {
+        ledger: LedgerArgs {
             file: Some(root.path().join("tasks.yaml")),
         },
         no_git: true,
     };
-    qctl::check::run(&args).expect("ok");
+    check::run(&args).expect("ok");
 }
 
 #[test]

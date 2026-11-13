@@ -2,8 +2,8 @@
 //! `archive`, `close-from-git`, and `close-from-openspec`.
 
 use std::collections::HashSet;
-use std::fs;
 use std::path::Path;
+use std::{fs, io};
 
 use anyhow::{Context, Result, bail, ensure};
 use ctl_core::input::Input;
@@ -12,16 +12,16 @@ use time::macros::format_description;
 use time::{OffsetDateTime, UtcOffset};
 
 use crate::cli::{
-    AddArgs, ArchiveArgs, CloseFromGitArgs, Disposition, InitArgs, LedgerArgs, ParkArgs,
+    AddArgs, ArchiveArgs, CloseFromGitArgs, Disposition, IdArgs, InitArgs, LedgerArgs, ParkArgs,
     PromoteArgs,
 };
-use crate::document::{Change, Document};
+use crate::document::{Change, Document, must_still_parse};
 use crate::ledger::order::{self, Row};
-use crate::ledger::{load, next_id, resolve_path};
+use crate::ledger::{Ledger, load, next_id, resolve_path};
 use crate::openspec::{self, Layout, Moved};
 use crate::report::{Destination, Report};
-use crate::schema::{HorizonTask, ListItems, QueuedTask, Style};
-use crate::trailers;
+use crate::schema::{self, HorizonTask, ListItems, QueuedTask, Style, VERSION};
+use crate::{format, trailers};
 
 /// `qctl init`: write an empty ledger for a prefix.
 ///
@@ -45,7 +45,7 @@ pub fn init(args: &InitArgs) -> Result<Report> {
     {
         fs::create_dir_all(parent)?;
     }
-    let version = crate::schema::VERSION;
+    let version = VERSION;
     let body = formatdoc! {"
         # yaml-language-server: $schema=https://raw.githubusercontent.com/victor-software-house/qctl/main/schema/tasks.schema.json
         schema_version: {version}
@@ -212,7 +212,7 @@ fn insertion_index(ids: &[String], before: Option<&str>, after: Option<&str>) ->
 ///
 /// Fails when the ledger does not [`load`], when the id is not queued or is
 /// blocked, or when the file cannot be written.
-pub fn start(args: &crate::cli::IdArgs) -> Result<Report> {
+pub fn start(args: &IdArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
     let task = ledger
@@ -423,7 +423,7 @@ pub fn close_from_git(args: &CloseFromGitArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let root = path.parent().unwrap_or(&path);
     let closed = if args.pre_push {
-        let stdin = std::io::read_to_string(std::io::stdin()).context("read pre-push stdin")?;
+        let stdin = io::read_to_string(io::stdin()).context("read pre-push stdin")?;
         trailers::closed_ids_pre_push(root, &stdin)?
     } else if let Some(range) = &args.range {
         trailers::closed_ids_rev(root, &[range.as_str()])?
@@ -617,12 +617,12 @@ pub(crate) fn one_line_notes(style: &Style, notes: &[String]) -> Result<()> {
 /// a diff that shows only the work is worth more than one that is always tidy.
 pub(crate) fn write(path: &Path, document: Document) -> Result<()> {
     let source = document.into_source();
-    crate::document::must_still_parse(&source)?;
-    let edited: crate::ledger::Ledger = Input::new(path.display().to_string(), source.as_str())
+    must_still_parse(&source)?;
+    let edited: Ledger = Input::new(path.display().to_string(), source.as_str())
         .parse()
         .context("read back what this verb wrote")?;
     let source = if edited.style.normalize_on_write {
-        crate::format::normalized(&source, &edited)?
+        format::normalized(&source, &edited)?
     } else {
         source
     };
@@ -634,8 +634,7 @@ pub(crate) fn require_plan(ledger: &Path, plan: Option<&str>) -> Result<()> {
         return Ok(());
     };
     ensure!(!plan.is_empty(), "--plan needs a path");
-    crate::schema::inside_the_repo(plan, &())
-        .map_err(|error| anyhow::anyhow!("plan {plan} {error}"))?;
+    schema::inside_the_repo(plan, &()).map_err(|error| anyhow::anyhow!("plan {plan} {error}"))?;
     let parent = ledger.parent().unwrap_or(Path::new("."));
     ensure!(parent.join(plan).is_file(), "missing plan {plan}");
     Ok(())

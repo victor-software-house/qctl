@@ -110,13 +110,12 @@ fn git_local_env_vars() -> &'static [OsString] {
             .output()
             .ok()
             .filter(|output| output.status.success())
-            .map(|output| {
+            .map_or_default(|output| {
                 String::from_utf8_lossy(&output.stdout)
                     .lines()
                     .map(OsString::from)
                     .collect()
             })
-            .unwrap_or_default()
     })
 }
 

@@ -3,13 +3,9 @@
 use std::fs;
 
 use indoc::indoc;
-use qctl::ledger::{graph_errors, load, read};
+use qctl::ledger::{graph_errors, load, next_id, read};
 use tempfile::TempDir;
 
-#[expect(
-    clippy::expect_used,
-    reason = "a fixture that cannot be written or parsed fails its test"
-)]
 fn errors(body: &str) -> Vec<String> {
     let root = TempDir::new().expect("tempdir");
     let path = root.path().join("tasks.yaml");
@@ -284,7 +280,7 @@ fn next_id_refuses_the_valid_maximum() {
     )
     .expect("write");
     let ledger = load(&path).expect("parse");
-    let error = qctl::ledger::next_id(&ledger).expect_err("id space is exhausted");
+    let error = next_id(&ledger).expect_err("id space is exhausted");
     assert_eq!(error.to_string(), "id space exhausted");
 }
 
@@ -311,7 +307,7 @@ fn next_id_ignores_an_already_invalid_overflowing_id() {
     .expect("write");
     assert!(load(&path).is_err(), "validated load must refuse the id");
     let ledger = read(&path).expect("parse without validation");
-    assert_eq!(qctl::ledger::next_id(&ledger).expect("next id"), "QCTL-001");
+    assert_eq!(next_id(&ledger).expect("next id"), "QCTL-001");
 }
 
 #[test]
@@ -478,5 +474,5 @@ fn next_id_skips_horizon_and_archive() {
     )
     .expect("write");
     let ledger = load(&path).expect("parse");
-    assert_eq!(qctl::ledger::next_id(&ledger).expect("id"), "QCTL-011");
+    assert_eq!(next_id(&ledger).expect("id"), "QCTL-011");
 }

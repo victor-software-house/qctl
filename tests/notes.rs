@@ -305,10 +305,6 @@ fn has_line(body: &str, wanted: &str) -> bool {
     body.lines().any(|line| line == wanted)
 }
 
-#[expect(
-    clippy::expect_used,
-    reason = "output that does not parse fails its test"
-)]
 fn row(body: &str) -> serde_json::Value {
     let ledger: serde_json::Value = Input::new("tasks.yaml", body)
         .parse()
@@ -316,10 +312,6 @@ fn row(body: &str) -> serde_json::Value {
     ledger["queue"][0].clone()
 }
 
-#[expect(
-    clippy::expect_used,
-    reason = "a list that is not strings fails its test"
-)]
 fn strings(list: &serde_json::Value) -> Vec<String> {
     list.as_array()
         .expect("a list")

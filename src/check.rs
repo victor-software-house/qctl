@@ -3,6 +3,8 @@
 //! one pass.
 
 use std::collections::HashSet;
+use std::env;
+use std::path::Path;
 
 use anyhow::Result;
 use ctl_core::input::Input;
@@ -92,12 +94,8 @@ pub fn run(args: &CheckArgs) -> Result<Report> {
     })
 }
 
-fn trailer_errors(
-    ledger: &crate::ledger::Ledger,
-    path: &std::path::Path,
-    layout: Option<&Layout>,
-) -> Vec<String> {
-    let cwd = match std::env::current_dir() {
+fn trailer_errors(ledger: &Ledger, path: &Path, layout: Option<&Layout>) -> Vec<String> {
+    let cwd = match env::current_dir() {
         Ok(cwd) => cwd,
         Err(error) => return vec![format!("git trailer scan failed: {error}")],
     };

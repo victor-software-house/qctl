@@ -1,8 +1,9 @@
 //! Committed operator documents rendered from Clap and consumer-owned prose.
 
-use std::fs;
 use std::path::Path;
+use std::{env, fs};
 
+use ctl_core::surface;
 use minijinja::{Value, context};
 use qctl::cli::Cli;
 
@@ -18,8 +19,8 @@ fn crate_file(relative: &str) -> String {
 
 fn render_template(relative: &str, context: &Value) -> String {
     let source = crate_file(relative);
-    let environment = ctl_core::surface::environment()
-        .unwrap_or_else(|error| panic!("operator environment: {error}"));
+    let environment =
+        surface::environment().unwrap_or_else(|error| panic!("operator environment: {error}"));
     environment
         .template_from_named_str(relative, &source)
         .unwrap_or_else(|error| panic!("parse {relative}: {error}"))
@@ -29,7 +30,7 @@ fn render_template(relative: &str, context: &Value) -> String {
 
 fn assert_committed(relative: &str, rendered: &str) {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(relative);
-    if std::env::var_os("UPDATE_OPERATOR_DOCS").is_some() {
+    if env::var_os("UPDATE_OPERATOR_DOCS").is_some() {
         fs::write(&path, rendered)
             .unwrap_or_else(|error| panic!("write {}: {error}", path.display()));
     }

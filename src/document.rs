@@ -11,11 +11,15 @@ mod notes;
 mod rows;
 mod scalars;
 
+use std::cmp::Reverse;
+use std::ops::Range;
+
 use anyhow::{Context, Result, bail};
+use ctl_core::input::Input;
 use serde::Serialize;
 use yamled::{Path, Segment, Spacing, Style, TextStyle};
 
-use crate::schema::{ListItems, Quotes};
+use crate::schema::{self, ListItems, Quotes};
 
 /// A ledger's text, parsed so it can be edited in place.
 #[derive(Debug)]
@@ -94,7 +98,7 @@ impl Document {
     /// # Errors
     ///
     /// Fails when the text is not YAML qctl can edit.
-    pub fn new(source: String, style: &crate::schema::Style) -> Result<Self> {
+    pub fn new(source: String, style: &schema::Style) -> Result<Self> {
         let yaml = yamled::Document::parse(source)
             .context("this ledger is not YAML qctl can edit")?
             .with_spacing(Spacing::Blank)
@@ -388,11 +392,11 @@ fn section(name: &str) -> Path {
 pub fn rename_row_keys(source: &str, name: &str, from: &str, to: &str) -> Result<String> {
     let yaml = yamled::Document::parse(source).context("this ledger is not YAML qctl can edit")?;
     let rows = yaml.node(&section(name)).map_or(0, |list| list.len());
-    let mut keys: Vec<std::ops::Range<usize>> = (0..rows)
+    let mut keys: Vec<Range<usize>> = (0..rows)
         .filter_map(|index| yaml.node(&section(name).index(index).key(from))?.key())
         .map(|key| key.start..key.end)
         .collect();
-    keys.sort_unstable_by_key(|key| std::cmp::Reverse(key.start));
+    keys.sort_unstable_by_key(|key| Reverse(key.start));
     let mut renamed = source.to_owned();
     for key in keys {
         renamed.replace_range(key, to);
@@ -408,7 +412,7 @@ pub fn rename_row_keys(source: &str, name: &str, from: &str, to: &str) -> Result
 ///
 /// Fails when `source` is not valid YAML.
 pub fn must_still_parse(source: &str) -> Result<()> {
-    if ctl_core::input::Input::new("tasks.yaml", source)
+    if Input::new("tasks.yaml", source)
         .parse::<serde_json::Value>()
         .is_err()
     {

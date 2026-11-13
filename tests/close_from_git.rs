@@ -5,17 +5,14 @@ mod common;
 
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use std::process::Command;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 
 use common::{qctl, qctl_in, stderr, stdout};
 use indoc::indoc;
 use tempfile::TempDir;
 
-#[expect(
-    clippy::expect_used,
-    reason = "a helper that cannot run git fails its test"
-)]
-fn git(root: &std::path::Path, args: &[&str]) {
+fn git(root: &Path, args: &[&str]) {
     let status = Command::new("git")
         .args(["-C", &root.display().to_string()])
         .args(args)
@@ -24,10 +21,6 @@ fn git(root: &std::path::Path, args: &[&str]) {
     assert!(status.success(), "git {args:?}");
 }
 
-#[expect(
-    clippy::expect_used,
-    reason = "a helper that cannot run git or parse its output fails its test"
-)]
 fn repo() -> TempDir {
     let root = TempDir::new().expect("tmp");
     git(root.path(), &["init"]);
@@ -54,11 +47,7 @@ fn repo() -> TempDir {
     root
 }
 
-#[expect(
-    clippy::expect_used,
-    reason = "a helper that cannot run git or parse its output fails its test"
-)]
-fn git_hook(root: &std::path::Path) -> std::path::PathBuf {
+fn git_hook(root: &Path) -> PathBuf {
     let hook = String::from_utf8(
         Command::new("git")
             .args([
@@ -74,7 +63,7 @@ fn git_hook(root: &std::path::Path) -> std::path::PathBuf {
     )
     .expect("utf-8");
     let hook = hook.trim();
-    let path = std::path::PathBuf::from(hook);
+    let path = PathBuf::from(hook);
     if path.is_absolute() {
         path
     } else {
@@ -82,11 +71,7 @@ fn git_hook(root: &std::path::Path) -> std::path::PathBuf {
     }
 }
 
-#[expect(
-    clippy::expect_used,
-    reason = "a helper that cannot run git or parse its output fails its test"
-)]
-fn sha(root: &std::path::Path) -> String {
+fn sha(root: &Path) -> String {
     let out = Command::new("git")
         .args(["-C", &root.display().to_string(), "rev-parse", "HEAD"])
         .output()
@@ -190,9 +175,9 @@ fn close_from_git_pre_push_refuses_to_amend() {
             path.to_str().expect("utf-8"),
         ])
         .env("COLUMNS", "1000")
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()
         .and_then(|mut child| {
             use std::io::Write;

@@ -12,9 +12,10 @@ use ctl_core::input::Input;
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::cli::LedgerArgs;
+use crate::cli::{IdArgs, LedgerArgs};
+use crate::openspec::{self, Layout, Moved};
 use crate::report::{Report, Task};
-use crate::schema::ArchiveOrder;
+use crate::schema::{self, ArchiveOrder};
 pub use crate::schema::{Ledger, VERSION};
 
 /// The schema qctl was built with, generated from [`crate::schema`].
@@ -149,7 +150,7 @@ pub fn status(args: &LedgerArgs) -> Result<Report> {
 /// # Errors
 ///
 /// Fails when the ledger does not [`load`] or no list holds the id.
-pub fn show(args: &crate::cli::IdArgs) -> Result<Report> {
+pub fn show(args: &IdArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
     let task = if let Some(task) = ledger.queue.into_iter().find(|task| task.id == args.id) {
@@ -173,16 +174,12 @@ pub fn show(args: &crate::cli::IdArgs) -> Result<Report> {
 /// resolve next to it. With the `openspec/` `layout` beside it, a missing plan
 /// names the archive folder its change moved into.
 #[must_use]
-pub fn graph_errors(
-    ledger: &Ledger,
-    root: &Path,
-    layout: Option<&crate::openspec::Layout>,
-) -> Vec<String> {
+pub fn graph_errors(ledger: &Ledger, root: &Path, layout: Option<&Layout>) -> Vec<String> {
     let mut errors = Vec::new();
     let prefix = &ledger.prefix;
 
     for task in &ledger.archive {
-        if !crate::schema::is_a_real_instant(&task.completed) {
+        if !schema::is_a_real_instant(&task.completed) {
             errors.push(format!(
                 "{}: completed {} is not a moment that exists",
                 task.id, task.completed
@@ -279,13 +276,13 @@ pub fn graph_errors(
 
 /// The problem for a plan file that does not exist, naming the archive folder
 /// its change moved into when the `openspec/` `layout` shows one.
-fn missing_plan(plan: &str, parent: &Path, layout: Option<&crate::openspec::Layout>) -> String {
-    let change = crate::openspec::named(plan).map_or(plan, crate::openspec::Named::name);
-    match layout.and_then(|layout| crate::openspec::moved(layout, parent, plan)) {
-        Some(crate::openspec::Moved::To { folder, .. }) => format!(
+fn missing_plan(plan: &str, parent: &Path, layout: Option<&Layout>) -> String {
+    let change = openspec::named(plan).map_or(plan, openspec::Named::name);
+    match layout.and_then(|layout| openspec::moved(layout, parent, plan)) {
+        Some(Moved::To { folder, .. }) => format!(
             "missing plan {plan}; change {change} was archived to {folder}/; run qctl close-from-openspec"
         ),
-        Some(crate::openspec::Moved::Ambiguous(folders)) => format!(
+        Some(Moved::Ambiguous(folders)) => format!(
             "missing plan {plan}; change {change} was archived more than once, to {}; point the plan at one with qctl edit",
             folders.join(", ")
         ),

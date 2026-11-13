@@ -40,13 +40,14 @@ assets:
 # release.
 patterns:
   catalog:
-    match: "qctl.git//tasks/q?ref=v{version}"
+    match: 'qctl.git//tasks/q?ref=v{version}"'
     occurrences: once
   install:
-    match: "github:victor-software-house/qctl@{version}"
+    match: "github:victor-software-house/qctl@{version} --"
     occurrences: once
   skill:
     match: "version: {version}"
+    whole_line: true
     occurrences: once
 
 pins:

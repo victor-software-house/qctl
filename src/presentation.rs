@@ -4,6 +4,7 @@
 use ctl_core::{Document, Fields, Notice, NoticeLevel, Outcome, Present, Section, Table, Text};
 
 use crate::report::{HookOutcome, Report, Task};
+use crate::schema::Ledger;
 
 impl Present for Report {
     fn present(&self) -> Document {
@@ -90,7 +91,7 @@ impl Present for Report {
     }
 }
 
-fn status(path: &str, ledger: &crate::schema::Ledger) -> Document {
+fn status(path: &str, ledger: &Ledger) -> Document {
     let active = ledger.active.as_deref().unwrap_or("none");
     let mut document = Document::new().fields(
         Fields::new()

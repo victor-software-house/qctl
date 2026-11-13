@@ -14,6 +14,7 @@ use policy::RowKind;
 use crate::cli::{EditArgs, RemoveField};
 use crate::document::Change;
 use crate::ledger::{Ledger, load, resolve_path};
+use crate::mutate;
 use crate::report::Report;
 use crate::schema::Style;
 
@@ -35,7 +36,7 @@ pub fn run(args: &EditArgs) -> Result<Report> {
     ensure!(!requested.is_empty(), "edit needs a field or a position");
     let path = resolve_path(&args.ledger);
     let ledger = load(&path)?;
-    crate::mutate::one_line_notes(&ledger.style, &args.note)?;
+    mutate::one_line_notes(&ledger.style, &args.note)?;
     let located = locate(&ledger, &args.id)?;
     policy::validate(&requested, located.kind)?;
     let row = RowLists::new(&ledger, located);
@@ -191,12 +192,12 @@ fn rewrite_row(
     destination: usize,
     changes: &[Change],
 ) -> Result<()> {
-    let mut document = crate::mutate::read(path, style)?;
+    let mut document = mutate::read(path, style)?;
     let current = document.position_of(section, id)?;
     if changes.is_empty() && current == destination {
         return Ok(());
     }
     document.move_row(section, id, destination)?;
     document.revise(section, destination, changes)?;
-    crate::mutate::write(path, document)
+    mutate::write(path, document)
 }

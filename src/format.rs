@@ -18,9 +18,9 @@ use ctl_core::input::Input;
 
 use crate::cli::FmtArgs;
 use crate::document::{Document, KeyShape, must_still_parse, rename_row_keys};
-use crate::ledger::{Ledger, resolve_path};
+use crate::ledger::{Ledger, checked, resolve_path, schema_version};
 use crate::report::Report;
-use crate::schema::{ArchiveOrder, RowSpacing, Section, Style, VERSION};
+use crate::schema::{ArchiveOrder, ArchivedTask, RowSpacing, Section, Style, VERSION};
 
 /// The ledger as its own style says it should be written.
 ///
@@ -105,7 +105,7 @@ fn ends_in_kept_block(row: &str) -> bool {
 /// The archive's ids, most recently completed first. Stamps share one zone and
 /// one shape, so comparing their text compares their moments.
 fn newest_first(ledger: &Ledger) -> Vec<String> {
-    let mut rows: Vec<&crate::schema::ArchivedTask> = ledger.archive.iter().collect();
+    let mut rows: Vec<&ArchivedTask> = ledger.archive.iter().collect();
     rows.sort_by(|left, right| right.completed.cmp(&left.completed));
     rows.into_iter().map(|row| row.id.clone()).collect()
 }
@@ -230,13 +230,13 @@ fn push_blank(out: &mut String, blank_run: &mut usize, after_key: bool) {
 ///
 /// Fails when the file cannot be read or written, when an older file cannot
 /// be upgraded, when the ledger is not
-/// [`checked`](crate::ledger::checked), or when it cannot be
+/// [`checked`], or when it cannot be
 /// [`normalized`].
 pub fn run(args: &FmtArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
     let original = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
     let source = upgrade(&original)?;
-    let ledger = crate::ledger::checked(&Input::new(path.display().to_string(), source.as_str()))?;
+    let ledger = checked(&Input::new(path.display().to_string(), source.as_str()))?;
     let wanted = normalized(&source, &ledger)?;
 
     if original == wanted {
@@ -310,7 +310,7 @@ fn declared_style(source: &str) -> Result<Style> {
 }
 
 fn peek_schema_version(source: &str) -> Option<u64> {
-    crate::ledger::schema_version(&Input::new("tasks.yaml", source))
+    schema_version(&Input::new("tasks.yaml", source))
 }
 
 fn rewrite_v3_notes(source: &str) -> Result<String> {

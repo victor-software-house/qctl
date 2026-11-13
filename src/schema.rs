@@ -16,14 +16,18 @@
     reason = "schemars' JsonSchema derive expands concat!; the ban is for hand-written strings"
 )]
 
-use std::path::{Component, Path};
+use std::path::{Component, Path, PathBuf};
 use std::sync::LazyLock;
+use std::{fmt, fs};
 
 use garde::Validate;
 use regex::Regex;
 use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+
+use crate::cli::SchemaArgs;
+use crate::report::Report;
 
 /// The one version of this shape a ledger may declare. 3 gave a ledger a
 /// `style` block and moved the zone out of every `completed` stamp into it.
@@ -516,8 +520,8 @@ pub enum Reason {
     Deferred,
 }
 
-impl std::fmt::Display for Reason {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Reason {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         let word = match self {
             Self::Research => "research",
             Self::Evaluation => "evaluation",
@@ -619,13 +623,10 @@ pub fn generated() -> anyhow::Result<String> {
 ///
 /// Fails when the schema cannot be generated or the file cannot be
 /// written.
-pub fn write(args: &crate::cli::SchemaArgs) -> anyhow::Result<crate::report::Report> {
-    let path = args
-        .out
-        .clone()
-        .unwrap_or_else(|| std::path::PathBuf::from(COMMITTED));
-    std::fs::write(&path, generated()?)?;
-    Ok(crate::report::Report::SchemaWritten {
+pub fn write(args: &SchemaArgs) -> anyhow::Result<Report> {
+    let path = args.out.clone().unwrap_or_else(|| PathBuf::from(COMMITTED));
+    fs::write(&path, generated()?)?;
+    Ok(Report::SchemaWritten {
         path: path.display().to_string(),
     })
 }
