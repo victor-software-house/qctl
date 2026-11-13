@@ -3,9 +3,10 @@
 #[path = "common/fixtures.rs"]
 mod common;
 
-use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
+use std::process::Command;
+use std::{env, fs, iter};
 
 use common::{qctl, stderr, stdout};
 use indoc::indoc;
@@ -90,16 +91,17 @@ fn the_served_task_pipes_json_without_an_escape_byte() {
             printf '{"ok":true}\n'
         "#},
     );
-    let path = std::env::join_paths(std::iter::once(root.path().join("bin")).chain(
-        std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default()),
-    ))
+    let path = env::join_paths(
+        iter::once(root.path().join("bin"))
+            .chain(env::split_paths(&env::var_os("PATH").unwrap_or_default())),
+    )
     .unwrap_or_else(|error| panic!("PATH: {error}"));
-    let output = std::process::Command::new("mise")
+    let output = Command::new("mise")
         .args(["run", "q", "status", "--format", "json"])
         .current_dir(root.path())
         .env_clear()
         .env("PATH", path)
-        .env("HOME", std::env::var_os("HOME").unwrap_or_default())
+        .env("HOME", env::var_os("HOME").unwrap_or_default())
         .env("MISE_CONFIG_DIR", root.path().join("mise-config"))
         .env("MISE_TRUSTED_CONFIG_PATHS", root.path())
         .env("MISE_DISABLE_TOOLS", "github:victor-software-house/qctl")

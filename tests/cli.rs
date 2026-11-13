@@ -3,8 +3,12 @@
 #[path = "common/fixtures.rs"]
 mod common;
 
+use std::fs;
+use std::path::Path;
+
 use common::{LedgerDir, MINIMAL, qctl, stderr, stdout};
 use indoc::indoc;
+use qctl::cli::Cli;
 
 #[test]
 fn init_writes_ledger_without_schema_copy() {
@@ -658,8 +662,7 @@ fn instructions_prints_the_installed_contract_exactly() {
     assert!(output.status.success(), "{}", stderr(&output));
     assert_eq!(output.stderr, Vec::<u8>::new());
     let expected =
-        std::fs::read(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/instructions.md"))
-            .unwrap();
+        fs::read(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/instructions.md")).unwrap();
     assert_eq!(output.stdout, expected);
 }
 
@@ -1049,7 +1052,7 @@ fn colorless_flags_render_the_same_document() {
 
 #[test]
 fn every_long_option_has_a_short() {
-    ctl_core::Surface::new::<qctl::cli::Cli>("qctl")
+    ctl_core::Surface::new::<Cli>("qctl")
         .require_shorts(["--format", "--color", "--no-color"])
         .expect("every other long option has an operator-visible short");
 }

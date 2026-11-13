@@ -5,7 +5,8 @@
 #[path = "common/fixtures.rs"]
 mod common;
 
-use std::process::Command;
+use std::path::Path;
+use std::process::{Command, Output};
 
 use common::{LedgerDir, qctl, stderr, stdout};
 use indoc::{formatdoc, indoc};
@@ -92,7 +93,7 @@ fn beside(changes: &[&str]) -> LedgerDir {
     dir
 }
 
-fn run(dir: &LedgerDir, args: &[&str]) -> std::process::Output {
+fn run(dir: &LedgerDir, args: &[&str]) -> Output {
     let path = dir.path.to_string_lossy().into_owned();
     let mut command = args.to_vec();
     command.extend(["--file", &path]);
@@ -402,11 +403,7 @@ fn fmt_upgrades_schema_4_by_one_line() {
     );
 }
 
-#[expect(
-    clippy::expect_used,
-    reason = "a helper that cannot run git fails its test"
-)]
-fn git(root: &std::path::Path, args: &[&str]) {
+fn git(root: &Path, args: &[&str]) {
     let status = Command::new("git")
         .args(["-C", &root.display().to_string()])
         .args(args)

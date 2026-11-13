@@ -4,6 +4,7 @@ use anyhow::{Result, bail, ensure};
 
 use crate::cli::{EditArgs, UnsetField};
 use crate::document::Change;
+use crate::mutate;
 
 pub(super) struct ListEdit<'a> {
     key: &'static str,
@@ -24,7 +25,7 @@ pub(super) fn changes(args: &EditArgs, path: &Path, lists: &[ListEdit<'_>]) -> R
     if args.plan.is_some() && args.unset.contains(&UnsetField::Plan) {
         bail!("use --plan or --unset plan, not both");
     }
-    crate::mutate::require_plan(path, args.plan.as_deref())?;
+    mutate::require_plan(path, args.plan.as_deref())?;
 
     let mut changes = Vec::new();
     push_scalar(&mut changes, "title", args.title.as_deref())?;
