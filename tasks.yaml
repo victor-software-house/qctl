@@ -129,21 +129,22 @@ horizon:
       - "2026-09-29: raised by a review of an archived row that had lost its criteria. `archive` has dropped both fields since the line-level rewrite, before the move to yamled. Rows archived by hand keep them, so a ledger such as yamled's now holds both shapes."
 
   - id: QCTL-055
-    title: Archive a row in the pull request that meets its acceptance
+    title: Archive done rows in the completing pull request
     scope: ledger
     outcome: >-
-      A row whose acceptance holds is archived in the pull request that makes it hold, because qctl check fails that pull request until the row is archived, as it fails a duplicate id.
+      qctl check fails a pull request that meets a queued row's acceptance until the row is archived. A done row then fails like a duplicate id.
     reason: research
     open: >-
-      Acceptance is prose, so no check can tell whether it holds; nobody has designed a checkable form for it, or how a merge archives the row.
+      Acceptance lines are prose, and no check can read them. A checkable form, and the way a merge archives the row, have no design yet.
     notes:
-      - 'templates audit, 2026-11-13: of 28 queued rows, 4 had shipped and 4 more had shipped behaviour with open OpenSpec boxes; 2 rows named checks that no longer exist.'
-      - 'The shipping pull requests, such as templates#98, #125, #197 and #200, named their row in the body, and no commit body carried a Closes trailer, so close-from-git never fired.'
-      - 'The goal is a hard failure built into how every repository works: CI on each pull request runs qctl check, so a done row left in the queue fails like any other ledger rule (operator, 2026-11-13).'
-      - 'Parts to design: a checkable form for each acceptance line, such as a task that must pass, a path that must exist, a plan change archived or a pull request merged; and how check evaluates them offline, or with network only in CI.'
-      - 'Also design how the archive happens: qctl archives the row in the same pull request, through a hook, a fix mode of check or a bot commit, so no follow-up pull request exists only to archive.'
-      - 'Existing pieces to build on: close-from-git for Closes trailers, close-from-openspec for archived changes, and check, which CI already runs on every pull request.'
-      - 'Research first: survey trackers that close work from code state, then write the design for the operator before any code (operator, 2026-11-13).'
+      - On 2026-11-13, an audit of the templates ledger found 8 of 28 queued rows with shipped work. Two more rows named checks that the repository had removed.
+      - The shipping pull requests named their row only in the description, for example [templates#98](https://github.com/victor-software-house/templates/pull/98). No commit body carried a Closes trailer, so close-from-git archived nothing.
+      - CI already runs qctl check on every pull request. A done row left in the queue should fail that check, like any other ledger rule (operator, 2026-11-13).
+      - Design a checkable form for each acceptance line. Candidates are a task that passes, a path that exists, an archived plan change and a merged pull request.
+      - Design how check reads those conditions. It reads files offline, and it may use the network only in CI.
+      - Design how the archive lands in the same pull request. Candidates are a hook, a fix mode of check and a bot commit.
+      - Build on close-from-git, close-from-openspec and check.
+      - Survey trackers that close work from repository state first. Then write the design for the operator before any code (operator, 2026-11-13).
 
 archive:
   - id: QCTL-048
