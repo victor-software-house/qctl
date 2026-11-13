@@ -96,6 +96,41 @@ queue:
     notes:
       - 'Found 2026-10-24 during the 0.6.0 rollout: a templates row was already archived when its change could not archive yet, and only archive --keep-change-open sets the field, so the change was archived with --skip-specs instead.'
       - 'This widens the archive-row edit set that QCTL-030 limits to note, evidence, and link operations, by one field: keep_change_open.'
+
+  - id: QCTL-056
+    title: Close an OpenSpec row that blocks the next row
+    scope: close-from-openspec, start, skills/qctl
+    outcome: >-
+      Closing the active row from its archived OpenSpec change works in one
+      documented order. It also works when the next queued row depends on the closing row.
+    blocked_by: []
+    acceptance:
+      - A fixture closes an active row A through its archived OpenSpec change. Queued row B, blocked by A, can then start with no manual archive.
+      - '`skills/qctl/SKILL.md` states the order for closing a row from OpenSpec and starting the next one.'
+    links:
+      - https://github.com/victor-software-house/qctl/pull/168
+    notes:
+      - shephrd-sh/shephrd hit this on 2026-11-03 with qctl 0.6.0, closing ledger rows `SPD-004` and `SPD-005`.
+      - close-from-openspec refuses while active names the row. start refuses the next row while its blocker is still queued. So neither verb reaches the successor.
+      - 'Candidate fixes: close-from-openspec moves active itself, or start accepts a blocker whose plan points into an archived change.'
+      - Nobody has rechecked this on qctl 0.7.0, so a fixture comes first.
+
+  - id: QCTL-057
+    title: Take add and edit input as a JSON or YAML document
+    scope: qctl
+    outcome: >-
+      A whole row, or a batch of rows, enters the ledger from one structured document
+      instead of a long flag list.
+    blocked_by: []
+    acceptance:
+      - qctl add and qctl edit accept `--input <file>` or `--input -`, in JSON or YAML, through ctl-core's structured input. A golden test adds a row from a JSON file.
+      - A batch of rows in one document is added in order, and a failing row adds none.
+    links:
+      - https://github.com/victor-software-house/qctl/pull/171
+    notes:
+      - On 2026-11-07 an agent added firescale rows with many repeated flags. The operator then asked for structured input (operator, 2026-11-07).
+      - Output already takes several formats, and input should match them. The shared parsing belongs in ctl-core.
+      - This waits on ctl-core ledger row `CTC-043`, which takes every command's input as JSON or YAML from a file or stdin.
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
@@ -146,7 +181,34 @@ horizon:
       - Build on close-from-git, close-from-openspec and check.
       - Survey trackers that close work from repository state first. Then write the design for the operator before any code (operator, 2026-11-13).
 
+  - id: QCTL-058
+    title: Rank rows beyond queue position
+    scope: qctl
+    outcome: >-
+      A ledger states each row's priority, so horizon rows and long queues can be
+      ranked and filtered.
+    reason: research
+    open: 'The model is undecided: queue order alone, a priority field, or ranked horizon buckets.'
+    links:
+      - https://github.com/victor-software-house/qctl/pull/171
+    notes:
+      - While adopting qctl in firescale on 2026-11-07, the operator named priority as the one missing piece (operator, 2026-11-07).
+      - Horizon order carries no priority, so research and deferred rows have no rank.
+
 archive:
+  - id: QCTL-059
+    title: Name why a horizon row waits
+    scope: ledger
+    outcome: >-
+      A horizon row stores `reason` instead of `kind`, and every verb, output and
+      message says reason.
+    plan: openspec/changes/archive/2026-11-13-horizon-reason/proposal.md
+    completed: 2026-11-13T04:11:15
+    evidence:
+      - openspec/changes/archive/2026-11-13-horizon-reason/
+      - qctl 0.7.0 shipped it (https://github.com/victor-software-house/qctl/pull/174, released by https://github.com/victor-software-house/qctl/pull/175); the change is archived as openspec/changes/archive/2026-11-13-horizon-reason.
+    disposition: completed
+
   - id: QCTL-048
     title: Take the shared template at v0.0.18
     scope: qctl template
