@@ -230,7 +230,7 @@ fn push_blank(out: &mut String, blank_run: &mut usize, after_key: bool) {
 ///
 /// Fails when the file cannot be read or written, when an older file cannot
 /// be upgraded, when the ledger is not
-/// [`checked`](crate::ledger::checked), or when it cannot be
+/// [`checked`], or when it cannot be
 /// [`normalized`].
 pub fn run(args: &FmtArgs) -> Result<Report> {
     let path = resolve_path(&args.ledger);
