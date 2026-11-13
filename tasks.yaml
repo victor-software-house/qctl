@@ -128,6 +128,22 @@ horizon:
     notes:
       - "2026-09-29: raised by a review of an archived row that had lost its criteria. `archive` has dropped both fields since the line-level rewrite, before the move to yamled. Rows archived by hand keep them, so a ledger such as yamled's now holds both shapes."
 
+  - id: QCTL-055
+    title: Find queued rows whose work already shipped
+    scope: ledger
+    outcome: >-
+      qctl reports a queued row whose work has shipped, so a ledger stays a true
+      record without a manual audit.
+    reason: research
+    open: >-
+      Nobody has studied why rows outlive their work, or which signals in a
+      repository qctl could read to catch it.
+    notes:
+      - 'templates audit, 2026-11-13: of 28 queued rows, 4 had shipped and 4 more had shipped behaviour with open OpenSpec boxes; 2 rows named checks that no longer exist.'
+      - 'The shipping pull requests, such as templates#98, #125, #197 and #200, named their row in the body, and no commit body carried a Closes trailer, so close-from-git never fired.'
+      - 'Candidate signals to study: a row id in a merged pull request body, a plan change whose tasks.md boxes are all ticked, and an acceptance line naming a path or task that no longer exists.'
+      - Explore and research the options first, including what other trackers do, before any design; the operator asked for that order (operator, 2026-11-13).
+
 archive:
   - id: QCTL-048
     title: Take the shared template at v0.0.18
