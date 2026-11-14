@@ -85,27 +85,27 @@ url = "https://github.com/mitsuhiko/insta/releases/download/1.48.0/cargo-insta-a
 url_api = "https://api.github.com/repos/mitsuhiko/insta/releases/assets/444757856"
 
 [[tools."github:victor-software-house/verctl"]]
-version = "0.8.6-rc.1"
+version = "0.8.6-rc.3"
 backend = "github:victor-software-house/verctl"
-specifiers = ["0.8.6-rc.1"]
+specifiers = ["0.8.6-rc.3"]
 
 [tools."github:victor-software-house/verctl"."platforms.linux-arm64"]
-checksum = "sha256:872357bbb0606b3cd34699c55e2ff2bf67510cad250a9e995a179d5223744c31"
+checksum = "sha256:ef61e410f01001f2ba43bc5a128844dc97ab99fa7336c6155e4f16b257810037"
 checksum_source = "mise-versions"
-url = "https://github.com/victor-software-house/verctl/releases/download/v0.8.6-rc.1/verctl_0.8.6-rc.1_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/victor-software-house/verctl/releases/assets/745042811"
+url = "https://github.com/victor-software-house/verctl/releases/download/v0.8.6-rc.3/verctl_0.8.6-rc.3_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/victor-software-house/verctl/releases/assets/746327032"
 
 [tools."github:victor-software-house/verctl"."platforms.linux-x64"]
-checksum = "sha256:cabcd921149a77ced3216beb818856763d02fe48dace987ee7d90e472de5479c"
+checksum = "sha256:8c1888e46a538bb922d4ba25d7598df55aad391ebad09e55c451d4140a0f2407"
 checksum_source = "mise-versions"
-url = "https://github.com/victor-software-house/verctl/releases/download/v0.8.6-rc.1/verctl_0.8.6-rc.1_linux_x64.tar.gz"
-url_api = "https://api.github.com/repos/victor-software-house/verctl/releases/assets/745041696"
+url = "https://github.com/victor-software-house/verctl/releases/download/v0.8.6-rc.3/verctl_0.8.6-rc.3_linux_x64.tar.gz"
+url_api = "https://api.github.com/repos/victor-software-house/verctl/releases/assets/746327083"
 
 [tools."github:victor-software-house/verctl"."platforms.macos-arm64"]
-checksum = "sha256:0fff9b595e2cd2ffc43fc872ef5f7d14fb68377c64f8459a4ceb2efbe0b81df8"
+checksum = "sha256:2b4fc2b8d9e4c4ec8ff51c578340e1d5a594321ce7deeb0abcddad6ff83695b7"
 checksum_source = "mise-versions"
-url = "https://github.com/victor-software-house/verctl/releases/download/v0.8.6-rc.1/verctl_0.8.6-rc.1_macos_arm64.tar.gz"
-url_api = "https://api.github.com/repos/victor-software-house/verctl/releases/assets/745043360"
+url = "https://github.com/victor-software-house/verctl/releases/download/v0.8.6-rc.3/verctl_0.8.6-rc.3_macos_arm64.tar.gz"
+url_api = "https://api.github.com/repos/victor-software-house/verctl/releases/assets/746326984"
 
 [[tools.gitleaks]]
 version = "8.30.1"
