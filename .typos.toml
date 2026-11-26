@@ -1,7 +1,9 @@
 # Spelling, checked by `mise run lint:typos`.
+[default]
+# A changelog links each entry to its commit as [`abc1234`](…).
+# A hash is not a word, yet a short one can spell a typo, such as 71c9abd.
+# Commit hashes cited in prose, such as `ba09083`, split into short fake words.
+extend-ignore-re = ["\\[`[0-9a-f]{7,40}`\\]", "\\b[0-9a-f]{7,40}\\b"]
+
 [files]
 extend-exclude = ["*.lock"]
-
-[default]
-# Commit hashes cited in prose, such as `ba09083`, split into short fake words.
-extend-ignore-re = ["\\b[0-9a-f]{7,40}\\b"]
