@@ -131,6 +131,22 @@ queue:
       - On 2026-11-07 an agent added firescale rows with many repeated flags. The operator then asked for structured input (operator, 2026-11-07).
       - Output already takes several formats, and input should match them. The shared parsing belongs in ctl-core.
       - This waits on ctl-core ledger row `CTC-043`, which takes every command's input as JSON or YAML from a file or stdin.
+      - 2026-11-27, QCTL-060 carries add and edit from one document; a batch of rows stays here.
+
+  - id: QCTL-060
+    title: Build on ctl-core 0.8 and take a row from an input document
+    scope: Cargo.toml, Cargo.lock, tests, skills/qctl, src/instructions.md, .ctl/ver.yaml
+    outcome: >-
+      qctl builds on ctl-core 0.8.0-rc.2 with every 0.8 break migrated, and add and
+      edit take a row from --input as YAML, JSON or TOML.
+    blocked_by: []
+    acceptance:
+      - Cargo.toml pins ctl-core =0.8.0-rc.2 with input-document and input-json, and Cargo.lock holds one copy of each ctl crate.
+      - qctl add --input row.json adds the row its flags would add, and qctl edit --input edit.yaml edits as its flags would, each proven by a golden test.
+      - The skill and the installed instructions describe --input, --input-format, QCTL_INPUT and the precedence, and the piped default output.
+    plan: openspec/changes/ctl-core-0-8/proposal.md
+    notes:
+      - 2026-11-27, ctl-core 0.8.0-rc.2 published; this row carries the single-row half of QCTL-057, and the batch half stays there.
 horizon:
   - id: QCTL-019
     title: Resolve a foreign blocker instead of only recording it
