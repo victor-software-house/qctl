@@ -137,8 +137,7 @@ queue:
     title: Build on ctl-core 0.8 and take a row from an input document
     scope: Cargo.toml, Cargo.lock, tests, skills/qctl, src/instructions.md, .ctl/ver.yaml
     outcome: >-
-      qctl builds on ctl-core 0.8.0-rc.2 with every 0.8 break migrated, and add and
-      edit take a row from --input as YAML, JSON or TOML.
+      qctl builds on ctl-core 0.8.0-rc.2 with every 0.8 break migrated, and add and edit take a row from --input as YAML or JSON.
     blocked_by: []
     acceptance:
       - Cargo.toml pins ctl-core =0.8.0-rc.2 with input-document and input-json, and Cargo.lock holds one copy of each ctl crate.
