@@ -135,7 +135,14 @@ fn show_reads_a_stamp_without_moving_it() {
             outcome: It shipped.
             evidence: [The tag exists.]
     "});
-    let output = qctl(&["show", "QCTL-001", "-f", dir.path.to_str().unwrap()]);
+    let output = qctl(&[
+        "show",
+        "QCTL-001",
+        "-f",
+        dir.path.to_str().unwrap(),
+        "--format",
+        "pretty",
+    ]);
     assert!(output.status.success(), "{}", stderr(&output));
     assert_eq!(
         stdout(&output).trim_end(),
@@ -162,7 +169,14 @@ fn piped_show_without_columns_stays_within_80_columns() {
             evidence: [The tag exists.]
     "});
     let output = common::binary()
-        .args(["show", "QCTL-001", "-f", dir.path.to_str().unwrap()])
+        .args([
+            "show",
+            "QCTL-001",
+            "-f",
+            dir.path.to_str().unwrap(),
+            "--format",
+            "pretty",
+        ])
         .env_remove("COLUMNS")
         .output()
         .expect("spawn qctl");
@@ -979,7 +993,7 @@ fn status_and_check_share_typed_json_output() {
 }
 
 #[test]
-fn failed_check_is_a_json_problem_array_on_stdout() {
+fn failed_check_is_a_json_problem_array_on_stderr() {
     let dir = LedgerDir::empty();
     dir.write(indoc! {"
         schema_version: 6
@@ -998,9 +1012,9 @@ fn failed_check_is_a_json_problem_array_on_stdout() {
         "json",
     ]);
     assert!(!output.status.success());
-    assert_eq!(output.stderr, Vec::<u8>::new());
-    assert!(!output.stdout.contains(&b'\x1b'));
-    let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(output.stdout, Vec::<u8>::new());
+    assert!(!output.stderr.contains(&b'\x1b'));
+    let report: serde_json::Value = serde_json::from_slice(&output.stderr).unwrap();
     assert_eq!(report["type"], "check");
     let problems = report["problems"].as_array().unwrap();
     assert!(
@@ -1053,7 +1067,7 @@ fn colorless_flags_render_the_same_document() {
 #[test]
 fn every_long_option_has_a_short() {
     ctl_core::Surface::new::<Cli>("qctl")
-        .require_shorts(["--format", "--color", "--no-color"])
+        .require_shorts(["--format", "--json", "--stream", "--color", "--no-color"])
         .expect("every other long option has an operator-visible short");
 }
 
@@ -1165,13 +1179,24 @@ fn json_output_holds_no_escape_byte_under_forced_colour() {
             stdout(&output),
             stderr(&output)
         );
-        serde_json::from_slice::<serde_json::Value>(&output.stdout)
-            .unwrap_or_else(|error| panic!("{args:?}: stdout is not JSON: {error}"));
+        // A failed run writes its JSON to stderr and leaves stdout empty.
+        let (json, other) = if output.status.success() {
+            (&output.stdout, &output.stderr)
+        } else {
+            (&output.stderr, &output.stdout)
+        };
+        assert!(
+            other.is_empty(),
+            "{args:?}: {}",
+            String::from_utf8_lossy(other)
+        );
+        serde_json::from_slice::<serde_json::Value>(json)
+            .unwrap_or_else(|error| panic!("{args:?}: output is not JSON: {error}"));
         if args.contains(&drifted_path.as_str()) {
             assert!(
-                stdout(&output).contains("change add-thing is named by no row"),
+                String::from_utf8_lossy(json).contains("change add-thing is named by no row"),
                 "{}",
-                stdout(&output)
+                String::from_utf8_lossy(json)
             );
         }
     }
