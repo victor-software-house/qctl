@@ -11,8 +11,9 @@ mise run q check
 mise run q instructions
 ```
 
-Never `mise run q --`. The `--` in `#USAGE mount` is mise's
-completion bootstrap.
+Never `mise run q --`.
+
+The `--` in `#USAGE mount` is mise's completion bootstrap.
 
 ## Commands
 
@@ -64,12 +65,15 @@ rejected commands.
 
 ## Output
 
-Every command returns one typed report. Human output is pretty by default.
+Every command returns one typed report. Human output is pretty on a terminal.
+Piped output defaults to `tsv`, tab-separated lines with the columns a person
+sees; `--format pretty` or `QCTL_FORMAT=pretty` gives the table when piped.
 `--color never` and `--no-color` render the same document without ANSI.
-`--format json` serializes the report directly as one JSON line on stdout;
-failures remain machine-readable on stdout and exit non-zero. JSON is never
-coloured, whatever `CLICOLOR_FORCE` or `FORCE_COLOR` say, and a parse error
-under `--format json` is a JSON error even when the bad argument comes first.
+`--format json`, or `--json`, serializes the report directly as JSON on stdout;
+a failure writes its JSON to stderr, leaves stdout empty, and exits non-zero.
+JSON is never coloured, whatever `CLICOLOR_FORCE` or `FORCE_COLOR` say, and a
+parse error under `--format json` is a JSON error even when the bad argument
+comes first.
 `--quiet` suppresses successful human output only, never JSON or failures. `-f` remains
 `--file`; format has no `-f` shorthand. `--color` has no `-c` shorthand;
 `fmt -c` is `--check`.
@@ -79,8 +83,35 @@ Every long option also reads `QCTL_<LONG>`: `QCTL_FILE` names the ledger,
 command line wins over its variable, and an empty variable counts as unset.
 
 `status --format json` includes the complete ledger state. The JSON from
-`check --format json` carries `problems` as an array and exits non-zero when it
-is not empty.
+`check --format json` carries `problems` as an array; it is on stdout when the
+array is empty, and on stderr with a non-zero exit when it is not.
+
+## Input document
+
+Every command takes `--input FILE`, or `--input -` for standard input, and
+`--input-format NAME`, either `yaml` or `json`, which standard input needs and
+a file's extension otherwise names. They read `QCTL_INPUT` and
+`QCTL_INPUT_FORMAT`.
+
+The document fills the arguments of the command the command line names. Its
+keys are long option names and positional ids, such as `title`, `acceptance`,
+`note`, `blocked-by`, and `id`, and a list value is a list with one item per
+entry. Each value passes the argument's own parser. The command line wins over
+the environment, the environment over the document, and the document over the
+default; a key that loses is dropped. A key that names no argument fails with
+its file and line.
+
+```yaml
+title: Document the schema
+scope: docs
+outcome: Readers can verify every row field.
+acceptance:
+  - The schema page names every row field.
+note:
+  - The type definitions are authoritative.
+```
+
+`qctl add --input row.yaml` adds that row; `edit ID --input edit.yaml` edits one.
 
 ## Three lists
 

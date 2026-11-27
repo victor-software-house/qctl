@@ -3,7 +3,7 @@
 #[path = "common/fixtures.rs"]
 mod common;
 
-use common::{LedgerDir, qctl, stderr, stdout};
+use common::{LedgerDir, qctl, stderr};
 use indoc::indoc;
 
 #[test]
@@ -97,7 +97,7 @@ fn other_verbs_refuse_schema_5_and_name_fmt() {
     let check = qctl(&["check", "-f", &path, "-g", "--format", "json"]);
     assert!(!check.status.success());
     let report: serde_json::Value =
-        serde_json::from_str(&stdout(&check)).unwrap_or_else(|error| panic!("{error}"));
+        serde_json::from_str(&stderr(&check)).unwrap_or_else(|error| panic!("{error}"));
     let problems = report["problems"].as_array().cloned().unwrap_or_default();
     assert_eq!(problems.len(), 1, "{report}");
     assert!(

@@ -10,15 +10,20 @@ arg_required_else_help #true
 args_override_self #false
 subcommand_required #true
 usage "Usage: q [OPTIONS] <COMMAND>"
-flag --format help="Output representation" global=#true help_heading=Output default=pretty {
+flag --format help="Output representation" global=#true help_heading=Output {
     arg <FORMAT> {
         choices {
             choice pretty help="Human text, optionally coloured"
             choice json help="Machine JSON. Never contains ANSI"
+            choice tsv help="Tab-separated lines, one record per line"
+            choice csv help="Comma-separated values (RFC 4180)"
+            choice markdown help="Markdown tables and text"
         }
     }
 }
 flag "-q --quiet" help="Suppress successful pretty output" global=#true help_heading=Output
+flag --stream help="Write each record when the command produces it" global=#true help_heading=Output
+flag --json help="Shorthand for `--format json`" global=#true help_heading=Output
 flag --color help="Pretty-output colour policy. JSON never contains ANSI" global=#true help_heading=Output default=auto {
     arg <COLOR> {
         choices {
@@ -29,6 +34,15 @@ flag --color help="Pretty-output colour policy. JSON never contains ANSI" global
     }
 }
 flag --no-color help="Force colourless pretty output. Wins over `--color`" global=#true help_heading=Output
+flag --input help="Fill this command's arguments from a document; `-` reads stdin" global=#true help_heading=Input {
+    arg <FILE>
+}
+flag --input-format help="The document's format, which stdin needs; a file's extension names it otherwise" global=#true help_heading=Input {
+    arg <NAME> {
+        choices yaml json
+    }
+}
+complete file type=path
 cmd init display_order=0 args_override_self=#false help="Write a tasks.yaml for a prefix. Does not copy a schema file" unknown_flags=error {
     flag "-p --prefix" help="Stable id prefix, such as QCTL, VER, or FRK" required=#true {
         arg <PREFIX>

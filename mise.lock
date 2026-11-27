@@ -94,6 +94,7 @@ url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/397
 version = "1.48.0"
 backend = "github:mitsuhiko/insta"
 specifiers = ["1.48.0"]
+unsupported_platforms = ["linux-arm64"]
 
 [tools."github:mitsuhiko/insta"."platforms.linux-x64"]
 checksum = "sha256:1c05a480a5a7f755f0ea15b2d8e2f71ad51b9c3a270d38ac72005c57ac0a1487"
