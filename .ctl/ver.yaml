@@ -8,6 +8,8 @@ prepare:
 packages:
   - name: qctl
     path: Cargo.toml
+    # Breaking output changes ship as candidates, such as 0.8.0-rc.1.
+    prerelease: rc
 
 runners:
   x64:
