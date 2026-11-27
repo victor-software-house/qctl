@@ -1,0 +1,23 @@
+---
+source: tests/mutations.rs
+description: qctl add --input tests/fixtures/mutations/add-from-a-json-document/row.json
+---
+# -1 +11
+ # yaml-language-server: $schema=./schema/tasks.schema.json
+ schema_version: 6
+ prefix: DEMO
+ active: null
+-queue: []
++queue:
++  - id: DEMO-001
++    title: Teach it to write
++    scope: demo
++    outcome: The file comes back as it went in.
++    blocked_by: []
++    acceptance:
++      - It holds.
++      - It holds twice.
++    notes:
++      - The evidence lives here.
+ archive: []
+ horizon: []
