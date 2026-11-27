@@ -1,6 +1,6 @@
 [package]
 name = "qctl"
-version = "0.7.0"
+version = "0.8.0-rc.1"
 edition = "2024"
 rust-version = "1.100.0"
 description = "Control in-repo YAML work queues"
